@@ -1,1 +1,1 @@
-# Cornopoly
+# Ithaca Map
