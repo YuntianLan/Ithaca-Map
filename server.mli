@@ -25,5 +25,12 @@ end
 module type Server = sig
 	type t
 
+	val accept_connection : t -> unit
+
 	val 
+	
 end
+
+
+
+
