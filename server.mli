@@ -8,11 +8,11 @@ module type Server = sig
 
 	(* [Tree] is a module representing the directories
 	 * of all the images with different resolutions. *)
-	module Tree : Data.ImageTree
+	module Tree : Image.ImageTree
 
 	(* [Graph] is a module representing the relations 
 	 * between nodes on the map. *)
-	module Graph : Data.MapGraph
+	module Graph : Graph.MapGraph
 
 
 	(* [tree] is the type of MapTree

@@ -1,2 +1,2 @@
 build:
-	ocamlbuild -use-ocamlfind data.cmo server.cmo client.cmo
+	ocamlbuild -use-ocamlfind graph.cmo image.cmo server.cmo client.cmo

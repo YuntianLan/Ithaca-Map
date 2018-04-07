@@ -1,15 +1,6 @@
 open Yojson.Basic;;
 open Yojson.Basic.Util;;
 
-module type ImageTree = sig
-
-	type t
-
-	val init_tree : string -> t
-	val get_image_dir : float -> float -> int -> string
-
-end
-
 
 module type MapGraph = sig
 
@@ -55,6 +46,10 @@ type trie = {
 	children: trie list;
 }
 
+
+
+
+
 module Map : MapGraph = struct
 	
 	type node = nd
@@ -64,7 +59,7 @@ module Map : MapGraph = struct
 		let j = from_file s in
 		let l = j |> to_assoc |> List.hd |> snd |> to_assoc in
 		let node_lst = List.assoc "node" l in
-		let way_lst = List.assic "way" l in
+		let way_lst = List.assoc "way" l in
 		failwith "Unimplemented"
 
 	let get_node_by_coord lat lon map =
