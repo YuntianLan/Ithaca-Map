@@ -15,13 +15,41 @@ module type MapGraph = sig
 
 end
 
+
+type category = 
+| Shop | Tourism | Leisure
+| FoodDrink (*  *)
+| School | Bank | Cinema | Fuel 
+| Postbox | Carwash | Doctor | Library
+| Other | Nope
+
+
 (* Node type, represents a point location on the map
  * with id, latitude and longitude stored *)
 type nd = {
 	nid: int;
 	lat: float;
 	lon: float;
+
+	categ: category;
+	name: string;
+	(* TODO: add tags when building nodes in the future *)
+	tags: (string * string) list;
 }
+
+
+
+module NodeHash = struct
+
+	type t = nd
+
+	let equal n1 n2 = n1.nid = n2.nid
+	let hash n = n.nid
+
+end
+
+module NodeHashtbl = Hashtbl.Make(NodeHash)
+
 
 (* The kdtree structure is used here to quickly index the 
  * nearest neighbor node given a coordinate (float * float).
@@ -52,8 +80,12 @@ type trie = {
 
 module Map : MapGraph = struct
 	
+	module H = NodeHashtbl
+
+	type tbl = (nd list) H.t
+
 	type node = nd
-	type t = kdtree * trie
+	type t = kdtree * trie * tbl
 
 
 
@@ -63,9 +95,16 @@ module Map : MapGraph = struct
 		let id = j |> List.assoc "@id" |> to_string |> int_of_string in
 		let lat = j |> List.assoc "@lat" |> to_string |> float_of_string in
 		let lon = j |> List.assoc "@lon" |> to_string |> float_of_string in
-		{nid = id; lat = lat; lon = lon}
+		let tags = List.assoc_opt "tag" j in
+		match tags with
+		| None -> {nid = id; lat = lat; lon = lon;
+								categ = Nope; name = ""; tags = []}
+		| Some tg -> failwith "Unimplemented"
 
-	
+
+
+
+
 
 
 	let init_graph s = 
@@ -74,6 +113,8 @@ module Map : MapGraph = struct
 		let node_jlst = (List.nth l 5) |> snd |> to_list in
 		let way_jlst = (List.nth l 6) |> snd |> to_list in
 		failwith "Unimplemented"
+
+
 
 	let get_node_by_coord lat lon map =
 		failwith "Unimplemented"

@@ -1,3 +1,7 @@
+(* open Lwt
+open Cohttp
+open Cohttp_lwt_unix *)
+
 module type Server = sig
 	
 	module Tree : Image.ImageTree
