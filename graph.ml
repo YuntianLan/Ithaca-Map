@@ -55,11 +55,24 @@ module Map : MapGraph = struct
 	type node = nd
 	type t = kdtree * trie
 
+
+
+
+	let j2node n = 
+		let j = to_assoc n in
+		let id = j |> List.assoc "@id" |> to_string |> int_of_string in
+		let lat = j |> List.assoc "@lat" |> to_string |> float_of_string in
+		let lon = j |> List.assoc "@lon" |> to_string |> float_of_string in
+		{nid = id; lat = lat; lon = lon}
+
+	
+
+
 	let init_graph s = 
 		let j = from_file s in
 		let l = j |> to_assoc |> List.hd |> snd |> to_assoc in
-		let node_lst = List.assoc "node" l in
-		let way_lst = List.assoc "way" l in
+		let node_jlst = (List.nth l 5) |> snd |> to_list in
+		let way_jlst = (List.nth l 6) |> snd |> to_list in
 		failwith "Unimplemented"
 
 	let get_node_by_coord lat lon map =
