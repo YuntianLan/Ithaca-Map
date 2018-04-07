@@ -12,26 +12,26 @@ module type GUI = sig
      | pattern ->  *)
 
   (* [init_window] initializes the whole user interface. *)
-  val init_window : unit -> unit
+  val init_window : unit->unit
 
   (* [zoom_in] choose a picture of larger scale to display when the zoom in
    * button is clicked. *)
-  val zoom_in : unit -> unit
+  val zoom_in : unit->unit
 
   (* [zoom_out] choose a picture of smaller scale to display when the zoom in
    * button is clicked. *)
-  val zoom_out : unit -> unit
+  val zoom_out : unit->unit
 
   (* [show_route] plots the route from start location to destination on the
    * picture of the map. *)
-  val show_route : unit -> unit
+  val show_route : unit->unit
 
   (* [search] displays a picture of the chosen location of appropriate scale. *)
-  val search : unit -> unit
+  val search : unit->unit
 
   (* [showLoc] shows a node on the map that represents the user's current
    * location when the button is clicked. *)
-  val showLoc : unit -> unit
+  val showLoc : unit->unit
 
 end
 
