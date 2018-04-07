@@ -1,19 +1,22 @@
-module type ImageTree = sig
+module type MapImage = sig
 
-	(* [t] is the type of MapTree *)
-	type t
+	(* [t] is the type of MapImage *)
+  type t
 
-	(* [init_tree s] takes in the directory 
+  (* [params] is the type of query parameters for getting the map *)
+  type params
+
+  (* [result] is the type of map image information *)
+  type result
+
+	(* [init] takes in the directory
 	 * where the graphs are stored and builds
-	 * the MapTree with all the graphs placed correctly in the 
+	 * the MapTree with all the graphs placed correctly in the
 	 * MapTree. *)
-	val init_tree : string -> t
+	val init : string -> t
 
-	(* [get_image_dir f f i] takes in the coordinate of 
-	 * the map and the zoom level and returns the directory of 
-	 * the graph needed. *)
-	val get_image_dir : float -> float -> int -> string
+  (* [get_map params] is the map image information that corresponds to the query
+   * information [params] *)
+	val get_map : params -> result
 
 end
-
-
