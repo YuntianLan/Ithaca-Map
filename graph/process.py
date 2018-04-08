@@ -29,7 +29,7 @@ data -> {
 }
 """
 pbar = progressbar.ProgressBar()
-t = et.ElementTree(file='map-full').getroot()
+t = et.ElementTree(file='map-ithaca').getroot()
 for i,child in pbar(list(enumerate(t))):
     if child.tag == 'node':
         node_data = {k:v for k,v in child.attrib.iteritems() \

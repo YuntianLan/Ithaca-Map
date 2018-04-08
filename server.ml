@@ -4,7 +4,7 @@ open Cohttp_lwt_unix *)
 
 module type Server = sig
 	
-	module Tree : Image.ImageTree
+	module Tree : Image.MapImage
 	module Graph : Graph.MapGraph
 
 	type tree = Tree.t

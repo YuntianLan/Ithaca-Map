@@ -24,6 +24,8 @@ type category =
 | Other | Nope
 
 
+type allowed = Walk | Drive | Both | Neither
+
 (* Node type, represents a point location on the map
  * with id, latitude and longitude stored *)
 type nd = {
@@ -38,17 +40,26 @@ type nd = {
 }
 
 
+type way = {
+	wid: int;
+	nodes: int list;
+	categ: category;
+	name: string;
+	allow: allowed;
+	(* TODO: add tags when building nodes in the future *)
+	tags: (string * string) list;
+}
 
-module NodeHash = struct
+module IntHash = struct
 
-	type t = nd
+	type t = int
 
-	let equal n1 n2 = n1.nid = n2.nid
-	let hash n = n.nid
+	let equal n1 n2 = n1 = n2
+	let hash n = n
 
 end
 
-module NodeHashtbl = Hashtbl.Make(NodeHash)
+module IntHashtbl = Hashtbl.Make(IntHash)
 
 
 (* The kdtree structure is used here to quickly index the 
@@ -72,7 +83,7 @@ type place = Nodeid of int | Wayid of int
 type trie = {
 	acc: string;
 	curr_char: string;
-	nodes: nd list;
+	nodes: place list;
 	children: trie list;
 }
 
@@ -82,29 +93,28 @@ type trie = {
 
 module Map : MapGraph = struct
 	
-	module H = NodeHashtbl
+	module H = IntHashtbl
 
-	type tbl = (nd list) H.t
+	type edgetbl = (int list) H.t
+	type nodetbl = (nd) H.t
+	type waytbl = (way) H.t
 
 	type node = nd
-	type t = kdtree * trie * tbl
+	type t = kdtree * trie * edgetbl * nodetbl * waytbl
 
 
 
 
 	let j2node n = 
 		let j = to_assoc n in
-		let id = j |> List.assoc "@id" |> to_string |> int_of_string in
-		let lat = j |> List.assoc "@lat" |> to_string |> float_of_string in
-		let lon = j |> List.assoc "@lon" |> to_string |> float_of_string in
+		let id = j |> List.assoc "id" |> to_string |> int_of_string in
+		let lat = j |> List.assoc "lat" |> to_string |> float_of_string in
+		let lon = j |> List.assoc "lon" |> to_string |> float_of_string in
 		let tags = List.assoc_opt "tag" j in
 		match tags with
 		| None -> {nid = id; lat = lat; lon = lon;
 								categ = Nope; name = ""; tags = []}
-		| Some tg -> 
-			match tg with
-			|hd::tl
-			|
+		| Some tg -> failwith "Unimplemented"
 
 
 
@@ -119,7 +129,32 @@ module Map : MapGraph = struct
 
 
 	let j2way n = 
-		let j = to_assoc n in ()
+		let nodes = n |> member "nodes" |> to_list |>
+				List.map to_string |> List.map int_of_string in
+		let id = n |> member "id" |> to_string |> int_of_string in
+		let tags = n |> member "tags" |> to_assoc |>
+				List.map (fun (x,y) -> (x,to_string y)) in
+		let allow = match List.assoc_opt "highway" tags with
+			| None -> Neither
+			| Some name -> 
+				let name = String.lowercase_ascii name in
+				if name = "mortorway" then Drive
+				else if name = "primary" then Drive
+				else if name = "secondary" then Both
+				else if name = "secondary" then Drive
+				else if name = "secondary" then Drive
+				else if name = "secondary" then Drive
+				else if name = "secondary" then Drive
+				else if name = "secondary" then Drive
+				else if name = "secondary" then Drive
+				else if name = "secondary" then Drive
+				else if name = "secondary" then Drive
+				else if name = "secondary" then Drive
+				else if name = "secondary" then Drive
+				else if name = "secondary" then Drive
+				else if name = "secondary" then Drive
+				else if name = "secondary" then Drive
+
 
 
 
