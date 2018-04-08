@@ -21,7 +21,7 @@ type category =
 | FoodDrink (* ^_^ *)
 | School | Bank | Cinema | Fuel 
 | Postbox | Carwash | Doctor | Library
-| Other | Nope
+| Other | Road
 
 
 (* Node type, represents a point location on the map
@@ -31,7 +31,7 @@ type nd = {
 	lat: float;
 	lon: float;
 
-	categ: category;
+	categ: category option;
 	name: string;
 	(* TODO: add tags when building nodes in the future *)
 	tags: (string * string) list;
@@ -93,54 +93,27 @@ module Map : MapGraph = struct
 
 
 	let j2node n = 
-		let j = to_assoc n in
-		let id = j |> List.assoc "@id" |> to_string |> int_of_string in
-		let lat = j |> List.assoc "@lat" |> to_string |> float_of_string in
-		let lon = j |> List.assoc "@lon" |> to_string |> float_of_string in
-		let tags = List.assoc_opt "tag" j in
-		match tags with
-		| None -> {nid = id; lat = lat; lon = lon;
-								categ = Nope; name = ""; tags = []}
-		| Some tg -> 
-			match tg with
-			|hd::tl
-			|
-
-
-
-
-
-
-
-
-
-
-
+		let id = n |> member "id" |> to_string |> int_of_string in 
+		let lat = n |> member "lat" |> to_string |> float_of_string in
+		let lon = n |> member "lon" |> to_string |> float_of_string in 
+		let tags = n |> member "tags" |> to_assoc |> List.map (fun (x,y) -> x, to_string y) in
+		let name = (match List.filter (fun x,_ -> x == "name") with
+			| [] -> "" 
+			| h::_ -> h
+		) in
+		let category = None in
+		{nid = id; lat = lat; lon = lon; categ = categry; name = name; tags = tags[]}
 
 
 	let j2way n = 
-		let j = to_assoc n in ()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		let j = to_assoc n in failwith "TODO"
 
 
 	let init_graph s = 
 		let j = from_file s in
-		let l = j |> to_assoc |> List.hd |> snd |> to_assoc in
-		let node_jlst = (List.nth l 5) |> snd |> to_list in
-		let way_jlst = (List.nth l 6) |> snd |> to_list in
+		(* let l = j |> to_assoc |> List.hd |> snd |> to_assoc in *)
+		let node_lst = j |> member "nodes" |> to_list |> List.map j2node in
+		let way_lst = j |> member "ways" |> to_list |> List.map j2way in
 		failwith "Unimplemented"
 
 
