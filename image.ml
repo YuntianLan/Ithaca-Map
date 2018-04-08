@@ -1,3 +1,11 @@
+(* constants *)
+let max_depth = 18
+let root_upleft_lon = -76.5192
+let root_upleft_lat = 42.4569
+let root_lowright_lon = -76.4676
+let root_lowright_lat = 42.4301
+
+(* =========================== *)
 
 module type MapImage = sig
   type t
@@ -85,7 +93,7 @@ module MapImage = struct
   let rec make_quadtree qt =
     match qt with
     | Leaf -> Leaf
-    | Node (qn,_,_,_,_) when qn.depth = 18 -> qt
+    | Node (qn,_,_,_,_) when qn.depth = max_depth -> qt
     | Node (qn,_,_,_,_) -> begin
       match make_children qn with
         | ul::ur::ll::lr::[] -> Node (qn,make_quadtree ul, make_quadtree ur,
@@ -95,10 +103,10 @@ module MapImage = struct
 
   let init_quadtree s =
     let root_node = {
-      upleft_lon = 1.0;
-      upleft_lat = 1.0;
-      lowright_lon = 1.0;
-      lowright_lat = 1.0;
+      upleft_lon = root_upleft_lon;
+      upleft_lat = root_upleft_lat;
+      lowright_lon = root_lowright_lon;
+      lowright_lat = root_lowright_lat;
       img = s;
       depth = 1;
     } in
