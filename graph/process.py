@@ -28,11 +28,18 @@ data -> {
     }]
 }
 """
+
 pbar = progressbar.ProgressBar()
+<<<<<<< HEAD
 t = et.ElementTree(file='map-ithaca').getroot()
+=======
+# t = et.ElementTree(file='map-full').getroot()
+t = et.ElementTree(file='map-ithaca.xml').getroot()
+
+>>>>>>> 8b35eb2997ad98d5315f6022c2dda17ae934ab8f
 for i,child in pbar(list(enumerate(t))):
     if child.tag == 'node':
-        node_data = {k:v for k,v in child.attrib.iteritems() \
+        node_data = {k:v for k,v in child.attrib.items() \
                 if k in ['lat', 'id', 'lon']}
         node_data['tags'] = {}
         for grandchild in child:
@@ -42,7 +49,7 @@ for i,child in pbar(list(enumerate(t))):
         data['nodes'].append(node_data)
 
     elif child.tag == 'way':
-        way_data = {k:v for k,v in child.attrib.iteritems() \
+        way_data = {k:v for k,v in child.attrib.items() \
                 if k in ['id']}
         way_data['nodes'] = []
         way_data['tags'] = {}
@@ -57,4 +64,10 @@ for i,child in pbar(list(enumerate(t))):
 
 
 with open('full.json', 'w') as f:
-	json.dump(data, f)
+    json.dump(data, f)
+
+with open('small.json', 'w') as f:
+    sm_data = dict(data)
+    sm_data['nodes'] = sm_data['nodes'][:10]
+    sm_data['ways'] = sm_data['ways'][:10]
+    json.dump(sm_data, f)

@@ -21,7 +21,7 @@ type category =
 | FoodDrink (* ^_^ *)
 | School | Bank | Cinema | Fuel 
 | Postbox | Carwash | Doctor | Library
-| Other | Nope
+| Other | Road
 
 
 type allowed = Walk | Drive | Both | Neither
@@ -33,7 +33,7 @@ type nd = {
 	lat: float;
 	lon: float;
 
-	categ: category;
+	catego: category option;
 	name: string;
 	(* TODO: add tags when building nodes in the future *)
 	tags: (string * string) list;
@@ -43,7 +43,7 @@ type nd = {
 type way = {
 	wid: int;
 	nodes: int list;
-	categ: category;
+	categ: category option;
 	name: string;
 	allow: allowed;
 	(* TODO: add tags when building nodes in the future *)
@@ -71,14 +71,16 @@ module IntHashtbl = Hashtbl.Make(IntHash)
 type kdtree = 
 | Xnode of float * kdtree * kdtree
 | Ynode of float * kdtree * kdtree
-| Leaf of nd list
+| Leaf of int
 
 
 type place = Nodeid of int | Wayid of int
 
+
 (* The prefix tree structure is used to quickly index all the
  * relevant nodes given a place's name (string), the tree is 
  * created at the parsing phase and never modified after.
+ * TODO: Put TRIE to the outside in a seperate module
  *)
 type trie = {
 	acc: string;
@@ -95,37 +97,45 @@ module Map : MapGraph = struct
 	
 	module H = IntHashtbl
 
-	type edgetbl = (int list) H.t
-	type nodetbl = (nd) H.t
-	type waytbl = (way) H.t
+	(* Given coordinate, find the closest of ALL nodes *)
+	type loc_tree = kdtree
+	(* Given coordinate, find the closest of WAY nodes *)
+	type route_tree = kdtree
+
+	(* Given a place's name, find the "place" of that name *)
+	type name_trie = trie
+
+	(* Given a node id (int), find all the nid of
+	 * the nodes reachable by walk *)
+	type edge_table = (int list) H.t
+
+	(* Given a node id (int), get the actual node *)
+	type node_table = (nd) H.t
+	(* Given a way id (int), get the actual way *)
+	type way_table = (way) H.t
 
 	type node = nd
-	type t = kdtree * trie * edgetbl * nodetbl * waytbl
+
+	type t = loc_tree * route_tree * name_trie * 
+		edge_table * edge_table * node_table * way_table
+	(* walk_table   drive_table *)
 
 
+	let num_nodes = 93987
+	let num_ways = 14101
 
 
 	let j2node n = 
-		let j = to_assoc n in
-		let id = j |> List.assoc "id" |> to_string |> int_of_string in
-		let lat = j |> List.assoc "lat" |> to_string |> float_of_string in
-		let lon = j |> List.assoc "lon" |> to_string |> float_of_string in
-		let tags = List.assoc_opt "tag" j in
-		match tags with
-		| None -> {nid = id; lat = lat; lon = lon;
-								categ = Nope; name = ""; tags = []}
-		| Some tg -> failwith "Unimplemented"
-
-
-
-
-
-
-
-
-
-
-
+		let id = n |> member "id" |> to_string |> int_of_string in 
+		let lat = n |> member "lat" |> to_string |> float_of_string in
+		let lon = n |> member "lon" |> to_string |> float_of_string in 
+		let tags = n |> member "tags" |> to_assoc |> List.map (fun (x,y) -> x, to_string y) in
+		let name = (match List.filter (fun (x,_) -> x == "name") tags with
+			| [] -> "" 
+			| h::_ -> (snd h)
+		) in
+		let category = None in
+		{nid = id; lat = lat; lon = lon; catego = category; name = name; tags = tags}
 
 
 	let j2way n = 
@@ -133,7 +143,11 @@ module Map : MapGraph = struct
 				List.map to_string |> List.map int_of_string in
 		let id = n |> member "id" |> to_string |> int_of_string in
 		let tags = n |> member "tags" |> to_assoc |>
-				List.map (fun (x,y) -> (x,to_string y)) in
+				List.map (fun (x,y) -> (x,to_string y)) |>
+				List.filter (fun (x,_) -> 
+					((String.length x)<4) ||
+					let sb = String.sub x 0 4
+					in (not (sb="tige" || sb="is_i"))) in
 		let allow = match List.assoc_opt "highway" tags with
 			| None -> Neither
 			| Some name -> 
@@ -141,41 +155,67 @@ module Map : MapGraph = struct
 				if name = "mortorway" then Drive
 				else if name = "primary" then Drive
 				else if name = "secondary" then Both
-				else if name = "secondary" then Drive
-				else if name = "secondary" then Drive
-				else if name = "secondary" then Drive
-				else if name = "secondary" then Drive
-				else if name = "secondary" then Drive
-				else if name = "secondary" then Drive
-				else if name = "secondary" then Drive
-				else if name = "secondary" then Drive
-				else if name = "secondary" then Drive
-				else if name = "secondary" then Drive
-				else if name = "secondary" then Drive
-				else if name = "secondary" then Drive
-				else if name = "secondary" then Drive
+				else if name = "tertiary" then Both
+				else if name = "unclassified" then Both
+				else if name = "residential" then Both
+				else if name = "motorway_link" then Drive
+				else if name = "secondary_link" then Both
+				else if name = "tertiary_link" then Both
+				else if name = "pedestrian" then Walk
+				else if name = "track" then Drive
+				else if name = "footway" then Walk
+				else if name = "bridleway" then Walk
+				else if name = "steps" then Walk
+				else if name = "path" then Walk
+				else if name = "cycleway" then Walk
+			else if name = "service" then Both
+				else Neither in 
+		let name = match List.assoc_opt "name" tags with
+		| None -> ""
+		| Some s -> s in
+		{wid = id; nodes = nodes; categ = None;
+			name = name; allow = allow; tags = tags}
 
 
+	let build_node_table nodes = 
+		let table = H.create num_nodes in
+		let add_node n = 
+			let key = n.nid in
+			H.replace table key n in
+		let _ = List.map add_node nodes in
+		table
+
+	let build_way_table ways = 
+		let table = H.create num_ways in
+		let add_way w = 
+			let key = w.wid in
+			H.replace table key w in
+		let _ = List.map add_way ways in
+		table
 
 
+	let build_edge_table ways = 
+		let table = H.create num_nodes in
+		let nid_llst = List.map (fun w -> w.nodes) ways in
+		let add_edge n1 n2 = 
 
+		let rec add_edges lst = 
+			match lst with
+			| h1::h2::t ->
 
-
-
-
-
-
-
-
-
-
+			| _ -> ()
 
 
 	let init_graph s = 
 		let j = from_file s in
-		let l = j |> to_assoc |> List.hd |> snd |> to_assoc in
-		let node_jlst = (List.nth l 5) |> snd |> to_list in
-		let way_jlst = (List.nth l 6) |> snd |> to_list in
+		let node_lst = j |> member "nodes" |> to_list |> List.map j2node in
+		let way_lst = j |> member "ways" |> to_list |> List.map j2way in
+
+		let walk_ways = List.filter 
+			(fun w -> w.allow = Walk || w.allow = Both) way_lst in
+		let drive_ways = List.filter 
+			(fun w -> w.allow = Drive || w.allow = Both) way_lst in
+
 		failwith "Unimplemented"
 
 
