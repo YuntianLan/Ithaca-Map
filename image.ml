@@ -11,7 +11,7 @@ module type MapImage = sig
   type t
   type params
   type result
-  val init : string -> t
+  val init_quadtree : string -> t
   val get_map : params -> result
 end
 
