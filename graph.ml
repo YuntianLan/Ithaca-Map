@@ -16,10 +16,11 @@ module type MapGraph = sig
 end
 
 
+
 type category = 
 | Shop | Tourism | Leisure
-| FoodDrink (* ^_^ *)
-| School | Bank | Cinema | Fuel 
+| FoodDrink
+| School | Bank | Cinema | Fuel
 | Postbox | Carwash | Doctor | Library
 | Other | Road
 
@@ -185,6 +186,7 @@ module Map : MapGraph = struct
 		let _ = List.map add_node nodes in
 		table
 
+
 	let build_way_table ways = 
 		let table = H.create num_ways in
 		let add_way w = 
@@ -197,13 +199,13 @@ module Map : MapGraph = struct
 	let build_edge_table ways = 
 		let table = H.create num_nodes in
 		let nid_llst = List.map (fun w -> w.nodes) ways in
-		let add_edge n1 n2 = 
+		let add_edge n1 n2 = () in
 
 		let rec add_edges lst = 
 			match lst with
 			| h1::h2::t ->
-
-			| _ -> ()
+				failwith "Unimplemented"
+			| _ -> () in ()
 
 
 	let init_graph s = 
