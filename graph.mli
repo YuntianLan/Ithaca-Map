@@ -1,6 +1,7 @@
 module type MapGraph = sig
 
 	type node
+	type way
 
 (* 	type kdtree
 	type trie *)
@@ -20,10 +21,11 @@ module type MapGraph = sig
 	val get_node_by_coord : float -> float -> t -> node
 
 	(* [get_node_by_name s] takes in a building name and
-	 * returns the node that corresponds to the building *)
-	val get_node_by_name : string -> t -> node
+	 * returns the nodes that corresponds to (encompasses) the building
+	 * *)
+	val get_nodes_by_name : string -> t -> node list
 
-	(* [shortest_path start end] takes in two nodes, one as starting
+	(* [shortest_path s e] takes in two nodes, one as starting
 	 * place and the other as ending place, and returns a node
 	 * list which indicates the shortest path betweeen the two
 	 * nodes. *)

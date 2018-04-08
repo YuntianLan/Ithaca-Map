@@ -18,7 +18,7 @@ end
 
 type category = 
 | Shop | Tourism | Leisure
-| FoodDrink (*  *)
+| FoodDrink (* ^_^ *)
 | School | Bank | Cinema | Fuel 
 | Postbox | Carwash | Doctor | Library
 | Other | Nope
@@ -63,6 +63,8 @@ type kdtree =
 | Leaf of nd list
 
 
+type place = Nodeid of int | Wayid of int
+
 (* The prefix tree structure is used to quickly index all the
  * relevant nodes given a place's name (string), the tree is 
  * created at the parsing phase and never modified after.
@@ -100,6 +102,30 @@ module Map : MapGraph = struct
 		| None -> {nid = id; lat = lat; lon = lon;
 								categ = Nope; name = ""; tags = []}
 		| Some tg -> failwith "Unimplemented"
+
+
+
+
+
+
+
+
+
+
+
+
+
+	let j2way n = 
+		let j = to_assoc n in ()
+
+
+
+
+
+
+
+
+
 
 
 
