@@ -40,10 +40,10 @@ module MapImage = struct
   }
   type result = {
     img_grid: string list list;
-    map_upleft_lon: float;
-    map_upleft_lat: float;
-    map_lowright_lon: float;
-    map_lowright_lat: float;
+    res_upleft_lon: float;
+    res_upleft_lat: float;
+    res_lowright_lon: float;
+    res_lowright_lat: float;
     tree_depth: int;
     status: bool;
   }
