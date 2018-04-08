@@ -101,7 +101,10 @@ module Map : MapGraph = struct
 		match tags with
 		| None -> {nid = id; lat = lat; lon = lon;
 								categ = Nope; name = ""; tags = []}
-		| Some tg -> failwith "Unimplemented"
+		| Some tg -> 
+			match tg with
+			|hd::tl
+			|
 
 
 
