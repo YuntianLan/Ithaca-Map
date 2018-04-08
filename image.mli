@@ -9,11 +9,11 @@ module type MapImage = sig
   (* [result] is the type of map image information *)
   type result
 
-	(* [init] takes in the directory
-	 * where the graphs are stored and builds
+	(* [init_quadtree] takes in the root image
+	 * where the graphs are stored in the same folder and builds
 	 * the MapTree with all the graphs placed correctly in the
 	 * MapTree. *)
-	val init : string -> t
+	val init_quadtree : string -> t
 
   (* [get_map params] is the map image information that corresponds to the query
    * information [params] *)
