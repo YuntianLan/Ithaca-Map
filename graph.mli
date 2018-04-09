@@ -25,14 +25,14 @@ module type MapGraph = sig
 	 * node in the iteration is returned. *)
 	val get_node_by_name : string -> t -> node
 
-	(* [shortest_path s e] takes in two nodes, one as starting
+	(* [shortest_path s e t] takes in two nodes, one as starting
 	 * place and the other as ending place, and returns a node
 	 * list which indicates the shortest path betweeen the two
 	 * nodes. *)
-	val shortest_path : node -> node -> node list
+	val shortest_path : node -> node -> t -> node list
 
 	(* [node_to_coord n] takes in a node and returns the coordinate
-	 * of the node. *)
+	 * of the node, latitude followed by longitude. *)
 	val node_to_coord : node -> (float * float)
 
 end

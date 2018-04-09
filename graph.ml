@@ -10,7 +10,7 @@ module type MapGraph = sig
 	val init_graph : string -> t
 	val get_node_by_coord : float -> float -> t -> node
 	val get_node_by_name : string -> t -> node
-	val shortest_path : node -> node -> node list
+	val shortest_path : node -> node -> t -> node list
 	val node_to_coord : node -> (float * float)
 
 end
@@ -66,8 +66,8 @@ module IntHashtbl = Hashtbl.Make(IntHash)
 (* The kdtree structure is used here to quickly index the 
  * nearest neighbor node given a coordinate (float * float).
  * The tree is created at the parsing phase and never modified
- * during the server-client interaction, so the average access time 
- * is logarithmic
+ * during the server-client interaction, so the average 
+ * access time is logarithmic
  *)
 type kdtree = 
 | Xnode of float * kdtree * kdtree
@@ -98,28 +98,26 @@ module Map : MapGraph = struct
 	
 	module H = IntHashtbl
 
-	(* Given coordinate, find the closest of ALL nodes *)
-	type loc_tree = kdtree
-	(* Given coordinate, find the closest of WAY nodes *)
-	type route_tree = kdtree
-
-	(* Given a place's name, find the "place" of that name *)
-	type name_trie = trie
-
-	(* Given a node id (int), find all the nid of
-	 * the nodes reachable by walk *)
-	type edge_table = (int list) H.t
-
-	(* Given a node id (int), get the actual node *)
-	type node_table = (nd) H.t
-	(* Given a way id (int), get the actual way *)
-	type way_table = (way) H.t
-
 	type node = nd
 
-	type t = loc_tree * route_tree * name_trie * 
-		edge_table * edge_table * node_table * way_table
-	(* walk_table   drive_table *)
+	type t = {
+		(* Given coordinate, find the closest of ALL nodes *)
+		loc_tree: kdtree;
+		(* Given coordinate, find the closest of WAY nodes *)
+		route_tree: kdtree;
+		(* Given a place's name, find the "place" of that name *)
+		name_trie: trie;
+
+		(* 	Given a node id (int), find all the nid of
+	   * the nodes reachable by walk/drive *)
+		walk_table: (int list) H.t;
+		drive_table: (int list) H.t;
+
+		(* Given a node id (int), get the actual node *)
+		node_table: (nd) H.t;
+		(* Given a way id (int), get the actual way *)
+		way_table: (way) H.t;
+	}
 
 
 	let num_nodes = 93987
@@ -129,14 +127,17 @@ module Map : MapGraph = struct
 	let j2node n = 
 		let id = n |> member "id" |> to_string |> int_of_string in 
 		let lat = n |> member "lat" |> to_string |> float_of_string in
-		let lon = n |> member "lon" |> to_string |> float_of_string in 
-		let tags = n |> member "tags" |> to_assoc |> List.map (fun (x,y) -> x, to_string y) in
-		let name = (match List.filter (fun (x,_) -> x == "name") tags with
+		let lon = n |> member "lon" |> to_string |> float_of_string in
+		let tags = n |> member "tags" |> to_assoc |> 
+			List.map (fun (x,y) -> x, to_string y) in
+		let name = 
+		(match List.filter (fun (x,_) -> x == "name") tags with
 			| [] -> "" 
 			| h::_ -> (snd h)
 		) in
 		let category = None in
-		{nid = id; lat = lat; lon = lon; catego = category; name = name; tags = tags}
+		{nid = id; lat = lat; lon = lon; catego = category;
+		name = name; tags = tags}
 
 
 	let j2way n = 
@@ -196,16 +197,29 @@ module Map : MapGraph = struct
 		table
 
 
-	let build_edge_table ways = 
+	let build_edge_table (ways: way list) = 
 		let table = H.create num_nodes in
-		let nid_llst = List.map (fun w -> w.nodes) ways in
-		let add_edge n1 n2 = () in
-
+		let nid_llst = List.map (fun (w: way) -> w.nodes) ways in
+		let add_edge n1 n2 =
+			let n1_in = H.mem table n1 in
+			let n2_in = H.mem table n2 in
+			let _ =
+				if n1_in then H.replace table n1 (n2::(H.find table n1))
+				else H.add table n1 [n2] in
+			let _ =
+				if n2_in then H.replace table n2 (n1::(H.find table n2))
+				else H.add table n2 [n1] in
+			() in
 		let rec add_edges lst = 
 			match lst with
 			| h1::h2::t ->
-				failwith "Unimplemented"
-			| _ -> () in ()
+				let _ = add_edge h1 h2 in
+				add_edges (h2::t)
+			| _ -> () in
+		let _ = List.map add_edges nid_llst in
+		let uniq k v = Some (List.sort_uniq (fun a b -> a - b) v) in
+		let _ = H.filter_map_inplace uniq table in
+		table
 
 
 	let init_graph s = 
@@ -222,17 +236,113 @@ module Map : MapGraph = struct
 
 
 
+	let node_to_coord n = (n.lat, n.lon)
+
+
 	let get_node_by_coord lat lon map =
 		failwith "Unimplemented"
 
 	let get_node_by_name name map =
 		failwith "Unimplemented"
 
-	let shortest_path s e = 
+
+
+	(* Given the nid of two nodes, return the (approximate)
+	 * distance between them in kilometers *)
+	let distance n1 n2 nd_table = 
+		let nd1 = H.find nd_table n1 in
+		let nd2 = H.find nd_table n2 in
+		let lat1, lon1 = node_to_coord nd1 in
+		let lat2, lon2 = node_to_coord nd2 in
+		let r_lat = 111.19492665183317 in
+		let r_lon = 82.03674088387993 in
+		let diff_lat, diff_lon = 
+			r_lat *.(lat1 -. lat2), r_lon *. (lon1 -. lon2) in
+		sqrt ((diff_lat *. diff_lat) +. (diff_lon *. diff_lon))
+
+(* 	let distance n1 n2 = 
+		let lat1, lon1 = n1.lat, n1.lon in
+		let lat2, lon2 = n2.lat, n2.lon in
+		let r_lat = 111.19492665183317 in
+		let r_lon = 82.03674088387993 in
+		let diff_lat, diff_lon = 
+			r_lat *.(lat1 -. lat2), r_lon *. (lon1 -. lon2) in
+		sqrt ((diff_lat *. diff_lat) +. (diff_lon *. diff_lon)) *)
+
+
+
+	(* End condition for A*, returns true when two nodes
+	 * are less than 20 meters apart *)
+	let close_enough n1 n2 nd_table = 
+		(distance n1 n2 nd_table) < 0.02
+
+	(* Scoring function for A*, uses current path length
+	 * as the current cost and l2 distance as heuristics *)
+	let estimate (id,curr_dist,_) target nd_table =
+		curr_dist +. (distance id target nd_table)
+
+	(* Find the triple in the list and replace its value with
+	 * the shortest distance, fail when the id not in the list *)
+	let replace lst (id,dist,path)= 
+		let rec replace_help lst (id,dist,path) acc =
+			match lst with
+			| [] -> failwith "replace key not found"
+			| (id1,dist1,path1)::t ->
+				if id1 = id then
+					if dist<dist1 then (* dist is better, replace path1 with path *)
+						t@((id,dist,path)::acc)
+					else
+						t@((id1,dist1,path1)::acc)
+				else (* not this one, recurse *)
+					replace_help t (id,dist,path) ((id1,dist1,path1)::acc)
+		in
+		replace_help lst (id,dist,path) []
+
+	(* Merge two (nid * dist * path) lists, if duplicate id found
+   * keep only the triple with lower distance *)
+	let rec merge frontier expanded = 
+		match expanded with
+		| [] -> frontier
+		| (id,dist,path)::t ->
+			let matches (id1,_,_) = id1 = id in
+			match List.find_opt matches frontier with
+			| None -> merge ((id,dist,path)::frontier) t
+			| Some (_,dist2,path2) ->
+				let new_front = replace frontier (id,dist,path) in
+				merge new_front t
+
+	(* Given a (nid * dist * path) list, find the triple with the least
+	 * expected distance to the destination, remove it from the list
+	 * and return the result in the form of (triple * triple list) *)
+		let find_best lst dest nd_table =
+			let rec find_min lst curr_id curr_min = 
+				(match lst with
+				| [] -> curr_id
+				| (id,dist,path)::t ->
+					let new_est = estimate (id,dist,path) dest nd_table in
+					if new_est < curr_min then
+						find_min t id new_est
+					else
+						find_min t curr_id curr_min
+			) in
+			let best_id = find_min lst 0 999999. in
+			let filt (id,_,_) = (not (id = best_id)) in
+			let matches (id,_,_) = (id = best_id) in
+			let triple = List.find matches lst in
+			let remaining = List.filter filt lst in
+			(triple, remaining)
+
+ (* Takes the nid of the start and end nodes,
+  * performs A* algorithm to find the shortest path between 2 nodes
+  * and return as a list of nid, head is destination.
+  * Assumes the start and end nid are in the way node table. *)
+	let rec path_btw_nodes s e nd_table = ()
+		
+
+	let shortest_path s e map = 
+
 		failwith "Unimplemented"
 
-	let node_to_coord n = 
-		failwith "Unimplemented"
 
 
 end
