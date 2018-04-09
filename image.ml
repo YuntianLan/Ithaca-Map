@@ -1,9 +1,9 @@
 (* constants *)
-let max_depth = 18
-let root_upleft_lon = -76.5192
-let root_upleft_lat = 42.4569
-let root_lowright_lon = -76.4676
-let root_lowright_lat = 42.4301
+let max_depth = 7
+let root_upleft_lon = -76.5527
+let root_upleft_lat = 42.4883
+let root_lowright_lon = -76.4649
+let root_lowright_lat = 42.4235
 
 (* =========================== *)
 
@@ -60,7 +60,7 @@ module MapImage = struct
       upleft_lat = qn.upleft_lat;
       lowright_lon = (qn.lowright_lon -. qn.upleft_lon)/.2. +. qn.upleft_lon;
       lowright_lat = (qn.lowright_lat -. qn.upleft_lat)/.2. +. qn.upleft_lat;
-      img = if qn.img = "img/root.png" then "img/1.png" else (trunc qn.img)^"1.png";
+      img = if qn.img = "tiles/root.png" then "tiles/0.png" else (trunc qn.img)^"0.png";
       depth = qn.depth + 1;
     } in
     let upright = {
@@ -68,7 +68,7 @@ module MapImage = struct
       upleft_lat = qn.upleft_lat;
       lowright_lon = qn.lowright_lon;
       lowright_lat = (qn.lowright_lat -. qn.upleft_lat)/.2. +. qn.upleft_lat;
-      img = if qn.img = "img/root.png" then "img/2.png" else (trunc qn.img)^"2.png";
+      img = if qn.img = "tiles/root.png" then "tiles/1.png" else (trunc qn.img)^"1.png";
       depth = qn.depth + 1;
     } in
     let lowleft = {
@@ -76,7 +76,7 @@ module MapImage = struct
       upleft_lat = (qn.lowright_lat -. qn.upleft_lat)/.2. +. qn.upleft_lat;
       lowright_lon = (qn.lowright_lon -. qn.upleft_lon)/.2. +. qn.upleft_lon;
       lowright_lat = qn.lowright_lat;
-      img = if qn.img = "img/root.png" then "img/3.png" else (trunc qn.img)^"3.png";
+      img = if qn.img = "tiles/root.png" then "tiles/2.png" else (trunc qn.img)^"2.png";
       depth = qn.depth + 1;
     } in
     let lowright = {
@@ -84,7 +84,7 @@ module MapImage = struct
       upleft_lat = (qn.lowright_lat -. qn.upleft_lat)/.2. +. qn.upleft_lat;
       lowright_lon = qn.lowright_lon;
       lowright_lat = qn.lowright_lat;
-      img = if qn.img = "img/root.png" then "img/4.png" else (trunc qn.img)^"4.png";
+      img = if qn.img = "tiles/root.png" then "tiles/3.png" else (trunc qn.img)^"3.png";
       depth = qn.depth + 1;
     } in
     [make_singlenode_tree upleft; make_singlenode_tree upright;
