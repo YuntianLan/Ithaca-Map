@@ -269,8 +269,6 @@ module Map : MapGraph = struct
 			r_lat *.(lat1 -. lat2), r_lon *. (lon1 -. lon2) in
 		sqrt ((diff_lat *. diff_lat) +. (diff_lon *. diff_lon)) *)
 
-
-
 	(* End condition for A*, returns true when two nodes
 	 * are less than 20 meters apart *)
 	let close_enough n1 n2 nd_table = 
@@ -314,7 +312,7 @@ module Map : MapGraph = struct
 	(* Given a (nid * dist * path) list, find the triple with the least
 	 * expected distance to the destination, remove it from the list
 	 * and return the result in the form of (triple * triple list) *)
-		let find_best lst dest nd_table =
+	let find_best lst dest nd_table =
 			let rec find_min lst curr_id curr_min = 
 				(match lst with
 				| [] -> curr_id
@@ -332,12 +330,53 @@ module Map : MapGraph = struct
 			let remaining = List.filter filt lst in
 			(triple, remaining)
 
+	(* Expand a node (nid * dist * path list) triple into a list of triples *)
+	let expand (id,dist,path) nd_table eg_table =
+		let neighbor_ids = H.find eg_table id in
+		let nodes = List.map (H.find nd_table) neighbor_ids in
+		let exp_func n =
+			let new_dist = dist +. distance id n.nid nd_table in
+			let new_path = (n.nid)::path in
+			(n.nid, new_dist, new_path) in
+		List.map exp_func nodes
+
+	let print_nd nd_table ndid =
+		let n = H.find nd_table ndid in
+		let lat = n.lat in let lon = n.lon in
+		let _ = print_float lat in
+		let _ = print_string ", " in
+		let _ = print_float lon in
+		let _ = print_char '\n' in ()
+
+
+	let get_id (id,_,_) = id
+
  (* Takes the nid of the start and end nodes,
   * performs A* algorithm to find the shortest path between 2 nodes
   * and return as a list of nid, head is destination.
   * Assumes the start and end nid are in the way node table. *)
-	let rec path_btw_nodes s e nd_table = ()
-		
+	let path_btw_nodes s e nd_table eg_table =
+		let start = [(s,0.,[s])] in
+		let filt (id,dist,path) = close_enough id e nd_table in
+		let rec exp_till_converge lst =
+			let filtered = List.filter filt lst in
+			if List.length filtered > 0 then filtered
+			else
+				let to_expand, remain = find_best lst e nd_table in
+				let estimate_remain = estimate to_expand e nd_table in
+
+				(* let _ = print_endline (string_of_float estimate_remain) in *)
+				(* let _ = print_nd (get_id to_expand) in
+				let _ = print_endline (string_of_int (List.length lst)) in *)
+				let merged = merge remain (expand to_expand nd_table eg_table) in
+				exp_till_converge merged
+		in
+		let satisfied = exp_till_converge start in
+		let comp (_,d1,_) (_,d2,_) = 
+			let diff = d1 -. d2 in
+			if diff < 0. then (-1) else if diff > 0. then 1 else 0 in
+		List.hd (List.sort comp satisfied)
+
 
 	let shortest_path s e map = 
 
