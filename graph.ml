@@ -197,29 +197,49 @@ module Map : MapGraph = struct
 		table
 
 
-	let build_edge_table (ways: way list) = 
-		let table = H.create num_nodes in
-		let nid_llst = List.map (fun (w: way) -> w.nodes) ways in
-		let add_edge n1 n2 =
-			let n1_in = H.mem table n1 in
-			let n2_in = H.mem table n2 in
-			let _ =
-				if n1_in then H.replace table n1 (n2::(H.find table n1))
-				else H.add table n1 [n2] in
-			let _ =
-				if n2_in then H.replace table n2 (n1::(H.find table n2))
-				else H.add table n2 [n1] in
-			() in
-		let rec add_edges lst = 
-			match lst with
-			| h1::h2::t ->
-				let _ = add_edge h1 h2 in
-				add_edges (h2::t)
-			| _ -> () in
-		let _ = List.map add_edges nid_llst in
-		let uniq k v = Some (List.sort_uniq (fun a b -> a - b) v) in
-		let _ = H.filter_map_inplace uniq table in
-		table
+let build_edge_table (ways: way list) = 
+  let table = H.create num_nodes in
+  let add_edge_oneway n1 n2 =
+   let n1_in = H.mem table n1 in
+   let _ =
+    if n1_in then H.replace table n1 (n2::(H.find table n1))
+    else H.add table n1 [n2] in
+   ()
+  in
+  let add_edge n1 n2 =
+   let n1_in = H.mem table n1 in
+   let n2_in = H.mem table n2 in
+   let _ =
+    if n1_in then H.replace table n1 (n2::(H.find table n1))
+    else H.add table n1 [n2] in
+   let _ =
+    if n2_in then H.replace table n2 (n1::(H.find table n2))
+    else H.add table n2 [n1] in
+   ()
+  in
+  let rec add_edges lst = 
+   match lst with
+   | h1::h2::t ->
+    let _ = add_edge h1 h2 in
+    add_edges (h2::t)
+   | _ -> () in
+  let rec add_edges_oneway lst =
+   match lst with
+   | h1::h2::t ->
+    let _ = add_edge_oneway h1 h2 in
+    add_edges_oneway (h2::t)
+   | _ -> () in
+  let is_oneway w = 
+   match List.assoc_opt "oneway" (w.tags) with
+   | None -> false
+   | Some s -> s = "yes" in
+  let process_way w = 
+   if is_oneway w then add_edges_oneway w.nodes
+   else add_edges w.nodes in
+  let _ = List.map process_way ways in
+  let uniq k v = Some (List.sort_uniq (fun a b -> a - b) v) in
+  let _ = H.filter_map_inplace uniq table in
+  table
 
 
 	let init_graph s = 
