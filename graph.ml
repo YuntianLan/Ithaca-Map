@@ -149,12 +149,12 @@ module Map : MapGraph = struct
 				List.filter (fun (x,_) -> 
 					((String.length x)<4) ||
 					let sb = String.sub x 0 4
-					in (not (sb="tige" || sb="is_i"))) in
+					in (not (sb="tige" || sb="is_i" || sb="sour"))) in
 		let allow = match List.assoc_opt "highway" tags with
 			| None -> Neither
 			| Some name -> 
 				let name = String.lowercase_ascii name in
-				if name = "mortorway" then Drive
+				if name = "motorway" then Drive
 				else if name = "primary" then Drive
 				else if name = "secondary" then Both
 				else if name = "tertiary" then Both
@@ -377,18 +377,26 @@ module Map : MapGraph = struct
   * Assumes the start and end nid are in the way node table. *)
 	let path_btw_nodes s e nd_table eg_table =
 		let start = [(s,0.,[s])] in
+		let explored = H.create num_nodes in
 		let filt (id,dist,path) = close_enough id e nd_table in
 		let rec exp_till_converge lst =
 			let filtered = List.filter filt lst in
 			if List.length filtered > 0 then filtered
 			else
 				let to_expand, remain = find_best lst e nd_table in
-				let estimate_remain = estimate to_expand e nd_table in
+				let _ = (fun (id,_,_) -> H.add explored id true) to_expand in
+				(* let estimate_remain = estimate to_expand e nd_table in *)
 
 				(* let _ = print_endline (string_of_float estimate_remain) in *)
-				(* let _ = print_nd (get_id to_expand) in
-				let _ = print_endline (string_of_int (List.length lst)) in *)
-				let merged = merge remain (expand to_expand nd_table eg_table) in
+				let _ = print_endline (string_of_int (get_id to_expand)) in
+				let _ = print_nd (get_id to_expand) in
+				let _ = print_endline (string_of_int (List.length lst)) in
+				let _ = print_endline (string_of_int (H.length explored)) in
+
+				let expanded = expand to_expand nd_table eg_table in
+				let filt_expanded = List.filter
+					(fun (id,_,_) -> not (H.mem explored id)) expanded in
+				let merged = merge remain filt_expanded in
 				exp_till_converge merged
 		in
 		let satisfied = exp_till_converge start in
