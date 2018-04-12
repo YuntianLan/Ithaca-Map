@@ -30,7 +30,7 @@ module MakeTrie = functor (M:S) -> struct
       if i < 0 then acc
       else helper (i-1) (s.[i]::acc)
     in
-    helper len []
+    helper (len-1) []
 
   let empty = Node (None, [])
 
