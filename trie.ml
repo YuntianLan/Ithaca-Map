@@ -40,12 +40,12 @@ module MakeTrie = functor (M:S) -> struct
     | n, [] -> n
     | Node (_, children), h::t ->
       try
-        find_helper (snd (List.find (fun child -> fst child = h) children)) t
+        find_helper (snd (List.find (fun child -> Char.lowercase_ascii (fst child) = h) children)) t
       with
       | Not_found -> empty
 
   let find (trie:t) (s:string) : value option =
-    match find_helper trie (to_charlist s) with
+    match find_helper trie (s |> String.lowercase_ascii |> to_charlist) with
     | Node (None, _) -> None
     | Node (v,_) -> v
 
@@ -70,22 +70,22 @@ module MakeTrie = functor (M:S) -> struct
   let insert (trie:t) (s:string) (v:value) : t =
     insert_helper trie (to_charlist s) v
 
-  let rec get_all_nodes (trie:t) (f:value -> bool) (base:string) (acc:string list):string list =
+  let rec get_all_nodes (trie:t) (f:value -> bool) (acc:value list):value list =
     let fold_f acc' i =
-      get_all_nodes (snd i) f (base^Char.escaped (fst i)) acc' in
+      get_all_nodes (snd i) f acc' in
     match trie with
     | Node(None, []) -> acc
-    | Node(Some v, []) -> if f v then base::acc else acc
+    | Node(Some v, []) -> if f v then v::acc else acc
     | Node(None, children) ->
       List.fold_left fold_f acc children
     | Node(Some v, children) ->
-      if f v then List.fold_left fold_f (base::acc) children
+      if f v then List.fold_left fold_f (v::acc) children
       else
         List.fold_left fold_f acc children
 
 
-  let begin_with (trie:t) (f:value -> bool) (s:string) : string list =
-    let found = find_helper trie (to_charlist s) in
-    get_all_nodes found f s []
+  let begin_with (trie:t) (f:value -> bool) (s:string) : value list =
+    let found = find_helper trie (s |> String.lowercase_ascii |> to_charlist) in
+    get_all_nodes found f []
 
 end
