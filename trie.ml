@@ -64,7 +64,7 @@ module MakeTrie = functor (M:S) -> struct
       with
       | Not_found -> empty in
       let t'' = insert_helper t' t v in
-      let new_children = List.rev_map (fun c -> if fst c = h then (h, t'') else c) children in
+      let new_children = (h, t'')::List.filter (fun c -> fst c <> h) children in
       Node (value, new_children)
 
   let insert (trie:t) (s:string) (v:value) : t =
