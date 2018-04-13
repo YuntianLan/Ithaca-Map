@@ -4,9 +4,9 @@
  * only support insertion of k/v pair and loopup (not remove)
  *)
 module type Trie = sig
-
-
-	type value
+  (* type of values stored in the trie *)
+  type value
+  (* type of the Trie *)
 	type t
 
 	(* [empty] is an empty TRIE *)
@@ -24,16 +24,18 @@ module type Trie = sig
 	 * The search is case insensitive *)
 	val find : t -> string -> value option
 
-	(* [begin_with t f k] returns the list of all keys (string)
-	 * that begin with the string k and whose associated value
-	 * satisfies the filter function f. *)
-	val begin_with : t -> (value -> bool) -> string -> string list
+	(* [begin_with t f k] returns the list of all values whose keys
+	 * begin with the string k and the value satisfies the filter function f. *)
+	val begin_with : t -> (value -> bool) -> string -> value list
 
 end
 
+(* A [S] is a value that can be stored in the Trie *)
 module type S = sig
+  (* The value has type t *)
   type t
 end
 
+(* [MakeTrie] makes a [Trie] with value [M] *)
 module type MakeTrie =
   functor (M : S) -> Trie
