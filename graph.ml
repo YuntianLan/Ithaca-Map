@@ -9,8 +9,8 @@ module type MapGraph = sig
 
 	val init_graph : string -> t
 	val get_node_by_coord : float -> float -> t -> node
-	val get_node_by_name : string -> t -> node
-	val shortest_path : node -> node -> t -> node list
+	val get_node_by_name : string -> t -> node option
+	val find_path : bool -> node -> node -> t -> float * node list
 	val node_to_coord : node -> (float * float)
 
 end
@@ -70,46 +70,95 @@ module IntHashtbl = Hashtbl.Make(IntHash)
  * access time is logarithmic
  *)
 type kdtree = 
-| Xnode of float * kdtree * kdtree
-| Ynode of float * kdtree * kdtree
+| LatNode of float * kdtree * kdtree
+| LonNode of float * kdtree * kdtree
 | Leaf of int
+
+
+(* Slice the list into two parts starting from start,
+ * Example: sublists [1;2;3;4;5] 2 = ([1;2],[3;4;5]) 
+ * Precondition: the start position is valid *)
+let sublists lst start =
+	let _ = assert (start<(List.length lst)) in
+	let rec sublist_help lst start acc = 
+		if start = 0 then (List.rev acc), lst
+		else
+			sublist_help (List.tl lst) 
+				(start - 1) ((List.hd lst)::acc)
+	in
+	sublist_help lst start []
+
+
+(* The procedure to build a kdtree, each non-leaf node
+ * corresponds to a split, all nodes greater than or
+ * equal to go the the right and the left go to left*)
+let rec build_kdtree nodes is_lat =
+	if (List.length nodes) = 0 then
+		failwith "build_kdtree encounters empty list"
+	else if (List.length nodes) = 1 then
+		Leaf((List.hd nodes).nid)
+	else
+		if is_lat then
+			(* sort accodring to lat, divide *)
+			let comp n1 n2 = let diff = n1.lat -. n2.lat in
+				if diff < 0. then -1
+				else if diff = 0. then 0
+				else 1
+			in
+			let sorted = List.sort comp nodes in
+			let idx = (List.length sorted) / 2 in
+			let split_val = (List.nth sorted idx).lat in
+			let left, right = sublists sorted idx in
+			LatNode (split_val,
+						build_kdtree left false,
+						build_kdtree right false)
+		else
+			let comp n1 n2 = let diff = n1.lon -. n2.lon in
+				if diff < 0. then -1
+				else if diff = 0. then 0
+				else 1
+			in
+			let sorted = List.sort comp nodes in
+			let idx = (List.length sorted) / 2 in
+			let split_val = (List.nth sorted idx).lon in
+			let left, right = sublists sorted idx in
+			LonNode (split_val,
+						build_kdtree left true,
+						build_kdtree right true)
+
+
 
 
 type place = Nodeid of int | Wayid of int
 
 
-(* The prefix tree structure is used to quickly index all the
- * relevant nodes given a place's name (string), the tree is 
- * created at the parsing phase and never modified after.
- * TODO: Put TRIE to the outside in a seperate module
- *)
-type trie = {
-	acc: string;
-	curr_char: string;
-	nodes: place list;
-	children: trie list;
-}
-
-
-
-
-
 module Map : MapGraph = struct
-	
+
+
 	module H = IntHashtbl
+
+	type place_trie = (place list) Trie.trie
 
 	type node = nd
 
 	type t = {
-		(* Given coordinate, find the closest of ALL nodes *)
+(* 		(* Given coordinate, find the closest of ALL nodes *)
 		loc_tree: kdtree;
 		(* Given coordinate, find the closest of WAY nodes *)
 		route_tree: kdtree;
+ *)
+
+		(* At this moment, use id list to store all nodes and
+		 * nodes on the way *)
+		all_nodes: int list;
+		walkway_nodes: int list;
+		driveway_nodes: int list;
+
 		(* Given a place's name, find the "place" of that name *)
-		name_trie: trie;
+		name_trie: place_trie;
 
 		(* 	Given a node id (int), find all the nid of
-	   * the nodes reachable by walk/drive *)
+		 * the nodes reachable by walk/drive *)
 		walk_table: (int list) H.t;
 		drive_table: (int list) H.t;
 
@@ -123,7 +172,7 @@ module Map : MapGraph = struct
 	let num_nodes = 93987
 	let num_ways = 14101
 
-
+	(* Convert a json to a node object *)
 	let j2node n = 
 		let id = n |> member "id" |> to_string |> int_of_string in 
 		let lat = n |> member "lat" |> to_string |> float_of_string in
@@ -139,7 +188,7 @@ module Map : MapGraph = struct
 		{nid = id; lat = lat; lon = lon; catego = category;
 		name = name; tags = tags}
 
-
+	(* Convert a json to a way object *)
 	let j2way n = 
 		let nodes = n |> member "nodes" |> to_list |>
 				List.map to_string |> List.map int_of_string in
@@ -178,7 +227,8 @@ module Map : MapGraph = struct
 		{wid = id; nodes = nodes; categ = None;
 			name = name; allow = allow; tags = tags}
 
-
+	(* Given a node list, build a hashtable mapping from
+	 * node ids to nodes *)
 	let build_node_table nodes = 
 		let table = H.create num_nodes in
 		let add_node n = 
@@ -187,7 +237,8 @@ module Map : MapGraph = struct
 		let _ = List.map add_node nodes in
 		table
 
-
+	(* Given a way list, build a hashtable mapping from
+	 * way ids to ways *)
 	let build_way_table ways = 
 		let table = H.create num_ways in
 		let add_way w = 
@@ -196,76 +247,160 @@ module Map : MapGraph = struct
 		let _ = List.map add_way ways in
 		table
 
+	(* Given a way list, build the adjacency matrix that
+	 * mappes node id to a list of node ids of its neighbors *)
+	let build_edge_table (ways: way list) = 
+		let table = H.create num_nodes in
+		let add_edge_oneway n1 n2 =
+		 let n1_in = H.mem table n1 in
+		 let _ =
+			if n1_in then H.replace table n1 (n2::(H.find table n1))
+			else H.add table n1 [n2] in
+		 ()
+		in
+		let add_edge n1 n2 =
+			let n1_in = H.mem table n1 in
+			let n2_in = H.mem table n2 in
+			let _ =
+				if n1_in then H.replace table n1 (n2::(H.find table n1))
+				else H.add table n1 [n2] in
+			let _ =
+				if n2_in then H.replace table n2 (n1::(H.find table n2))
+				else H.add table n2 [n1] in
+			()
+		in
+		let rec add_edges lst = 
+		 match lst with
+		 | h1::h2::t ->
+			let _ = add_edge h1 h2 in
+			add_edges (h2::t)
+		 | _ -> () in
+		let rec add_edges_oneway lst =
+		 match lst with
+		 | h1::h2::t ->
+			let _ = add_edge_oneway h1 h2 in
+			add_edges_oneway (h2::t)
+		 | _ -> () in
+		let is_oneway w = 
+		 match List.assoc_opt "oneway" (w.tags) with
+		 | None -> false
+		 | Some s -> s = "yes" in
+		let process_way w = 
+		 if is_oneway w then add_edges_oneway w.nodes
+		 else add_edges w.nodes in
+		let _ = List.map process_way ways in
+		let uniq k v = Some (List.sort_uniq (fun a b -> a - b) v) in
+		let _ = H.filter_map_inplace uniq table in
+		table
 
-let build_edge_table (ways: way list) = 
-  let table = H.create num_nodes in
-  let add_edge_oneway n1 n2 =
-   let n1_in = H.mem table n1 in
-   let _ =
-    if n1_in then H.replace table n1 (n2::(H.find table n1))
-    else H.add table n1 [n2] in
-   ()
-  in
-  let add_edge n1 n2 =
-   let n1_in = H.mem table n1 in
-   let n2_in = H.mem table n2 in
-   let _ =
-    if n1_in then H.replace table n1 (n2::(H.find table n1))
-    else H.add table n1 [n2] in
-   let _ =
-    if n2_in then H.replace table n2 (n1::(H.find table n2))
-    else H.add table n2 [n1] in
-   ()
-  in
-  let rec add_edges lst = 
-   match lst with
-   | h1::h2::t ->
-    let _ = add_edge h1 h2 in
-    add_edges (h2::t)
-   | _ -> () in
-  let rec add_edges_oneway lst =
-   match lst with
-   | h1::h2::t ->
-    let _ = add_edge_oneway h1 h2 in
-    add_edges_oneway (h2::t)
-   | _ -> () in
-  let is_oneway w = 
-   match List.assoc_opt "oneway" (w.tags) with
-   | None -> false
-   | Some s -> s = "yes" in
-  let process_way w = 
-   if is_oneway w then add_edges_oneway w.nodes
-   else add_edges w.nodes in
-  let _ = List.map process_way ways in
-  let uniq k v = Some (List.sort_uniq (fun a b -> a - b) v) in
-  let _ = H.filter_map_inplace uniq table in
-  table
 
 
 
-	let init_graph s = 
-		let j = from_file s in
+
+	(* Add a given node's nid to the trie *)
+	let add_node_trie (tr:place_trie) (nd:node) = 
+		if nd.name = "" then tr
+		else
+			if Trie.memb tr nd.name then
+				let lst = match Trie.find tr nd.name with
+				| None -> failwith "this won't happen"
+				| Some l -> l in
+				Trie.insert tr nd.name (Nodeid(nd.nid)::lst)
+			else Trie.insert tr nd.name [Nodeid(nd.nid)]
+
+	(* Add a given way's wid to the trie *)
+	let add_way_trie (tr:place_trie) (wy:way) = 
+		if wy.name = "" then tr
+		else
+			if Trie.memb tr wy.name then
+				let lst = match Trie.find tr wy.name with
+				| None -> failwith "this won't happen"
+				| Some l -> l in
+				Trie.insert tr wy.name (Wayid(wy.wid)::lst)
+			else Trie.insert tr wy.name [Wayid(wy.wid)]
+
+
+(*
+
+	let add_node_trie (tr:place_trie) (nd:node) = 
+		if nd.name = "" then tr
+		else
+			if memb tr nd.name then
+				let lst = match find tr nd.name with
+				| None -> failwith "this won't happen"
+				| Some l -> l in
+				insert tr nd.name (Nodeid(nd.nid)::lst)
+			else insert tr nd.name [Nodeid(nd.nid)]
+
+	let add_way_trie (tr:place_trie) (wy:way) = 
+		if wy.name = "" then tr
+		else
+			if memb tr wy.name then
+				let lst = match find tr wy.name with
+				| None -> failwith "this won't happen"
+				| Some l -> l in
+				insert tr wy.name (Wayid(wy.wid)::lst)
+			else insert tr wy.name [Wayid(wy.wid)]
+*)
+
+
+
+
+
+
+	let way2node ways = 
+		let nodes = List.map (fun w -> w.nodes) ways in
+		let lst = List.flatten nodes in
+		let comp n1 n2 = n1 - n2 in
+		List.sort_uniq comp lst
+
+
+
+
+	let init_graph file_name = 
+		let j = from_file file_name in
 		let node_lst = j |> member "nodes" |> to_list |> List.map j2node in
 		let way_lst = j |> member "ways" |> to_list |> List.map j2way in
+
+		let all_nodes = List.map (fun x -> x.nid) node_lst in
 
 		let walk_ways = List.filter 
 			(fun w -> w.allow = Walk || w.allow = Both) way_lst in
 		let drive_ways = List.filter 
 			(fun w -> w.allow = Drive || w.allow = Both) way_lst in
 
-		failwith "Unimplemented"
+		let walkway_nodes = way2node walk_ways in
+		let driveway_nodes = way2node drive_ways in
 
+		let tr = Trie.empty in
+		let tr = List.fold_left add_node_trie tr node_lst in
+		let tr = List.fold_left add_way_trie tr way_lst in
+
+		let nd_table = build_node_table node_lst in
+		let way_table = build_way_table way_lst in
+
+		let walk_table = build_edge_table walk_ways in
+		let drive_table = build_edge_table drive_ways in {
+			all_nodes = all_nodes;
+ 			walkway_nodes = walkway_nodes;
+ 			driveway_nodes = driveway_nodes;
+			name_trie = tr;
+			walk_table = walk_table;
+			drive_table = drive_table;
+			node_table = nd_table;
+			way_table = way_table;
+		}
 
 
 	let node_to_coord n = (n.lat, n.lon)
 
 
-	let get_node_by_coord lat lon map =
-		failwith "Unimplemented"
-
-	let get_node_by_name name map =
-		failwith "Unimplemented"
-
+	let coord_dist lat1 lon1 lat2 lon2 = 
+		let r_lat = 111.19492665183317 in
+		let r_lon = 82.03674088387993 in
+		let diff_lat, diff_lon = 
+			r_lat *.(lat1 -. lat2), r_lon *. (lon1 -. lon2) in
+		sqrt ((diff_lat *. diff_lat) +. (diff_lon *. diff_lon))
 
 
 	(* Given the nid of two nodes, return the (approximate)
@@ -275,20 +410,7 @@ let build_edge_table (ways: way list) =
 		let nd2 = H.find nd_table n2 in
 		let lat1, lon1 = node_to_coord nd1 in
 		let lat2, lon2 = node_to_coord nd2 in
-		let r_lat = 111.19492665183317 in
-		let r_lon = 82.03674088387993 in
-		let diff_lat, diff_lon = 
-			r_lat *.(lat1 -. lat2), r_lon *. (lon1 -. lon2) in
-		sqrt ((diff_lat *. diff_lat) +. (diff_lon *. diff_lon))
-
-(* 	let distance n1 n2 = 
-		let lat1, lon1 = n1.lat, n1.lon in
-		let lat2, lon2 = n2.lat, n2.lon in
-		let r_lat = 111.19492665183317 in
-		let r_lon = 82.03674088387993 in
-		let diff_lat, diff_lon = 
-			r_lat *.(lat1 -. lat2), r_lon *. (lon1 -. lon2) in
-		sqrt ((diff_lat *. diff_lat) +. (diff_lon *. diff_lon)) *)
+		coord_dist lat1 lon1 lat2 lon2
 
 	(* End condition for A*, returns true when two nodes
 	 * are less than 20 meters apart *)
@@ -308,7 +430,8 @@ let build_edge_table (ways: way list) =
 			| [] -> failwith "replace key not found"
 			| (id1,dist1,path1)::t ->
 				if id1 = id then
-					if dist<dist1 then (* dist is better, replace path1 with path *)
+					if dist<dist1 then 
+					(* dist is better, replace path1 with path *)
 						t@((id,dist,path)::acc)
 					else
 						t@((id1,dist1,path1)::acc)
@@ -318,7 +441,7 @@ let build_edge_table (ways: way list) =
 		replace_help lst (id,dist,path) []
 
 	(* Merge two (nid * dist * path) lists, if duplicate id found
-   * keep only the triple with lower distance *)
+	 * keep only the triple with lower distance *)
 	let rec merge frontier expanded = 
 		match expanded with
 		| [] -> frontier
@@ -373,9 +496,9 @@ let build_edge_table (ways: way list) =
 	let get_id (id,_,_) = id
 
  (* Takes the nid of the start and end nodes,
-  * performs A* algorithm to find the shortest path between 2 nodes
-  * and return as a list of nid, head is destination.
-  * Assumes the start and end nid are in the way node table. *)
+	* performs A* algorithm to find the shortest path between 2 nodes
+	* and return as a list of nid, head is destination.
+	* Assumes the start and end nid are in the way node table. *)
 	let path_btw_nodes s e nd_table eg_table =
 		let start = [(s,0.,[s])] in
 		let explored = H.create num_nodes in
@@ -406,10 +529,70 @@ let build_edge_table (ways: way list) =
 			if diff < 0. then (-1) else if diff > 0. then 1 else 0 in
 		List.hd (List.sort comp satisfied)
 
+	(* Helper function to find the closest node id given coordinates,
+	 * lst is int list for node id, (lat,lon) is the target
+	 * coordinate, nd_table is the hashtable storing information,
+	 * curr_id and curr_min are the id and distance of current closest *)
+	let rec find_closest lst (lat,lon) nd_table curr_id curr_min =
+		match lst with
+		| [] -> curr_id
+		| h::t ->
+			let h_node = H.find nd_table h in
+			let h_lat, h_lon = h_node.lat, h_node.lon in
+			let d = coord_dist lat lon h_lat h_lon in
+			if d < curr_min then
+				find_closest t (lat,lon) nd_table h d
+			else
+				find_closest t (lat,lon) nd_table curr_id curr_min
 
-	let shortest_path s e map = 
-		failwith "Unimplemented"
 
+	let get_node_by_coord lat lon map =
+		let nid = find_closest map.all_nodes (lat,lon) 
+			map.node_table 0 99999.9 in
+		H.find map.node_table nid
+
+	(* TODO: improve when multiple nodes possible? *)
+	let get_node_by_name name map =
+		match Trie.find map.name_trie name with
+		| None -> None
+		| Some p ->
+			(* If multiple entries, select the first one *)
+			match (List.hd p) with
+			| Nodeid nid -> Some (H.find map.node_table nid)
+			| Wayid wid -> 
+				let w = H.find map.way_table wid in
+				let nid = List.hd w.nodes in
+				Some (H.find map.node_table nid)
+
+	let get_snd (_,e,_) = e
+	let get_trd (_,_,e) = e
+
+
+	let find_path (drive:bool) (s:nd) (e:nd) (map:t) = 
+		let tbl, ndlst =
+			if drive then map.drive_table, map.driveway_nodes
+			else map.walk_table, map.walkway_nodes in
+		let slat, slon = s.lat, s.lon in
+		let elat, elon = e.lat, e.lon in
+		let sid = find_closest 
+			ndlst (slat,slon) map.node_table 0 99999.9 in
+		let eid = find_closest
+			ndlst (elat,elon) map.node_table 0 99999.9 in
+		let (dist:float), (path:int list) = 
+			let triple = (path_btw_nodes sid eid map.node_table tbl) in
+			get_snd triple, get_trd triple in
+		let (node_path:nd list) = List.map (H.find map.node_table) path in
+		(dist, node_path)
+
+
+	let path_by_names drive s e map = 
+		let ns = match get_node_by_name s map with
+			| None -> failwith "start name not found"
+			| Some p -> p in
+		let ne = match get_node_by_name e map with
+			| None -> failwith "end name not found"
+			| Some q -> q in
+		find_path drive ns ne map
 
 end
 
