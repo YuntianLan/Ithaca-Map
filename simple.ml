@@ -1,5 +1,12 @@
 open GMain
 open GdkKeysyms
+open GtkMisc
+open Graphics
+open Camlimages
+open Images
+open Png
+open Jpeg
+open Player
 
 let locale = GtkMain.Main.init ()
 
@@ -22,6 +29,7 @@ let create_bbox direction title spacing child_width child_height layout =
   let button2 = GButton.button ~label:"Zoom Out"
       ~packing:bbox#add () in
   button2#connect#clicked ~callback: (fun () -> prerr_endline "zoom_out");
+
   (* GButton.button ~stock:`HELP ~packing:bbox#add (); *)
 
 
@@ -56,7 +64,8 @@ let main () =
   destination#insert_text " world" tmp_pos;
   destination#select_region ~start:0 ~stop:destination#text_length; *)
 
-
+  let img = GMisc.image in ~packing:vbox#pack () in
+  img#set_file;
 
 
   (* Button *)
