@@ -1,22 +1,35 @@
 module type MapImage = sig
-
-	(* [t] is the type of MapImage *)
+  (* [t] is the type of MapImage *)
   type t
 
   (* [params] is the type of query parameters for getting the map *)
-  type params
+  type params = {
+    param_upleft_lon: float;
+    param_upleft_lat: float;
+    param_lowright_lon: float;
+    param_lowright_lat: float;
+    width: float;
+    height: float;
+  }
 
   (* [result] is the type of map image information *)
-  type result
+  type result = {
+    img_grid: string list list;
+    res_upleft_lon: float;
+    res_upleft_lat: float;
+    res_lowright_lon: float;
+    res_lowright_lat: float;
+    tree_depth: int;
+    status: bool;
+  }
 
-	(* [init_quadtree] takes in the root image
-	 * where the graphs are stored in the same folder and builds
-	 * the MapTree with all the graphs placed correctly in the
-	 * MapTree. *)
-	val init_quadtree : string -> t
+  (* [init ()] takes in the root image
+   * where the graphs are stored in the same folder and builds
+   * the MapImage with all the graphs placed correctly in the
+   * MapImage. *)
+  val init : unit -> t
 
-  (* [get_map params] is the map image information that corresponds to the query
+  (* [query_image t params] is the map image information that corresponds to the query
    * information [params] *)
-	val get_map : params -> result
-
+  val query_image : t -> params -> result
 end
