@@ -11,3 +11,5 @@ simplegui:
 clean:
 	ocamlbuild -clean
 	rm -f src.zip
+check:
+	bash checkenv.sh
