@@ -1,8 +1,5 @@
 open Graphics
 open Camlimages
-open GMain
-open GdkKeysyms
-open GtkMisc
 
 let _ = Graphics.open_graph " 800x800"
 
@@ -13,7 +10,7 @@ let _ = Graphics.open_graph " 800x800"
 let create_image image =
   Images.load image [] |> Graphic_image.of_image
 
-let init_tile = create_image "tiles/1.png"
+let init_tile = create_image "images/1.png"
 let delete_input = create_image "images/delete_input.png"
 let textbox = create_image "images/input.png"
 let ok_button = create_image "images/ok_button.png"
@@ -59,7 +56,6 @@ let rec draw_input () x y acc =
     else draw_input () x y acc
      end *)
 
-let writeText x y =
 
 let draw_init () =
   draw_image welcome 100 600;

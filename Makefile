@@ -5,9 +5,6 @@ zip:
 install-dep:
 	opam update
 	opam install lablgtk cohttp
-simplegui:
-	ocamlfind ocamlc -g -package lablgtk2 -linkpkg simple.ml -o simple
-	./simple
 clean:
 	ocamlbuild -clean
 	rm -f src.zip
