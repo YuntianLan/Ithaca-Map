@@ -268,29 +268,63 @@ module MapImage = struct
       all_lon_dpp = calc_all_lon_dpp image_qt;
     }
 
-  (* [query_image map_image params] is the response map images for requested information
+  (* [query_image_helper map_image params] is the response map images for requested information
    * in [params]*)
-  let query_image (map_image:t) (params:params) : result =
+  let query_image_helper (map_image:t) (params:params) : result =
 
     let qt = map_image.image_qt in
     let query_upleft_lon = params.param_upleft_lon in
     let query_lowright_lon = params.param_lowright_lon in
-    let w = params.width in
-    let query_lon_dpp = (query_lowright_lon -. query_upleft_lon) /. w in
-    let opt_depth = find_optimal_depth map_image.all_lon_dpp query_lon_dpp in
-    let queue = image_queue qt opt_depth params [] in
-    let sorted_rows = sort_grid queue in
-    let get_img (qnlist:qnode list) : string list= List.map (fun i -> i.img) qnlist in
-    let grid = List.map get_img sorted_rows in
+    let query_upleft_lat = params.param_upleft_lat in
+    let query_lowright_lat = params.param_lowright_lat in
+    if (query_lowright_lon <= root_upleft_lon
+        || query_upleft_lon >= root_lowright_lon
+        || query_lowright_lat >= root_upleft_lat
+        || query_upleft_lat <= root_lowright_lat
+        || query_lowright_lat > query_upleft_lat
+        || query_lowright_lon < query_upleft_lon) then
+      {
+        img_grid = [];
+        res_upleft_lon = 0.;
+        res_upleft_lat = 0.;
+        res_lowright_lon = 0.;
+        res_lowright_lat = 0.;
+        tree_depth = 0;
+        status = false;
+      }
+    else
+      let w = params.width in
+      let query_lon_dpp = (query_lowright_lon -. query_upleft_lon) /. w in
+      let opt_depth = find_optimal_depth map_image.all_lon_dpp query_lon_dpp in
+      let queue = image_queue qt opt_depth params [] in
+      let sorted_rows = sort_grid queue in
+      let get_img (qnlist:qnode list) : string list= List.map (fun i -> i.img) qnlist in
+      let grid = List.map get_img sorted_rows in
 
-    {
-      img_grid = grid;
-      res_upleft_lon = (sorted_rows |> List.hd |> List.hd).upleft_lon;
-      res_upleft_lat = (sorted_rows |> List.hd |> List.hd).upleft_lat;
-      res_lowright_lon = (sorted_rows |> List.rev |> List.hd |> List.hd).lowright_lon;
-      res_lowright_lat = (sorted_rows |> List.rev |> List.hd |> List.hd).lowright_lat;
-      tree_depth = opt_depth;
-      status = true;
-    }
+      {
+        img_grid = grid;
+        res_upleft_lon = (sorted_rows |> List.hd |> List.hd).upleft_lon;
+        res_upleft_lat = (sorted_rows |> List.hd |> List.hd).upleft_lat;
+        res_lowright_lon = (sorted_rows |> List.rev |> List.hd |> List.rev |> List.hd).lowright_lon;
+        res_lowright_lat = (sorted_rows |> List.rev |> List.hd |> List.rev |> List.hd).lowright_lat;
+        tree_depth = opt_depth;
+        status = true;
+      }
 
+  (* [query_image map_image params] is the response map images for requested information
+   * in [params]*)
+  let query_image (map_image:t) (params:params) : result =
+    try
+      query_image_helper map_image params
+    with
+    | _ ->
+      {
+        img_grid = [];
+        res_upleft_lon = 0.;
+        res_upleft_lat = 0.;
+        res_lowright_lon = 0.;
+        res_lowright_lat = 0.;
+        tree_depth = 0;
+        status = false;
+      }
 end
