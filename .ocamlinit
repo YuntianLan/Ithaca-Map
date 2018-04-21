@@ -1,2 +1,7 @@
 #require "graphics";;
 #require "camlimages.all";;
+#require "str"
+#directory "_build";;
+#load "image.cmo";;
+#load "graph.cmo";;
+#load "trie.cmo";;
