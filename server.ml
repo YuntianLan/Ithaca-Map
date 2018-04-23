@@ -1,17 +1,63 @@
 (* open Lwt
 open Cohttp
 open Cohttp_lwt_unix *)
+open Image
+open Graph
 
-module type Server = sig
-	
-	module Tree : Image.MapImage
-	module Graph : Graph.MapGraph
 
-	type tree = Tree.t
-	type graph = Graph.t
-	type t
 
-	val init_server : tree -> graph -> t
-	val accept_connection : t -> unit
+module ImageTree = Image.Images
+module MapGraph = Graph.Map
 
-end
+type tree = ImageTree.t
+
+type graph = MapGraph.t
+type node = MapGraph.node
+
+type t = {
+	imagetree: tree;
+	mapgraph: graph;
+}
+
+let sth = Unix.socket
+let cret = Thread.create
+
+let sip = Unix.inet_addr_of_string "127.0.0.1"
+let sport = 4780
+
+
+let init_server = 
+	let gr = MapGraph.init_graph "graph/full.json" in
+	let tr = ImageTree.init () in
+	{imagetree = tr; mapgraph = gr}
+
+
+let rec handle_client tg desc = 
+	let str = Bytes.of_string "          " in
+	let len = Unix.recv desc str 0 10 [] in
+	let sstr = Bytes.to_string str in
+	let _ = print_endline sstr in
+	let _ = Unix.send_substring desc sstr 0 10 [] in
+	handle_client tg desc
+
+
+let begin_service tg = 
+	let server_socket = 
+		Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
+	let _ = Unix.bind server_socket 
+		(Unix.ADDR_INET(sip, sport)) in
+	let _ = Unix.listen server_socket 1 in
+	let desc, addr = Unix.accept server_socket in
+	handle_client tg desc
+
+
+let _ = begin_service init_server
+
+
+
+
+
+
+
+
+

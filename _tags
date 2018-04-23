@@ -1,2 +1,4 @@
 true: package(oUnit), package(yojson), package(str)
 
+<server.ml> : thread
+<server.{native,byte}> : thread

@@ -47,7 +47,7 @@ module type MapImage = sig
 end
 
 
-module MapImage = struct
+module Images : MapImage = struct
   type qnode = {
     upleft_lon: float;
     upleft_lat: float;
