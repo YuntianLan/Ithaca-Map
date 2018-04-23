@@ -33,5 +33,9 @@ module type MapImage = sig
    * information [params] *)
   val query_image : t -> params -> result
 end
+<<<<<<< HEAD
 
 module Images : MapImage
+=======
+module MapImage:MapImage
+>>>>>>> 9c10c574cb4ce8697496887cc5c102b427033d75
