@@ -16,13 +16,8 @@ module type MapGraph = sig
 end
 
 
-
 type category = 
-| Shop | Tourism | Leisure
-| FoodDrink
-| School | Bank | Cinema | Fuel
-| Postbox | Carwash | Doctor | Library
-| Other | Road
+| FoodDrink | Shop | Medical | Study | Fuel | Other
 
 
 type allowed = Walk | Drive | Both | Neither
@@ -34,7 +29,7 @@ type nd = {
 	lat: float;
 	lon: float;
 
-	catego: category option;
+	catego: category;
 	name: string;
 	(* TODO: add tags when building nodes in the future *)
 	tags: (string * string) list;
@@ -184,8 +179,29 @@ module Map : MapGraph = struct
 			| [] -> "" 
 			| h::_ -> (snd h)
 		) in
-		let category = None in
-		{nid = id; lat = lat; lon = lon; catego = category;
+		let categ = match (List.assoc_opt "amenity" tags, 
+			List.assoc_opt "shop" tags) with
+			| None, None -> Other
+			| Some name1, None ->
+				let name = String.lowercase_ascii name1 in
+				if name = "fast_food" then FoodDrink
+				else if name = "restaurant" then FoodDrink
+				else if name = "cafe" then FoodDrink
+				else if name = "pub" then FoodDrink
+				else if name = "bar" then FoodDrink
+				else if name = "ice_cream" then FoodDrink
+				else if name = "school" then Study
+				else if name = "university" then Study
+				else if name = "college" then Study
+				else if name = "library" then Study
+				else if name = "fuel" then Fuel
+				else if name = "doctors" then Medical
+				else if name = "hospital" then Medical
+				else if name = "pharmacy" then Medical
+				else Other
+			| None, Some name2 -> Shop
+			| Some name1, Some name2 -> Shop in
+		{nid = id; lat = lat; lon = lon; catego = categ;
 		name = name; tags = tags}
 
 	(* Convert a json to a way object *)
@@ -219,13 +235,44 @@ module Map : MapGraph = struct
 				else if name = "steps" then Walk
 				else if name = "path" then Walk
 				else if name = "cycleway" then Walk
-			else if name = "service" then Both
+				else if name = "service" then Both
 				else Neither in 
 		let name = match List.assoc_opt "name" tags with
 		| None -> ""
 		| Some s -> s in
-		{wid = id; nodes = nodes; categ = None;
+		let categ = match (List.assoc_opt "amenity" tags, 
+			List.assoc_opt "shop" tags) with
+			| None, None -> Other
+			| Some name1, None ->
+				let name = String.lowercase_ascii name1 in
+				if name = "fast_food" then FoodDrink
+				else if name = "restaurant" then FoodDrink
+				else if name = "cafe" then FoodDrink
+				else if name = "pub" then FoodDrink
+				else if name = "bar" then FoodDrink
+				else if name = "ice_cream" then FoodDrink
+				else if name = "school" then Study
+				else if name = "university" then Study
+				else if name = "college" then Study
+				else if name = "library" then Study
+				else if name = "fuel" then Fuel
+				else if name = "doctors" then Medical
+				else if name = "hospital" then Medical
+				else if name = "pharmacy" then Medical
+				else Other
+			| None, Some name2 -> Shop
+			| Some name1, Some name2 -> Shop in
+		{wid = id; nodes = nodes; categ = categ;
 			name = name; allow = allow; tags = tags}
+
+	let nodes_oftype leftuplat leftuplon rightdownlat rightdownlon type graph =
+		let 
+
+	let ways_oftype leftuplat leftuplon rightdownlat rightdownlon type graph =
+		failwith "unimplmented"
+
+	let nodes_ways_oftype leftuplat leftuplon rightdownlat rightdownlon type graph =
+		(nodes_oftype lat lon type) @ (ways_oftype lat lon type) 
 
 	(* Given a node list, build a hashtable mapping from
 	 * node ids to nodes *)
