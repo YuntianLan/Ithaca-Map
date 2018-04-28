@@ -152,6 +152,8 @@ let dist_to_box n b =
 		else n.lon in
 	coord_dist n.lat n.lon tlat tlon
 
+
+(* [nearest n tree] finds the nearest node given a KD tree *)
 let nearest n tree =
 	let best n1 n2 =
 		let d1 = coord_dist n.lat n.lon n1.lat n1.lon in
@@ -513,7 +515,8 @@ module Map : MapGraph = struct
 
 
 
-
+	(* [way2node ways] converts ways into a list of 
+		nodes that arein the ways*)
 	let way2node ways = 
 		let nodes = List.map (fun w -> w.nodes) ways in
 		let lst = List.flatten nodes in
@@ -522,7 +525,7 @@ module Map : MapGraph = struct
 
 
 
-
+	(* [init_graph file_name] initialize a graph given a json file *)
 	let init_graph file_name = 
 		let j = from_file file_name in
 		let node_lst = j |> member "nodes" |> to_list |> List.map j2node in
@@ -563,6 +566,8 @@ module Map : MapGraph = struct
 		}
 
 
+	(*[node_to_coord n] returns the latitude 
+	and longitude of the given node *)
 	let node_to_coord n = (n.lat, n.lon)
 
 
@@ -717,6 +722,8 @@ module Map : MapGraph = struct
 				find_closest t (lat,lon) nd_table curr_id curr_min
 
 
+	(* [get_node_by_coord lat lon map] returns the nearest node 
+	in the map given a coordinate *)
 	let get_node_by_coord lat lon map =
 		let dummy_node = {
 			nid = 0; lat = lat; lon = lon;
@@ -740,7 +747,8 @@ module Map : MapGraph = struct
 	let get_snd (_,e,_) = e
 	let get_trd (_,_,e) = e
 
-
+	(* [find_path (drive:bool) (s:nd) (e:nd) (map:t)] finds 
+	a path between starting node and ending node *)
 	let find_path (drive:bool) (s:nd) (e:nd) (map:t) = 
 		let tbl, ndlst =
 			if drive then map.drive_table, map.driveway_nodes
@@ -757,7 +765,8 @@ module Map : MapGraph = struct
 		let (node_path:nd list) = List.map (H.find map.node_table) path in
 		(dist, node_path)
 
-
+	(* [path_by_names drive s e map] returns a path between 
+	starting location and ending location*)
 	let path_by_names drive s e map = 
 		let ns = match get_node_by_name s map with
 			| None -> failwith "start name not found"
