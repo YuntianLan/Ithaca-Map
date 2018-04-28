@@ -134,13 +134,106 @@ type box = {
 	maxlon: float;
 }
 
-(* Calculate the minimal distance  *)
-let dist_to_box n b = failwith "Unimplemented"
-(* 	let tlat = if n.lat < lat_mid then b.minlat else b.maxlat in
-	let tlon = if n.lon < lon_mid then b.minlon else b.maxlon in
-	(tlat**2. +. tlon**2.)**0.5 *)
 
-let nearest = failwith "Unimplemented"
+
+
+(* [coord_dist lat1 lon1 lat2 lon2] returns the approximate
+ * distance between two coordinates *)
+let coord_dist lat1 lon1 lat2 lon2 = 
+	let r_lat = 111.19492665183317 in
+	let r_lon = 82.03674088387993 in
+	let diff_lat, diff_lon = 
+		r_lat *.(lat1 -. lat2), r_lon *. (lon1 -. lon2) in
+	sqrt ((diff_lat *. diff_lat) +. (diff_lon *. diff_lon))
+
+
+
+(* [dist_to_box n b] calculates the
+ * minimal distance between the given node
+ * and the box  *)
+let dist_to_box n b =
+	let tlat =
+		if n.lat < b.minlat then b.minlat
+		else if n.lat > b.maxlat then b.maxlat
+		else n.lat in
+	let tlon =
+		if n.lon < b.minlon then b.minlon
+		else if n.lon > b.maxlon then b.maxlon
+		else n.lon in
+	coord_dist n.lat n.lon tlat tlon
+
+
+
+
+let nearest n tree =
+	let best n1 n2 =
+		let d1 = coord_dist n.lat n.lon n1.lat n1.lon in
+		let d2 = coord_dist n.lat n.lon n2.lat n2.lon in
+		if d1 < d2 then n1 else n2 in
+	let best_node lst = 
+		List.fold_left best (List.hd lst) lst in
+	let opt2lst sth = 
+		match sth with | None -> [] | Some s -> [s] in
+	let rec nearest_help (la,lo) tree cn bbox =
+		if (dist_to_box n bbox) > 
+				(coord_dist la lo cn.lat cn.lon) then None
+		else
+			match tree with
+			| Leaf -> None
+			| LatNode (rn,l,r) ->
+				let cb = best cn rn in
+				let lbox = {
+					minlat = bbox.minlat;
+					maxlat = min bbox.maxlat rn.lat;
+					minlon = bbox.minlon;
+					maxlon = bbox.maxlon;
+				} in
+				let rbox = {
+					minlat = max bbox.minlat rn.lat;
+					maxlat = bbox.maxlat;
+					minlon = bbox.minlon;
+					maxlon = bbox.maxlon;
+				} in
+				let llst = opt2lst (nearest_help (la,lo) l cb lbox) in
+				let rlst = opt2lst (nearest_help (la,lo) r cb rbox) in
+				let finlst = List.flatten [llst;rlst;[cb]] in
+				Some (best_node finlst)
+			| LonNode (rn,l,r) ->
+				let cb = best cn rn in
+				let lbox = {
+					minlat = bbox.minlat;
+					maxlat = bbox.maxlat;
+					minlon = bbox.minlon;
+					maxlon = min bbox.maxlon rn.lon;
+				} in
+				let rbox = {
+					minlat = bbox.minlat;
+					maxlat = bbox.maxlat;
+					minlon = max bbox.minlon rn.lon;
+					maxlon = bbox.maxlon;
+				} in
+				let llst = opt2lst (nearest_help (la,lo) l cb lbox) in
+				let rlst = opt2lst (nearest_help (la,lo) r cb rbox) in
+				let finlst = List.flatten [llst;rlst;[cb]] in
+				Some (best_node finlst)
+	in
+	let init_box = {
+		minlat = -1000.; 
+		maxlat = 1000.; 
+		minlon = -1000.; 
+		maxlon = 1000.;
+	} in
+	let unwrap sth = 
+		match sth with
+		| None -> failwith "unwrap encounters None"
+		| Some s -> s in
+	match tree with
+	| Leaf -> failwith "empty kdtree for nearest"
+	| LatNode (rn,_,_) -> 
+		unwrap (nearest_help (n.lat,n.lon) tree rn init_box)
+	| LonNode (rn,_,_) ->
+		unwrap (nearest_help (n.lat,n.lon) tree rn init_box)
+
 
 
 type place = Nodeid of int | Wayid of int
@@ -170,6 +263,9 @@ module Map : MapGraph = struct
 
 		(* Catering special request from Hanqing *)
 		way_lst: way list;
+
+		(* kdtree to efficiently locate nearest node given coord *)
+		node_kdtree: kdtree;
 
 		(* Given a place's name, find the "place" of that name *)
 		name_trie: place_trie;
@@ -337,6 +433,7 @@ module Map : MapGraph = struct
 			else Trie.insert tr wy.name [Wayid(wy.wid)]
 
 
+
 (*
 
 	let add_node_trie (tr:place_trie) (nd:node) = 
@@ -397,7 +494,10 @@ module Map : MapGraph = struct
 		let way_table = build_way_table way_lst in
 
 		let walk_table = build_edge_table walk_ways in
-		let drive_table = build_edge_table drive_ways in {
+		let drive_table = build_edge_table drive_ways in 
+
+		let tree = build_kdtree node_lst true in
+		{
 			all_nodes = all_nodes;
  			walkway_nodes = walkway_nodes;
  			driveway_nodes = driveway_nodes;
@@ -407,18 +507,14 @@ module Map : MapGraph = struct
 			node_table = nd_table;
 			way_table = way_table;
 			way_lst = way_lst;
+			node_kdtree = tree;
 		}
 
 
 	let node_to_coord n = (n.lat, n.lon)
 
 
-	let coord_dist lat1 lon1 lat2 lon2 = 
-		let r_lat = 111.19492665183317 in
-		let r_lon = 82.03674088387993 in
-		let diff_lat, diff_lon = 
-			r_lat *.(lat1 -. lat2), r_lon *. (lon1 -. lon2) in
-		sqrt ((diff_lat *. diff_lat) +. (diff_lon *. diff_lon))
+
 
 
 	(* Given the nid of two nodes, return the (approximate)
@@ -565,9 +661,11 @@ module Map : MapGraph = struct
 
 
 	let get_node_by_coord lat lon map =
-		let nid = find_closest map.all_nodes (lat,lon) 
-			map.node_table 0 99999.9 in
-		H.find map.node_table nid
+		let dummy_node = {
+			nid = 0; lat = lat; lon = lon;
+			catego = None; name = ""; tags = [];
+		} in
+		nearest dummy_node map.node_kdtree
 
 	(* TODO: improve when multiple nodes possible? *)
 	let get_node_by_name name map =
