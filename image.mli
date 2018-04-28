@@ -35,3 +35,4 @@ module type MapImage = sig
 end
 
 module Images : MapImage
+

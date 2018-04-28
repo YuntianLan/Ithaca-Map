@@ -65,9 +65,9 @@ module IntHashtbl = Hashtbl.Make(IntHash)
  * access time is logarithmic
  *)
 type kdtree = 
-| LatNode of float * kdtree * kdtree
-| LonNode of float * kdtree * kdtree
-| Leaf of int
+| LatNode of nd * kdtree * kdtree
+| LonNode of nd * kdtree * kdtree
+| Leaf
 
 
 (* Slice the list into two parts starting from start,
@@ -89,9 +89,7 @@ let sublists lst start =
  * equal to go the the right and the left go to left*)
 let rec build_kdtree nodes is_lat =
 	if (List.length nodes) = 0 then
-		failwith "build_kdtree encounters empty list"
-	else if (List.length nodes) = 1 then
-		Leaf((List.hd nodes).nid)
+		Leaf
 	else
 		if is_lat then
 			(* sort accodring to lat, divide *)
@@ -102,9 +100,10 @@ let rec build_kdtree nodes is_lat =
 			in
 			let sorted = List.sort comp nodes in
 			let idx = (List.length sorted) / 2 in
-			let split_val = (List.nth sorted idx).lat in
 			let left, right = sublists sorted idx in
-			LatNode (split_val,
+			let curr_nd = List.hd right in
+			let right = List.tl right in
+			LatNode (curr_nd,
 						build_kdtree left false,
 						build_kdtree right false)
 		else
@@ -115,13 +114,28 @@ let rec build_kdtree nodes is_lat =
 			in
 			let sorted = List.sort comp nodes in
 			let idx = (List.length sorted) / 2 in
-			let split_val = (List.nth sorted idx).lon in
 			let left, right = sublists sorted idx in
-			LonNode (split_val,
+			let curr_nd = List.hd right in
+			let right = List.tl right in
+			LonNode (curr_nd,
 						build_kdtree left true,
 						build_kdtree right true)
 
+(* Helper type to do pruning in kdtree search *)
+type box = {
+	minlat: float;
+	maxlat: float;
+	minlon: float;
+	maxlon: float;
+}
 
+(* Calculate the minimal distance  *)
+let dist_to_box n b = failwith "Unimplemented"
+(* 	let tlat = if n.lat < lat_mid then b.minlat else b.maxlat in
+	let tlon = if n.lon < lon_mid then b.minlon else b.maxlon in
+	(tlat**2. +. tlon**2.)**0.5 *)
+
+let nearest = failwith "Unimplemented"
 
 
 type place = Nodeid of int | Wayid of int
@@ -148,6 +162,9 @@ module Map : MapGraph = struct
 		all_nodes: int list;
 		walkway_nodes: int list;
 		driveway_nodes: int list;
+
+		(* Catering special request from Hanqing *)
+		way_lst: way list;
 
 		(* Given a place's name, find the "place" of that name *)
 		name_trie: place_trie;
@@ -411,7 +428,7 @@ module Map : MapGraph = struct
 
 		let all_nodes = List.map (fun x -> x.nid) node_lst in
 
-		let walk_ways = List.filter 
+		let walk_ways = List.filter
 			(fun w -> w.allow = Walk || w.allow = Both) way_lst in
 		let drive_ways = List.filter 
 			(fun w -> w.allow = Drive || w.allow = Both) way_lst in
@@ -436,6 +453,7 @@ module Map : MapGraph = struct
 			drive_table = drive_table;
 			node_table = nd_table;
 			way_table = way_table;
+			way_lst = way_lst;
 		}
 
 
