@@ -40,13 +40,13 @@ let init_client =
 
 (* Send a string of information to the server *)
 let send_info sock info = 
-	let _ = Unix.send_substring sock info 0
+	Unix.send_substring sock info 0
 		(String.length info) []
 
 (* Receive a string of information to the server *)
 let recv_info sock =
-	let buffer = make_buffer 30 in
-	let num = Unix.recv sock buffer 0 30 [] in
+	let buffer = make_buffer 1024 in
+	let num = Unix.recv sock buffer 0 1024 [] in
 	String.sub (Bytes.to_string buffer) 0 num
 
 
