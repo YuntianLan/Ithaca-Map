@@ -126,7 +126,21 @@ let rec build_kdtree nodes is_lat =
 						build_kdtree left true,
 						build_kdtree right true)
 
+(* Helper type to do pruning in kdtree search *)
+type box = {
+	minlat: float;
+	maxlat: float;
+	minlon: float;
+	maxlon: float;
+}
 
+(* Calculate the minimal distance  *)
+let dist_to_box n b = failwith "Unimplemented"
+(* 	let tlat = if n.lat < lat_mid then b.minlat else b.maxlat in
+	let tlon = if n.lon < lon_mid then b.minlon else b.maxlon in
+	(tlat**2. +. tlon**2.)**0.5 *)
+
+let nearest = failwith "Unimplemented"
 
 
 type place = Nodeid of int | Wayid of int
@@ -153,6 +167,9 @@ module Map : MapGraph = struct
 		all_nodes: int list;
 		walkway_nodes: int list;
 		driveway_nodes: int list;
+
+		(* Catering special request from Hanqing *)
+		way_lst: way list;
 
 		(* Given a place's name, find the "place" of that name *)
 		name_trie: place_trie;
@@ -389,6 +406,7 @@ module Map : MapGraph = struct
 			drive_table = drive_table;
 			node_table = nd_table;
 			way_table = way_table;
+			way_lst = way_lst;
 		}
 
 
