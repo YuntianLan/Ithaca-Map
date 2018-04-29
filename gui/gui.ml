@@ -50,7 +50,10 @@ let get_element_by_id id =
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
   (* let doc = Html.document in *)
-
+  let img_dest = Html.createImg doc in
+  setId img_dest "dest";
+  img_dest##src <- js "marker.gif";
+  Dom.appendChild doc##body img_dest;
   (* ==================== begin div map-container ==================== *)
 
   let div_map_container = Html.createDiv doc in
@@ -62,6 +65,10 @@ let onload _ =
   setClass div_mapbody "mapbody";
   Dom.appendChild div_map_container div_mapbody;
   (* append_text div_mapbody "Hi"; *)
+  div_mapbody##ondblclick <- Dom_html.handler
+      (fun _ ->
+         img_dest##style##visibility <- js "visible";
+         img_dest##style##transform <- js "translateX(500px)translateY(500px)";Js._true);
 
   let img_map = Html.createImg doc in
   setId img_map "map";
@@ -70,12 +77,14 @@ let onload _ =
 
   (* ==================== end div map-container ==================== *)
 
-  let img_dest = Html.createImg doc in
-  setId img_dest "dest";
-  Dom.appendChild doc##body img_dest;
+
 
   let div_markers = Html.createDiv doc in
   setId div_markers "markers";
+  (* let img_marker = Html.createImg doc in
+  setClass img_marker "rmarker";
+  img_marker##src <- js "marker.gif";
+  Dom.appendChild div_markers img_marker; *)
   Dom.appendChild doc##body div_markers;
 
   let div_actions = Html.createDiv doc in

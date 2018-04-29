@@ -1,4 +1,6 @@
 #require "str"
+#require "camlimages"
+#require "camlimages.png"
 #directory "_build";;
 #load "image.cmo";;
 #load "graph.cmo";;
