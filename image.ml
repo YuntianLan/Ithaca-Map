@@ -370,4 +370,5 @@ module Images : MapImage = struct
                     ^(img_grid |> List.rev |> List.hd |> List.rev |> List.hd)^"_"
                     ^(string_of_int res.tree_depth)^".png" in
     Png.save save_path [] (Rgb24 buffer_rgb24);
+    save_path
 end
