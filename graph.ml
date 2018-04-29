@@ -16,13 +16,8 @@ module type MapGraph = sig
 end
 
 
-
 type category = 
-| Shop | Tourism | Leisure
-| FoodDrink
-| School | Bank | Cinema | Fuel
-| Postbox | Carwash | Doctor | Library
-| Other | Road
+| FoodDrink | Shop | Medical | Study | Fuel | Other
 
 
 type allowed = Walk | Drive | Both | Neither
@@ -36,7 +31,7 @@ type nd = {
 
 	catego: category option;
 	name: string;
-	(* TODO: add tags when building nodes in the future *)
+	
 	tags: (string * string) list;
 }
 
@@ -134,9 +129,6 @@ type box = {
 	maxlon: float;
 }
 
-
-
-
 (* [coord_dist lat1 lon1 lat2 lon2] returns the approximate
  * distance between two coordinates *)
 let coord_dist lat1 lon1 lat2 lon2 = 
@@ -145,8 +137,6 @@ let coord_dist lat1 lon1 lat2 lon2 =
 	let diff_lat, diff_lon = 
 		r_lat *.(lat1 -. lat2), r_lon *. (lon1 -. lon2) in
 	sqrt ((diff_lat *. diff_lat) +. (diff_lon *. diff_lon))
-
-
 
 (* [dist_to_box n b] calculates the
  * minimal distance between the given node
@@ -161,9 +151,6 @@ let dist_to_box n b =
 		else if n.lon > b.maxlon then b.maxlon
 		else n.lon in
 	coord_dist n.lat n.lon tlat tlon
-
-
-
 
 let nearest n tree =
 	let best n1 n2 =
@@ -235,7 +222,6 @@ let nearest n tree =
 		unwrap (nearest_help (n.lat,n.lon) tree rn init_box)
 
 
-
 type place = Nodeid of int | Wayid of int
 
 
@@ -297,8 +283,29 @@ module Map : MapGraph = struct
 			| [] -> "" 
 			| h::_ -> (snd h)
 		) in
-		let category = None in
-		{nid = id; lat = lat; lon = lon; catego = category;
+		let categ = match (List.assoc_opt "amenity" tags, 
+			List.assoc_opt "shop" tags) with
+			| None, None -> Some Other
+			| Some name1, None ->
+				let name = String.lowercase_ascii name1 in
+				if name = "fast_food" then Some FoodDrink
+				else if name = "restaurant" then Some FoodDrink
+				else if name = "cafe" then Some FoodDrink
+				else if name = "pub" then Some FoodDrink
+				else if name = "bar" then Some FoodDrink
+				else if name = "ice_cream" then Some FoodDrink
+				else if name = "school" then Some Study
+				else if name = "university" then Some Study
+				else if name = "college" then Some Study
+				else if name = "library" then Some Study
+				else if name = "fuel" then Some Fuel
+				else if name = "doctors" then Some Medical
+				else if name = "hospital" then Some Medical
+				else if name = "pharmacy" then Some Medical
+				else Some Other
+			| None, Some name2 -> Some Shop
+			| Some name1, Some name2 -> Some Shop in
+		{nid = id; lat = lat; lon = lon; catego = categ;
 		name = name; tags = tags}
 
 	(* Convert a json to a way object *)
@@ -332,13 +339,59 @@ module Map : MapGraph = struct
 				else if name = "steps" then Walk
 				else if name = "path" then Walk
 				else if name = "cycleway" then Walk
-			else if name = "service" then Both
+				else if name = "service" then Both
 				else Neither in 
 		let name = match List.assoc_opt "name" tags with
 		| None -> ""
 		| Some s -> s in
-		{wid = id; nodes = nodes; categ = None;
+		let categ = match (List.assoc_opt "amenity" tags, 
+			List.assoc_opt "shop" tags) with
+			| None, None -> Some Other
+			| Some name1, None ->
+				let name = String.lowercase_ascii name1 in
+				if name = "fast_food" then Some FoodDrink
+				else if name = "restaurant" then Some FoodDrink
+				else if name = "cafe" then Some FoodDrink
+				else if name = "pub" then Some FoodDrink
+				else if name = "bar" then Some FoodDrink
+				else if name = "ice_cream" then Some FoodDrink
+				else if name = "school" then Some Study
+				else if name = "university" then Some Study
+				else if name = "college" then Some Study
+				else if name = "library" then Some Study
+				else if name = "fuel" then Some Fuel
+				else if name = "doctors" then Some Medical
+				else if name = "hospital" then Some Medical
+				else if name = "pharmacy" then Some Medical
+				else Some Other
+			| None, Some name2 -> Some Shop
+			| Some name1, Some name2 -> Some Shop in
+		{wid = id; nodes = nodes; categ = categ;
 			name = name; allow = allow; tags = tags}
+
+	(* let nodes_oftype lulat lulon rdlat rdlon type graph =
+		let lst = List.filter (fun s -> 
+			(H.find graph.node_table s).lat > lulat && 
+			(H.find graph.node_table s).lat < rdlat &&
+			(H.find graph.node_table s).lon > lulon &&
+			(H.find graph.node_table s).lon > rdlon &&
+			(H.find graph.node_table s).catego = type) graph.all_nodes in
+		let ret = List.map (fun n -> ((H.find graph.node_table n).lat, (H.find graph.node_table n).lon)) lst in
+		ret
+
+	let ways_oftype lulat lulon rdlat rdlon type graph =
+		let lst = List.filter (fun s -> 
+			(H.find graph.node_table (List.hd (H.find graph.way_table s).nodes)).lat > lulat && 
+			(H.find graph.node_table (List.hd (H.find graph.way_table s).nodes)).lat < rdlat &&
+			(H.find graph.node_table (List.hd (H.find graph.way_table s).nodes)).lon > lulon &&
+			(H.find graph.node_table (List.hd (H.find graph.way_table s).nodes)).lon > rdlon &&
+			(H.find graph.way_table s).categ = type) graph.way_lst in
+		let ret = List.map (fun n -> (((H.find graph.node_table (List.hd (H.find graph.way_table n).nodes)).lat,
+									(H.find graph.node_table (List.hd (H.find graph.way_table n).nodes)).lon)) lst in
+		ret
+
+	let nodes_ways_oftype lulat lulon rdlat rdlon t graph =
+		(nodes_oftype lulat lulon rdlat rdlon t graph) @ (ways_oftype lulat lulon rdlat rdlon t graph)  *)
 
 	(* Given a node list, build a hashtable mapping from
 	 * node ids to nodes *)
@@ -514,7 +567,12 @@ module Map : MapGraph = struct
 	let node_to_coord n = (n.lat, n.lon)
 
 
-
+	(* let coord_dist lat1 lon1 lat2 lon2 = 
+		let r_lat = 111.19492665183317 in
+		let r_lon = 82.03674088387993 in
+		let diff_lat, diff_lon = 
+			r_lat *.(lat1 -. lat2), r_lon *. (lon1 -. lon2) in
+		sqrt ((diff_lat *. diff_lat) +. (diff_lon *. diff_lon)) *)
 
 
 	(* Given the nid of two nodes, return the (approximate)

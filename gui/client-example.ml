@@ -9,8 +9,8 @@
 
 
 let cip = Unix.inet_addr_of_string "127.0.0.1"
-let cport = 3110
-let sport = 4780
+let cport = 3410
+let sport = 4999
 
 (* Example string for service 1 *)
 let eg_service1 = "1 42.813746 -76.7116266"
@@ -29,7 +29,7 @@ let make_buffer n =
 
 
 (* Setup the client connection socket *)
-let init_client =
+let init_client () =
 	let client_socket =
 		Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
 	let _ = Unix.bind client_socket
@@ -40,11 +40,21 @@ let init_client =
 
 (* Send a string of information to the server *)
 let send_info sock info = 
-	Unix.send_substring sock info 0
+	Unix.send_substring sock info 0 (String.length info) []
 
 
 (* Receive a string of information to the server *)
 let recv_info sock =
-	let buffer = make_buffer 1024 in
-	let num = Unix.recv sock buffer 0 1024 [] in
+	let buffer = Byts.make 196608 ' ' in
+	let num = Unix.recv sock buffer 0 196608 [] in
 	String.sub (Bytes.to_string buffer) 0 num
+
+
+let recv_bytes sock = 
+	let buffer = Bytes.make 196608 ' ' in
+	let _ = Unix.recv sock buffer 0 196608 [] in
+	buffer
+
+
+
+
