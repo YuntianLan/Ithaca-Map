@@ -3,7 +3,6 @@ open Cohttp
 open Cohttp_lwt_unix *)
 open Image
 open Graph
-open Graphics
 open Camlimages
 open Pervasives
 
@@ -27,7 +26,7 @@ let sip = Unix.inet_addr_of_string "127.0.0.1"
 let sport = 4999
 
 
-let init_server = 
+let init_server =
 	let gr = MapGraph.init_graph "graph/full.json" in
 	let tr = ImageTree.init () in
 	{imagetree = tr; mapgraph = gr}
@@ -35,7 +34,7 @@ let init_server =
 
 
 let make_buffer n =
-	let rec make_help n acc = 
+	let rec make_help n acc =
 		if n = 0 then acc
 		else make_help (n-1) (" "^acc) in
 	Bytes.of_string (make_help n "")
@@ -46,7 +45,7 @@ let make_buffer n =
 (* [image_to_string name] returns the image specified by the
  * argument name in the form of a string where each
  * character represents a uint8 *)
-let image_to_string name = 
+let image_to_string name =
 	let img = Png.load_as_rgb24 name [] in
 	let s = Bytes.make (256*256*3) ' ' in
 	let im = match img with
@@ -69,7 +68,7 @@ let image_to_string name =
 
 
 
-let rec handle_client tg desc = 
+let rec handle_client tg desc =
 	let str = make_buffer 1024 in
 	let len = Unix.recv desc str 0 1024 [] in
 	let _ = print_endline "received message from client" in
@@ -77,25 +76,25 @@ let rec handle_client tg desc =
 	let args = String.split_on_char ' ' s in
 	let idx = List.hd args in
 	if idx = "1" then
-		let res = 
+		let res =
 			if (List.length args) < 3 then
 				"Error: too few arguments for service 1"
 			else
 				let lat = float_of_string (List.nth args 1) in
 				let lon = float_of_string (List.nth args 2) in
-				let nd = 
+				let nd =
 					MapGraph.get_node_by_coord lat lon tg.mapgraph in
 				let rlat, rlon = MapGraph.node_to_coord nd in
 				let slat = string_of_float rlat in
 				let slon = string_of_float rlon in
 				slat ^ " " ^ slon in
-		let _ = Unix.send_substring desc res 0 
+		let _ = Unix.send_substring desc res 0
 			(String.length res) [] in
 		Thread.yield ();
 		handle_client tg desc
 	else if idx = "2" then
 		let res =
-			if (String.length s) < 3 then 
+			if (String.length s) < 3 then
 				"Error: string length for service 2 too short"
 			else
 				let name = String.sub s 2 ((String.length s)-2) in
@@ -121,7 +120,7 @@ let rec handle_client tg desc =
 	else if ((idx = "quit") || (idx = "exit")) then
 		let _ = Unix.close desc in
 		(Thread.exit ())
-	else 
+	else
 		let res = "Error: improper request" in
 		let _ = Unix.send_substring desc res 0
 			(String.length res) [] in
@@ -136,10 +135,10 @@ let rec test s () =
 	let _ = Thread.yield () in
 	test s ()
 
-let begin_service tg = 
-	let server_socket = 
+let begin_service tg =
+	let server_socket =
 		Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
-	let _ = Unix.bind server_socket 
+	let _ = Unix.bind server_socket
 		(Unix.ADDR_INET(sip, sport)) in
 	let _ = Unix.listen server_socket 2 in
 	let desc, addr = Unix.accept server_socket in
@@ -150,12 +149,3 @@ let begin_service tg =
 
 
 let _ = begin_service init_server
-
-
-
-
-
-
-
-
-

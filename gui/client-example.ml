@@ -39,22 +39,18 @@ let init_client () =
 	client_socket
 
 (* Send a string of information to the server *)
-let send_info sock info = 
+let send_info sock info =
 	Unix.send_substring sock info 0 (String.length info) []
 
 
 (* Receive a string of information to the server *)
 let recv_info sock =
-	let buffer = Byts.make 196608 ' ' in
+	let buffer = Bytes.make 196608 ' ' in
 	let num = Unix.recv sock buffer 0 196608 [] in
 	String.sub (Bytes.to_string buffer) 0 num
 
 
-let recv_bytes sock = 
+let recv_bytes sock =
 	let buffer = Bytes.make 196608 ' ' in
 	let _ = Unix.recv sock buffer 0 196608 [] in
 	buffer
-
-
-
-
