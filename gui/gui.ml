@@ -194,6 +194,6 @@ let onload _ =
   Dom.appendChild doc##body button; *)
   Js._false
 
-let read_lrlat () =
+(* let read_lrlat () = *)
 let () =
   Dom_html.window##onload <- Dom_html.handler onload

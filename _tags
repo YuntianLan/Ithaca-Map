@@ -1,4 +1,5 @@
-true: package(oUnit), package(yojson), package(str), package(graphics), package(camlimages.all)
+
+true: package(oUnit), package(yojson), package(str), package(Camlimages.png), package(graphics), package(camlimages.all)
 
 <server.ml> : thread
 <server.{native,byte}> : thread

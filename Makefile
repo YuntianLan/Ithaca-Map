@@ -7,10 +7,7 @@ zip:
 	zip src.zip *.ml*
 install-dep:
 	opam update
-	opam install lablgtk cohttp
-simplegui:
-	ocamlfind ocamlc -g -package lablgtk2 -linkpkg GUI/simple.ml -o simple
-	./simple
+	opam install camlimages
 clean:
 	ocamlbuild -clean
 	rm -f src.zip

@@ -34,18 +34,11 @@ let init_server =
 
 
 
-
-
 let make_buffer n =
 	let rec make_help n acc = 
 		if n = 0 then acc
 		else make_help (n-1) (" "^acc) in
 	Bytes.of_string (make_help n "")
-
-
-
-
-
 
 
 
@@ -81,8 +74,6 @@ let rec handle_client tg desc =
 	let len = Unix.recv desc str 0 1024 [] in
 	let _ = print_endline "received message from client" in
 	let s = Bytes.to_string (Bytes.sub str 0 len) in
-
-
 	let args = String.split_on_char ' ' s in
 	let idx = List.hd args in
 	if idx = "1" then
@@ -100,9 +91,10 @@ let rec handle_client tg desc =
 				slat ^ " " ^ slon in
 		let _ = Unix.send_substring desc res 0 
 			(String.length res) [] in
+		Thread.yield ();
 		handle_client tg desc
 	else if idx = "2" then
-		let res = 
+		let res =
 			if (String.length s) < 3 then 
 				"Error: string length for service 2 too short"
 			else
@@ -114,20 +106,26 @@ let rec handle_client tg desc =
 					(string_of_float lat) ^ " " ^ (string_of_float lon) in
 		let _ = Unix.send_substring desc res 0
 			(String.length res) [] in
+		Thread.yield ();
 		handle_client tg desc
 	else if idx = "3" then
 		let res = "Error: idx 3 not implemented" in
 		let _ = Unix.send_substring desc res 0
 			(String.length res) [] in
+		Thread.yield ();
 		handle_client tg desc
 	else if idx = "4" then
 		let res = image_to_string "tiles/0.png" in
 		let _ = Unix.send desc res 0 (256*256*3) [] in
 		handle_client tg desc
+	else if ((idx = "quit") || (idx = "exit")) then
+		let _ = Unix.close desc in
+		(Thread.exit ())
 	else 
 		let res = "Error: improper request" in
 		let _ = Unix.send_substring desc res 0
 			(String.length res) [] in
+		Thread.yield ();
 		handle_client tg desc
 
 
@@ -146,6 +144,8 @@ let begin_service tg =
 	let _ = Unix.listen server_socket 2 in
 	let desc, addr = Unix.accept server_socket in
 	let _ = print_endline "connected" in
+	let thr = Thread.create (handle_client tg) desc in
+	Thread.join thr;
 	handle_client tg desc
 
 
