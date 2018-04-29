@@ -17,7 +17,7 @@ module type MapImage = sig
   (* [t] is the type of MapImage *)
   type t
 
-  
+
 
 (* [params] is the type of query parameters for getting the map *)
   type params = {
@@ -56,7 +56,7 @@ module type MapImage = sig
   (* [build_full_map res] is the filepath of a single png that covers the
    * area discribed by [res]
    * returns "error" if no image can be built from [res] *)
-  val build_full_map : result -> string
+  val build_full_map : result -> bytes
 
 end
 
@@ -344,7 +344,7 @@ module Images : MapImage = struct
         status = false;
       }
 
-  let get_img_rgb24 (img_path:string) : Rgb24.elt array array =
+  (* let get_img_rgb24 (img_path:string) : Rgb24.elt array array =
     let img_rgb24 = Png.load_as_rgb24 img_path [] in
     match img_rgb24 with
     | Rgb24 bmp ->
@@ -372,22 +372,85 @@ module Images : MapImage = struct
     let img_grid = res.img_grid in
     if (res.status = false || List.length img_grid = 0
         || img_grid |> List.hd |> List.length = 0) then
-      "error"
+      Bytes.empty
     else
       let int_tilesize = int_of_float tile_size in
       let fullimg_h = (img_grid |> List.length) * int_tilesize in
       let fullimg_w = (img_grid |> List.hd |> List.length) * int_tilesize in
       let full_map_rgb = build_full_map_rgb img_grid in
-      let buffer_rgb24 = Rgb24.create fullimg_w fullimg_h in
+      let buffer_byte = Bytes.create (fullimg_w*fullimg_h*3) in
       for j = 0 to (fullimg_h-1) do
         for i = 0 to (fullimg_w-1) do
-          Rgb24.set buffer_rgb24 i j full_map_rgb.(j).(i)
+          let color = full_map_rgb.(j).(i) in
+          let r, g, b = char_of_int color.r,
+                        char_of_int color.g,
+                        char_of_int color.b in
+          Bytes.set buffer_byte (j * fullimg_w + i + 0) r;
+    			Bytes.set buffer_byte (j * fullimg_w + i + 1) g;
+    			Bytes.set buffer_byte (j * fullimg_w + i + 2) b;
         done
       done;
-      (* let start = String.length image_folder in
-      let ul = img_grid |> List.hd |> List.hd in
-      let lr = img_grid |> List.rev |> List.hd |> List.rev |> List.hd in *)
-      let save_path = "test.png" in
-      Png.save save_path [] (Rgb24 buffer_rgb24);
-      save_path
+      buffer_byte *)
+
+  let build_full_map (res:result) =
+    let img_grid = res.img_grid in
+    let int_tilesize = int_of_float tile_size in
+    let fullimg_h = (img_grid |> List.length) * int_tilesize in
+    let fullimg_w = (img_grid |> List.hd |> List.length) * int_tilesize in
+    let buffer_rgb = Rgb24.create fullimg_w fullimg_h in
+    List.iteri (fun j imglst ->
+        List.iteri (fun i img_path_i ->
+            let img_rgb24 = Png.load_as_rgb24 img_path_i [] in
+            match img_rgb24 with
+            | Rgb24 bmp ->
+              let w = bmp.Rgb24.width in
+              let h = bmp.Rgb24.height in
+              Rgb24.blit bmp 0 0 buffer_rgb (i*int_tilesize) (j*int_tilesize) w h;
+            | _ -> failwith "Only supports RGB24"
+          ) imglst) img_grid;
+    (* Png.save "testcheap.png" [] (Rgb24 buffer_rgb); *)
+    let buffer_byte = Bytes.create (fullimg_w*fullimg_h*3) in
+    for j = 0 to (fullimg_h-1) do
+      for i = 0 to (fullimg_w-1) do
+        let color = Rgb24.get buffer_rgb i j in
+        let r, g, b = char_of_int color.r,
+                      char_of_int color.g,
+                      char_of_int color.b in
+        Bytes.set buffer_byte (j * fullimg_w + i + 0) r;
+        Bytes.set buffer_byte (j * fullimg_w + i + 1) g;
+        Bytes.set buffer_byte (j * fullimg_w + i + 2) b;
+      done
+    done;
+    buffer_byte
+  
+  let build_full_map_buf (res:result) =
+    let img_grid = res.img_grid in
+    let int_tilesize = int_of_float tile_size in
+    let fullimg_h = (img_grid |> List.length) * int_tilesize in
+    let fullimg_w = (img_grid |> List.hd |> List.length) * int_tilesize in
+    let buffer_rgb = Rgb24.create fullimg_w fullimg_h in
+    List.iteri (fun j imglst ->
+        List.iteri (fun i img_path_i ->
+            let img_rgb24 = Png.load_as_rgb24 img_path_i [] in
+            match img_rgb24 with
+            | Rgb24 bmp ->
+              let w = bmp.Rgb24.width in
+              let h = bmp.Rgb24.height in
+              Rgb24.blit bmp 0 0 buffer_rgb (i*int_tilesize) (j*int_tilesize) w h;
+            | _ -> failwith "Only supports RGB24"
+          ) imglst) img_grid;
+    Png.save "testcheap.png" [] (Rgb24 buffer_rgb);
+    let ch = open_in "testcheap.png" in
+    let buf = Buffer.create (fullimg_w * fullimg_h) in
+    try 
+      Buffer.add_channel buf ch (fullimg_w * fullimg_h);
+      close_in ch;
+      Buffer.to_bytes buf
+    with
+    | _ -> Buffer.to_bytes buf
+  
+    let decode (buf:bytes) =
+      let ch = open_out "testcheap.png" in
+      output ch buf 0 (Bytes.length buf)
+
 end
