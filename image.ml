@@ -392,7 +392,7 @@ module Images : MapImage = struct
       done;
       buffer_byte *)
 
-  let build_full_map (res:result) =
+  (* let build_full_map (res:result) =
     let img_grid = res.img_grid in
     let int_tilesize = int_of_float tile_size in
     let fullimg_h = (img_grid |> List.length) * int_tilesize in
@@ -421,9 +421,9 @@ module Images : MapImage = struct
         Bytes.set buffer_byte (j * fullimg_w + i + 2) b;
       done
     done;
-    buffer_byte
+    buffer_byte *)
   
-  let build_full_map_buf (res:result) =
+  let build_full_map (res:result) =
     let img_grid = res.img_grid in
     let int_tilesize = int_of_float tile_size in
     let fullimg_h = (img_grid |> List.length) * int_tilesize in
