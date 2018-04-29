@@ -53,15 +53,11 @@ module type MapImage = sig
    * information [params] *)
   val query_image : t -> params -> result
 
-<<<<<<< HEAD
-
-  val build_full_map : result -> unit
-=======
   (* [build_full_map res] is the filepath of a single png that covers the
    * area discribed by [res]
    * returns "error" if no image can be built from [res] *)
   val build_full_map : result -> string
->>>>>>> 22747066b93712413b09aef6855fd6070c9ea634
+
 end
 
 
