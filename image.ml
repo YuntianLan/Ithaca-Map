@@ -1,9 +1,10 @@
 open Camlimages
 open Png
 (* ========= constants ========== *)
-let image_folder = "tiles_test"^Filename.dir_sep
-(* let max_depth = 6 *)
-let max_depth = 2
+let image_folder = "tiles"^Filename.dir_sep
+(* let image_folder = "tiles_test"^Filename.dir_sep *)
+let max_depth = 6
+(* let max_depth = 2 *)
 let root_upleft_lon = -76.5527
 let root_upleft_lat = 42.4883
 let root_lowright_lon = -76.4649
@@ -46,6 +47,11 @@ module type MapImage = sig
   (* [query_image t params] is the map image information that corresponds to the query
    * information [params] *)
   val query_image : t -> params -> result
+
+  (* [build_full_map res] is the filepath of a single png that covers the
+   * area discribed by [res]
+   * returns "error" if no image can be built from [res] *)
+  val build_full_map : result -> string
 end
 
 
@@ -356,19 +362,24 @@ module Images : MapImage = struct
 
   let build_full_map (res:result) =
     let img_grid = res.img_grid in
-    let int_tilesize = int_of_float tile_size in
-    let fullimg_h = (img_grid |> List.length) * int_tilesize in
-    let fullimg_w = (img_grid |> List.hd |> List.length) * int_tilesize in
-    let full_map_rgb = build_full_map_rgb img_grid in
-    let buffer_rgb24 = Rgb24.create fullimg_w fullimg_h in
-    for j = 0 to (fullimg_h-1) do
-      for i = 0 to (fullimg_w-1) do
-        Rgb24.set buffer_rgb24 i j full_map_rgb.(j).(i)
-      done
-    done;
-    let save_path = (img_grid |> List.hd |> List.hd)^"_"
-                    ^(img_grid |> List.rev |> List.hd |> List.rev |> List.hd)^"_"
-                    ^(string_of_int res.tree_depth)^".png" in
-    Png.save save_path [] (Rgb24 buffer_rgb24);
-    save_path
+    if (res.status = false || List.length img_grid = 0
+        || img_grid |> List.hd |> List.length = 0) then
+      "error"
+    else
+      let int_tilesize = int_of_float tile_size in
+      let fullimg_h = (img_grid |> List.length) * int_tilesize in
+      let fullimg_w = (img_grid |> List.hd |> List.length) * int_tilesize in
+      let full_map_rgb = build_full_map_rgb img_grid in
+      let buffer_rgb24 = Rgb24.create fullimg_w fullimg_h in
+      for j = 0 to (fullimg_h-1) do
+        for i = 0 to (fullimg_w-1) do
+          Rgb24.set buffer_rgb24 i j full_map_rgb.(j).(i)
+        done
+      done;
+      (* let start = String.length image_folder in
+      let ul = img_grid |> List.hd |> List.hd in
+      let lr = img_grid |> List.rev |> List.hd |> List.rev |> List.hd in *)
+      let save_path = "test.png" in
+      Png.save save_path [] (Rgb24 buffer_rgb24);
+      save_path
 end
