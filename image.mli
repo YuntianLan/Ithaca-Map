@@ -32,7 +32,9 @@ module type MapImage = sig
   (* [query_image t params] is the map image information that corresponds to the query
    * information [params] *)
   val query_image : t -> params -> result
+
+  (* [build_full_map res] saves a single png that covers the area discribed by [res]*)
+  val build_full_map : result -> unit
 end
 
 module Images : MapImage
-

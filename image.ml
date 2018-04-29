@@ -1,3 +1,5 @@
+open Camlimages
+open Png
 (* ========= constants ========== *)
 let image_folder = "tiles_test"^Filename.dir_sep
 (* let max_depth = 6 *)
@@ -327,4 +329,45 @@ module Images : MapImage = struct
         tree_depth = 0;
         status = false;
       }
+
+  let get_img_rgb24 (img_path:string) : Rgb24.elt array array =
+    let img_rgb24 = Png.load_as_rgb24 img_path [] in
+    match img_rgb24 with
+    | Rgb24 bmp ->
+      let w = bmp.Rgb24.width in
+      let h = bmp.Rgb24.height in
+      Array.init h (fun j ->
+          Array.init w (fun i ->
+            Rgb24.get bmp i j))
+    | _ -> failwith "Only supports RGB24"
+
+  let build_full_map_rgb (img_grid:string list list) : Rgb24.elt array array =
+    let int_tilesize = int_of_float tile_size in
+    let fullimg_h = (img_grid |> List.length) * int_tilesize in
+    let dummy_rgb = {Color.r = 0; g = 0; b = 0} in
+    let buffer = Array.make fullimg_h (Array.make 0 dummy_rgb) in
+    List.iteri (fun j imglst ->
+        List.iteri (fun i img_path_i ->
+            let rgb_elm = get_img_rgb24 img_path_i in
+            Array.iteri (fun rgb_j row_of_rgb ->
+                buffer.(j*int_tilesize+rgb_j) <- Array.append buffer.(j*int_tilesize+rgb_j) row_of_rgb)
+              rgb_elm) imglst) img_grid;
+    buffer
+
+  let build_full_map (res:result) =
+    let img_grid = res.img_grid in
+    let int_tilesize = int_of_float tile_size in
+    let fullimg_h = (img_grid |> List.length) * int_tilesize in
+    let fullimg_w = (img_grid |> List.hd |> List.length) * int_tilesize in
+    let full_map_rgb = build_full_map_rgb img_grid in
+    let buffer_rgb24 = Rgb24.create fullimg_w fullimg_h in
+    for j = 0 to (fullimg_h-1) do
+      for i = 0 to (fullimg_w-1) do
+        Rgb24.set buffer_rgb24 i j full_map_rgb.(j).(i)
+      done
+    done;
+    let save_path = (img_grid |> List.hd |> List.hd)^"_"
+                    ^(img_grid |> List.rev |> List.hd |> List.rev |> List.hd)^"_"
+                    ^(string_of_int res.tree_depth)^".png" in
+    Png.save save_path [] (Rgb24 buffer_rgb24);
 end
