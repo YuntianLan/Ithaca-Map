@@ -53,9 +53,9 @@ module type MapImage = sig
    * information [params] *)
   val query_image : t -> params -> result
 
-  (* [build_full_map res] is the filepath of a single png that covers the
+  (* [build_full_map res] is the byte array of a single png that covers the
    * area discribed by [res]
-   * returns "error" if no image can be built from [res] *)
+   * returns empty byte if no image can be built from [res] *)
   val build_full_map : result -> bytes
 
 end
@@ -441,16 +441,18 @@ module Images : MapImage = struct
           ) imglst) img_grid;
     Png.save "testcheap.png" [] (Rgb24 buffer_rgb);
     let ch = open_in "testcheap.png" in
-    let buf = Buffer.create (fullimg_w * fullimg_h) in
+    let buf = Buffer.create (fullimg_w * fullimg_h * 3) in
     try 
-      Buffer.add_channel buf ch (fullimg_w * fullimg_h);
+      Buffer.add_channel buf ch (fullimg_w * fullimg_h * 3);
       close_in ch;
       Buffer.to_bytes buf
     with
     | _ -> Buffer.to_bytes buf
   
     let decode (buf:bytes) =
-      let ch = open_out "testcheap.png" in
-      output ch buf 0 (Bytes.length buf)
+      let ch = open_out_bin "testencode.png" in
+      (* output ch buf 0 (Bytes.length buf) *)
+      output_bytes ch buf;
+      close_out ch
 
 end
