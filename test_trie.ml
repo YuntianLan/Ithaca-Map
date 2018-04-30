@@ -2,7 +2,7 @@ open OUnit2
 open Trie
 
 let e = Trie.empty
-let strs = ["data"; "data"; "datastruct"; "structure"; "ithaca"; "map"; "yuntian"; "hanqing"; "xinqi"; "xinzhe"]
+let strs = ["Data"; "Data"; "datastruct"; "structure"; "ithaca"; "map"; "yuntian"; "hanqing"; "xinqi"; "XINzhe"]
 let empty_str = Trie.insert e "" ""
 let test_empty = [
   "empty_mem" >:: (fun _ -> assert_equal (List.init (List.length strs) (fun i -> false))
@@ -16,8 +16,9 @@ let test_empty = [
 
 ]
 
-let data = Trie.insert e "data" "data"
-let data2 = Trie.insert data "data" "data"
+let data = Trie.insert e "Data" "Data"
+let data2 = Trie.insert data "DATA" "Data"
+let data3 = Trie.insert e "Data" "DATA"
 let datastruct = Trie.insert data2 "datastruct" "datastruct"
 
 let unit_test = [
@@ -28,16 +29,17 @@ let unit_test = [
   "data_insensitive" >:: (fun _ -> assert_equal true (Trie.memb data "DAtA"));
   "data_substr" >:: (fun _ -> assert_equal false (Trie.memb data "da"));
   "data_substr'" >:: (fun _ -> assert_equal false (Trie.memb data ""));
-  "data_find" >:: (fun _ -> assert_equal (Some "data") (Trie.find data "data"));
+  "data_find" >:: (fun _ -> assert_equal (Some "Data") (Trie.find data "data"));
   "data_find'" >:: (fun _ -> assert_equal None (Trie.find data "dat"));
+  "data_begin_lowercase" >:: (fun _ -> assert_equal ["Data"] (Trie.begin_with data (fun i -> true) "daTA"));
 
   "no_dup" >:: (fun _ -> assert_equal data data2);
-
+  "diff" >:: (fun _ -> assert_equal false (data=data3));
   "datastruct_data" >:: (fun _ -> assert_equal true (Trie.memb datastruct "DAtA"));
   "datastruct" >:: (fun _ -> assert_equal true (Trie.memb datastruct "DAtAStrUCT"));
-  "beiginwith_DA" >:: (fun _ -> assert_equal ["datastruct";"data"] (Trie.begin_with datastruct (fun i -> true) "DA"));
+  "beiginwith_DA" >:: (fun _ -> assert_equal ["datastruct";"Data"] (Trie.begin_with datastruct (fun i -> true) "DA"));
   "beiginwith_dataS" >:: (fun _ -> assert_equal ["datastruct"] (Trie.begin_with datastruct (fun i -> true) "DAtaS"));
-  "beiginwith_empty" >:: (fun _ -> assert_equal ["datastruct";"data"] (Trie.begin_with datastruct (fun i -> true) ""));
+  "beiginwith_empty" >:: (fun _ -> assert_equal ["datastruct";"Data"] (Trie.begin_with datastruct (fun i -> true) ""));
   "beiginwith_shit" >:: (fun _ -> assert_equal [] (Trie.begin_with datastruct (fun i -> true) "shit"));
   "beiginwith_predicate" >:: (fun _ -> assert_equal [] (Trie.begin_with datastruct (fun i -> false) "DA"));
   "beiginwith_predicate'" >:: (fun _ -> assert_equal ["datastruct"]
@@ -55,8 +57,14 @@ let stress_test = [
 
   "beginwithemp" >:: (fun _ -> assert_equal ((strs |> List.length) - 1)
                          ((Trie.begin_with strs_trie (fun i -> true) "")|> List.length));
-  "beginwithxin" >:: (fun _ -> assert_equal ["xinqi";"xinzhe"]
+  "beginwithxin" >:: (fun _ -> assert_equal ["xinqi";"XINzhe"]
                          (Trie.begin_with strs_trie (fun i -> true) "Xin"));
+
+  "stress_mem" >:: (fun _ -> assert_equal (List.init (List.length strs) (fun i -> true))
+                      (List.map (fun i -> Trie.memb strs_trie i) strs));
+
+  "str_begin" >:: (fun _ -> assert_equal ["structure"]
+                         (Trie.begin_with strs_trie (fun i -> true) "STR"));
 ]
 let tests =
   "test suite for Trie" >::: List.flatten [

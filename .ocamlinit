@@ -1,7 +1,8 @@
 #require "str"
 #require "camlimages"
 #require "camlimages.png"
+#require "yojson"
 #directory "_build";;
 #load "image.cmo";;
-#load "graph.cmo";;
 #load "trie.cmo";;
+#load "graph.cmo";;

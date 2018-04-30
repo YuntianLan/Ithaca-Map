@@ -29,7 +29,7 @@ let rec find_helper (trie:'a trie) (ks:char list) : 'a trie =
   | n, [] -> n
   | Node (_, children), h::t ->
     try
-      find_helper (snd (List.find (fun child -> Char.lowercase_ascii (fst child) = h) children)) t
+      find_helper (snd (List.find (fun child -> fst child = h) children)) t
     with
     | Not_found -> empty
 
@@ -58,7 +58,7 @@ let rec insert_helper (trie:'a trie) (ks:char list) (v:'a) : 'a trie =
     Node (value, new_children)
 
 let insert (trie:'a trie) (s:string) (v:'a) : 'a trie =
-  insert_helper trie (to_charlist s) v
+  insert_helper trie (s |> String.lowercase_ascii |> to_charlist) v
 
 (* [get_all_nodes t f acc] is the list of all values that satisfies the predicate
  * [f] in [t] and [acc] *)
@@ -79,8 +79,3 @@ let rec get_all_nodes (trie:'a trie) (f:'a -> bool) (acc:'a list):'a list =
 let begin_with (trie:'a trie) (f:'a -> bool) (s:string) : 'a list =
   let found = find_helper trie (s |> String.lowercase_ascii |> to_charlist) in
   get_all_nodes found f []
-
-
-
-
-
