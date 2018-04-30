@@ -1,4 +1,5 @@
 B _build
+PKG oUnit
 PKG js_of_ocaml
 PKG js_of_ocaml-lwt
 PKG js_of_ocaml.syntax

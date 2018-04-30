@@ -425,33 +425,36 @@ module Images : MapImage = struct
   
   let build_full_map (res:result) =
     let img_grid = res.img_grid in
-    let int_tilesize = int_of_float tile_size in
-    let fullimg_h = (img_grid |> List.length) * int_tilesize in
-    let fullimg_w = (img_grid |> List.hd |> List.length) * int_tilesize in
-    let buffer_rgb = Rgb24.create fullimg_w fullimg_h in
-    List.iteri (fun j imglst ->
-        List.iteri (fun i img_path_i ->
-            let img_rgb24 = Png.load_as_rgb24 img_path_i [] in
-            match img_rgb24 with
-            | Rgb24 bmp ->
-              let w = bmp.Rgb24.width in
-              let h = bmp.Rgb24.height in
-              Rgb24.blit bmp 0 0 buffer_rgb (i*int_tilesize) (j*int_tilesize) w h;
-            | _ -> failwith "Only supports RGB24"
-          ) imglst) img_grid;
-    Png.save "testcheap.png" [] (Rgb24 buffer_rgb);
-    let ch = open_in "testcheap.png" in
-    let buf = Buffer.create (fullimg_w * fullimg_h * 3) in
-    try 
-      Buffer.add_channel buf ch (fullimg_w * fullimg_h * 3);
-      close_in ch;
-      Buffer.to_bytes buf
-    with
-    | _ -> Buffer.to_bytes buf
-  
+    if (res.status = false || List.length img_grid = 0
+        || img_grid |> List.hd |> List.length = 0) then
+      Bytes.empty
+    else
+      let int_tilesize = int_of_float tile_size in
+      let fullimg_h = (img_grid |> List.length) * int_tilesize in
+      let fullimg_w = (img_grid |> List.hd |> List.length) * int_tilesize in
+      let buffer_rgb = Rgb24.create fullimg_w fullimg_h in
+      List.iteri (fun j imglst ->
+          List.iteri (fun i img_path_i ->
+              let img_rgb24 = Png.load_as_rgb24 img_path_i [] in
+              match img_rgb24 with
+              | Rgb24 bmp ->
+                let w = bmp.Rgb24.width in
+                let h = bmp.Rgb24.height in
+                Rgb24.blit bmp 0 0 buffer_rgb (i*int_tilesize) (j*int_tilesize) w h;
+              | _ -> failwith "Only supports RGB24"
+            ) imglst) img_grid;
+      Png.save "testcheap.png" [] (Rgb24 buffer_rgb);
+      let ch = open_in "testcheap.png" in
+      let buf = Buffer.create (fullimg_w * fullimg_h * 3) in
+      try 
+        Buffer.add_channel buf ch (fullimg_w * fullimg_h * 3);
+        close_in ch;
+        Buffer.to_bytes buf
+      with
+      | _ -> Buffer.to_bytes buf
+    
     let decode (buf:bytes) =
       let ch = open_out_bin "testencode.png" in
-      (* output ch buf 0 (Bytes.length buf) *)
       output_bytes ch buf;
       close_out ch
 
