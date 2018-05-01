@@ -12,16 +12,37 @@ let test_get_node_by_coord = [
   "test1" >:: (fun _ -> assert_equal (42.375543, -76.415228) 
               (Map.get_node_by_coord 42.40 (-76.3) t |> Map.node_to_coord));
 
-  "test2" >:: (fun _ -> assert_equal (42.375543, -76.415228) 
-              (Map.get_node_by_coord 42.40 (-76.3) t |> Map.node_to_coord));
+  "test2" >:: (fun _ -> assert_equal (42.318172, -76.374253) 
+              (Map.get_node_by_coord 40.0 (-70.0) t |> Map.node_to_coord));
 
+  "test3" >:: (fun _ -> assert_equal (42.318172, -76.374253) 
+              (Map.get_node_by_coord 30.0 (-60.0) t |> Map.node_to_coord)); 
+
+  "test4" >:: (fun _ -> assert_equal (42.5043439, -76.3593372)
+              (Map.get_node_by_coord 100.0 (30.0) t |> Map.node_to_coord)); 
+
+  "test5" >:: (fun _ -> assert_equal (42.5043439, -76.3593372)
+              (Map.get_node_by_coord （-60.0） (30.0) t |> Map.node_to_coord)); 
+
+  "test6" >:: (fun _ -> assert_equal (42.5043439, -76.3593372)
+              (Map.get_node_by_coord （-60.0） (-30.0) t |> Map.node_to_coord)); 
+
+  "test7" >:: (fun _ -> assert_equal (42.5043439, -76.3593372)
+              (Map.get_node_by_coord 41.0 (-70.0) t |> Map.node_to_coord)); 
+
+  "test8" >:: (fun _ -> assert_equal (42.5043439, -76.3593372)
+              (Map.get_node_by_coord 43.0 (-80.0) t |> Map.node_to_coord));   
 ]
-
 
 
 (* Test get_node_by_name *)
 
-let test_get_node_by_name = []
+let test_get_node_by_name = [
+  "test1" >:: (fun _ -> assert_equal (42.375543, -76.415228) 
+              (Map.get_node_by_coord 42.40 (-76.3) t |> Map.node_to_coord));
+ 
+
+]
 
 
 (* Test find_path *)
