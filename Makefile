@@ -6,10 +6,7 @@ runserver:
 test:
 	ocamlbuild -use-ocamlfind test_trie.byte && ./test_trie.byte
 	ocamlbuild -use-ocamlfind test_image.byte && ./test_image.byte
-
-graphtest :
 	ocamlbuild -use-ocamlfind test_graph.byte && ./test_graph.byte
-
 zip:
 	zip src.zip *.ml*
 install-dep:

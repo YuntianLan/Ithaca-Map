@@ -275,16 +275,19 @@ module Map : MapGraph = struct
 
 	(* Convert a json to a node object *)
 	let j2node n = 
-		let id = n |> member "id" |> to_string |> int_of_string in 
+		let id = n |> member "id" |> to_string |> int_of_string in
 		let lat = n |> member "lat" |> to_string |> float_of_string in
 		let lon = n |> member "lon" |> to_string |> float_of_string in
 		let tags = n |> member "tags" |> to_assoc |> 
 			List.map (fun (x,y) -> x, to_string y) in
-		let name = 
-		(match List.filter (fun (x,_) -> x == "name") tags with
+		(* let name = 
+		(match List.filter (fun (x,_) -> x = "name") tags with
 			| [] -> "" 
 			| h::_ -> (snd h)
-		) in
+		)  in *)
+		let name = match List.assoc_opt "name" tags with
+		| None -> ""
+		| Some s -> s in
 		let categ = match (List.assoc_opt "amenity" tags, 
 			List.assoc_opt "shop" tags) with
 			| None, None -> Some Other
@@ -524,7 +527,7 @@ module Map : MapGraph = struct
 		let comp n1 n2 = n1 - n2 in
 		List.sort_uniq comp lst
 
-
+(* 4209899393 *)
 
 	(* [init_graph file_name] initialize a graph given a json file *)
 	let init_graph file_name = 
