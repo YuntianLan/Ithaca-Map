@@ -41,17 +41,25 @@ let test = [
   "ullat" >:: (fun _ -> assert_equal (42.4883) q2.res_upleft_lat);
   "lwlon" >:: (fun _ -> assert_equal (-76.4649) q2.res_lowright_lon);
   "lwlat" >:: (fun _ -> assert_equal (42.4235) q2.res_lowright_lat);
+  "ullon_in_root" >:: (fun _ -> assert_equal true (-76.5527 <= q2.res_upleft_lon));
+  "ullon_contain" >:: (fun _ -> assert_equal true (params_512.param_upleft_lon >= q2.res_upleft_lon));
+  "ullat_in_root" >:: (fun _ -> assert_equal true (42.4883 >= q2.res_upleft_lat));
+  "ullat_contain" >:: (fun _ -> assert_equal true (params_512.param_upleft_lat <= q2.res_upleft_lat));
+  "lwlon_in_root" >:: (fun _ -> assert_equal true (-76.4649 >= q2.res_lowright_lon));
+  "lwlon_contain" >:: (fun _ -> assert_equal true (params_512.param_lowright_lon <= q2.res_lowright_lon));
+  "lwlat_in_root" >:: (fun _ -> assert_equal true (42.4235 <= q2.res_lowright_lat));
+  "lwlat_contain" >:: (fun _ -> assert_equal true (params_512.param_lowright_lat >= q2.res_lowright_lat));
 
   "valid_smaller" >:: (fun _ -> assert_equal true q3.status);
   "check_depth" >:: (fun _ -> assert_equal 4 q3.tree_depth);
-  "ullon_in_root" >:: (fun _ -> assert_equal true (-76.5527 <= q2.res_upleft_lon));
-  "ullon_contain" >:: (fun _ -> assert_equal true (params_1200.param_upleft_lon >= q2.res_upleft_lon));
-  "ullat_in_root" >:: (fun _ -> assert_equal true (42.4883 >= q2.res_upleft_lat));
-  "ullat_contain" >:: (fun _ -> assert_equal true (params_1200.param_upleft_lat <= q2.res_upleft_lat));
-  "lwlon_in_root" >:: (fun _ -> assert_equal true (-76.4649 >= q2.res_lowright_lon));
-  "lwlon_contain" >:: (fun _ -> assert_equal true (params_1200.param_lowright_lon <= q2.res_lowright_lon));
-  "lwlat_in_root" >:: (fun _ -> assert_equal true (42.4235 <= q2.res_lowright_lat));
-  "lwlat_contain" >:: (fun _ -> assert_equal true (params_1200.param_lowright_lat >= q2.res_lowright_lat));
+  "ullon_in_root" >:: (fun _ -> assert_equal true (-76.5527 <= q3.res_upleft_lon));
+  "ullon_contain" >:: (fun _ -> assert_equal true (params_1200.param_upleft_lon >= q3.res_upleft_lon));
+  "ullat_in_root" >:: (fun _ -> assert_equal true (42.4883 >= q3.res_upleft_lat));
+  "ullat_contain" >:: (fun _ -> assert_equal true (params_1200.param_upleft_lat <= q3.res_upleft_lat));
+  "lwlon_in_root" >:: (fun _ -> assert_equal true (-76.4649 >= q3.res_lowright_lon));
+  "lwlon_contain" >:: (fun _ -> assert_equal true (params_1200.param_lowright_lon <= q3.res_lowright_lon));
+  "lwlat_in_root" >:: (fun _ -> assert_equal true (42.4235 <= q3.res_lowright_lat));
+  "lwlat_contain" >:: (fun _ -> assert_equal true (params_1200.param_lowright_lat >= q3.res_lowright_lat));
 ]
 
 
