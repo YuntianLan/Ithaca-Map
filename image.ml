@@ -10,7 +10,7 @@ let root_upleft_lat = 42.4883
 let root_lowright_lon = -76.4649
 let root_lowright_lat = 42.4235
 let tile_size = 256.0
-
+let max_img_size = 6000000
 (* ============================== *)
 
 module type MapImage = sig
@@ -422,7 +422,7 @@ module Images : MapImage = struct
       done
     done;
     buffer_byte *)
-  
+
   let build_full_map (res:result) =
     let img_grid = res.img_grid in
     if (res.status = false || List.length img_grid = 0
@@ -445,17 +445,12 @@ module Images : MapImage = struct
             ) imglst) img_grid;
       Png.save "testcheap.png" [] (Rgb24 buffer_rgb);
       let ch = open_in "testcheap.png" in
-      let buf = Buffer.create (fullimg_w * fullimg_h * 3) in
-      try 
-        Buffer.add_channel buf ch (fullimg_w * fullimg_h * 3);
+      let buf = Buffer.create max_img_size in
+      try
+        Buffer.add_channel buf ch max_img_size;
         close_in ch;
         Buffer.to_bytes buf
       with
       | _ -> Buffer.to_bytes buf
-    
-    let decode (buf:bytes) =
-      let ch = open_out_bin "testencode.png" in
-      output_bytes ch buf;
-      close_out ch
 
 end
