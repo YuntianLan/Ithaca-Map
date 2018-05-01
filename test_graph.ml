@@ -42,9 +42,9 @@ let test_get_node_by_name = [
               (match (Map.get_node_by_name "Gates Hall" t) with 
               | Some x -> Map.node_to_coord x | None -> (0.0,0.0)));
 
-(*   "test2" >:: (fun _ -> assert_equal (42.4281548, -76.4691226)
+  "test2" >:: (fun _ -> assert_equal (42.4281548, -76.4691226)
               (match (Map.get_node_by_name "Hillside Alliance Church" t) with 
-              | Some x -> Map.node_to_coord x | None -> (0.0,0.0))); *)
+              | Some x -> Map.node_to_coord x | None -> (0.0,0.0))); 
 
 ]
 
