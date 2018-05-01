@@ -48,8 +48,8 @@ type t = {
 }
 
 
-let sip = Unix.inet_addr_of_string "10.132.12.66"
-let sport = 4998
+let sip = Unix.inet_addr_of_string "127.0.0.1"
+let sport = 4996
 
 
 let init_server () =
@@ -58,21 +58,24 @@ let init_server () =
 	{imagetree = tr; mapgraph = gr}
 
 
-
+(* [lst2str lst] converts the string list to the string
+ * representation of the list *)
 let lst2str lst = 
 	let rec helper l acc start = 
 		match l with
-		| [] -> acc ^ "]"
+		| [] -> if (not start) then acc ^ "]" else "[]"
 		| h::t -> 
 			let nacc = if start then "[" ^ h
 			else (acc ^ ";" ^ h) in
 			helper t nacc false in
 	helper lst "" true
 
+(* [slst2str lst] does similar things to lst2str, except
+ * the target is a string list list *)
 let slst2str lst = 
 	let rec helper l acc start = 
 		match l with
-		| [] -> acc ^ "]"
+		| [] -> if (not start) then acc ^ "]" else "[]"
 		| h::t -> 
 			let nacc = if start then "[" ^ (lst2str h)
 			else (acc ^ ";" ^ (lst2str h)) in
@@ -81,26 +84,15 @@ let slst2str lst =
 
 
 
-let rec handle_client tg desc =
-	let str = Bytes.make 1024 ' ' in
-	let rec get_len () =
-		let _ = print_endline "waiting for response" in
-		if Thread.wait_timed_read desc 0.5 then
-			Unix.recv desc str 0 1024 []
-		else
-			let _ = print_endline "yielding to other threads" in
-			let _ = Thread.yield () in 
-			get_len ()
-	in
-	let len = get_len () in
-	let _ = print_endline "received message from client" in
-	let s = Bytes.to_string (Bytes.sub str 0 len) in
+(* [responst_bytes] tg s takes in the tree/graph and
+ * the request string, respond with a stream of bytes *)
+let response_bytes tg s = 
 	let args = String.split_on_char ' ' s in
 	let idx = List.hd args in
-	(* Coordinates to nearest node coord *)
 	if idx = "1" then
 		let res = try
 			if (List.length args) < 3 then
+				Bytes.of_string
 				"Error: too few arguments for service 1"
 			else
 				let lat = float_of_string (List.nth args 1) in
@@ -110,38 +102,47 @@ let rec handle_client tg desc =
 				let rlat, rlon = MapGraph.node_to_coord nd in
 				let slat = string_of_float rlat in
 				let slon = string_of_float rlon in
-				slat ^ " " ^ slon
-		with _ -> "Error: invalid command for service 1"
-		in
-		let _ = Unix.send_substring desc res 0
-			(String.length res) [] in
-		Thread.yield ();
-		handle_client tg desc
+				Bytes.of_string (slat ^ " " ^ slon)
+		with _ -> 
+			Bytes.of_string "Error: invalid command for service 1"
+		in res
 	(* Location name to node coord *)
 	else if idx = "2" then
 		let res = try
-			if (String.length s) < 3 then
+			if (String.length s) < 3 then Bytes.of_string
 				"Error: string length for service 2 too short"
 			else
 				let name = String.sub s 2 ((String.length s)-2) in
 				match MapGraph.get_node_by_name name tg.mapgraph with
-				| None -> "Error: location not found"
+				| None -> Bytes.of_string "Error: location not found"
 				| Some nd ->
 					let lat, lon = MapGraph.node_to_coord nd in
-					(string_of_float lat) ^ " " ^ (string_of_float lon)
-		with _ -> "Error: invalid command for service 2"
-		in
-		let _ = Unix.send_substring desc res 0
-			(String.length res) [] in
-		Thread.yield ();
-		handle_client tg desc
+					Bytes.of_string
+					((string_of_float lat) ^ " " ^ (string_of_float lon))
+		with _ -> 
+			Bytes.of_string "Error: invalid command for service 2"
+		in res
 	(* Path from one coord to another coord *)
 	else if idx = "3" then
-		let res = "Error: idx 3 not implemented" in
-		let _ = Unix.send_substring desc res 0
-			(String.length res) [] in
-		Thread.yield ();
-		handle_client tg desc
+		try
+			let drive = (List.nth args 1) = "drive" in
+			let slat = float_of_string (List.nth args 2) in
+			let slon = float_of_string (List.nth args 3) in
+			let elat = float_of_string (List.nth args 4) in
+			let elon = float_of_string (List.nth args 5) in
+			let ns = MapGraph.get_node_by_coord slat slon tg.mapgraph in
+			let ne = MapGraph.get_node_by_coord elat elon tg.mapgraph in
+			let trip_len, path = MapGraph.find_path drive
+				ns ne tg.mapgraph in
+			let floats = List.map MapGraph.node_to_coord path in
+			let strs = List.map (fun (la,lo) -> 
+				(string_of_float la) ^ "," ^ (string_of_float lo)) floats in
+			let accum a b = a ^ ";" ^ b in
+			let total_str = List.fold_left accum (List.hd strs) (List.tl strs) in
+			let res_bts = (string_of_float trip_len) ^ " " ^ total_str in
+			Bytes.of_string res_bts
+		with
+		| _ -> Bytes.of_string "illegal arguments for service 3"
 	(* Result and image given client param *)
 	else if idx = "4" then
 		let _ = print_endline "entered 4" in
@@ -158,12 +159,10 @@ let rec handle_client tg desc =
 		begin match prm with
 		| None ->
 			let _ = print_endline "nothing, sending" in
-			let res = "Error: exception in parsing parameter!" in
-			let _ = Unix.send_substring desc res 0
-				(String.length res) [] in
-			let _ = Unix.send desc (Bytes.make 10 'a') 0 10 [] in
-			Thread.yield ();
-			handle_client tg desc
+			let res = 
+				Bytes.of_string 
+					"Error: exception in parsing parameter!" in
+			res
 		| Some pm ->
 			let _ = print_endline "something, sending" in
 			let rt = ImageTree.query_image tg.imagetree pm in
@@ -176,41 +175,58 @@ let rec handle_client tg desc =
 			let depth = string_of_int rt.tree_depth in
 			let status = if rt.status then "1" else "0" in
 			let res1 = grid ^ " " ^ lal1 ^ " " ^ lol1 ^ " " ^ 
-				lar1 ^ " " ^ lor1 ^ " " ^ depth ^ " " ^ status in
-			let _ = print_endline "sending res1" in
-			Unix.send_substring desc res1 0 
-				(String.length res1) [];
-			let _ = print_endline "sending res2" in
-			Unix.send desc bts 0 (Bytes.length bts) [];
-			let _ = print_endline "finished, yielding" in
-			Thread.yield ();
-			handle_client tg desc
+				lar1 ^ " " ^ lor1 ^ " " ^ depth ^ " " ^ status ^ " " in
+			let _ = print_endline res1 in
+			let _ = print_endline "bytes length:" in
+			let _ = print_int (Bytes.length bts) in
+			let res = Bytes.cat (Bytes.of_string res1) bts in
+			res
 		end
-	(* Path from one coord to another coord *)
-	else if idx = "5" then
-		let res = Bytes.make 12582912 ' ' in
-		let _ = Unix.send desc res 0 12582912  [] in
-		Thread.yield ();
-		handle_client tg desc
-	(* Client willingly terminates connection *)
-	else if ((idx = "quit") || (idx = "exit")) then
-		let _ = Unix.close desc in
-		Thread.exit ()
 	(* Error *)
 	else
 		let res = "Error: improper request" in
-		let _ = Unix.send_substring desc res 0
-			(String.length res) [] in
-		Thread.yield ();
+		Bytes.of_string res
+
+
+
+
+
+
+(* [handle_client tg desc] takes in the client connection
+ * desc and respond to its requests until the connection
+ * has ended. *)
+let rec handle_client tg desc : unit =
+	let str = Bytes.make 1024 ' ' in
+	let rec get_len () =
+		(* let _ = print_endline "waiting for response" in *)
+		if Thread.wait_timed_read desc 0.5 then
+			Unix.recv desc str 0 1024 []
+		else
+			(* let _ = print_endline "yielding to other threads" in *)
+			let _ = Thread.yield () in 
+			get_len ()
+	in
+	let len = get_len () in
+	let _ = print_endline "received message from client" in
+	let s = Bytes.to_string (Bytes.sub str 0 len) in
+	if ((s = "exit") || (s = "quit")) then
+		let _ = Unix.close desc in
+		Thread.exit ()
+	else if s="test" then
+		let _ = Unix.send desc 
+			(Bytes.create 1000000) 0 1000000 [] in
+		handle_client tg desc
+	else
+		let res = response_bytes tg s in
+		let _ = Unix.send desc res 0 (Bytes.length res) [] in
 		handle_client tg desc
 
 
 
-let rec test s () =
-	print_endline s;
-	Thread.delay 2.;
-	Thread.yield ();
-	test s ()
+
+
+
+
 
 let rec begin_service tg =
 	let server_socket =
@@ -225,6 +241,26 @@ let rec begin_service tg =
 	begin_service tg
 	(* handle_client tg desc *)
 
+(* The temporary begin_service is a mini version of the
+ * actual one in that it only allows one single connection. *)
+let rec begin_service_temp tg = 
+	let server_socket = 
+		Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
+	let _ = Unix.bind server_socket
+	 (Unix.ADDR_INET(sip,sport)) in
+	let _ = Unix.listen server_socket 1 in
+	let desc, addr = Unix.accept server_socket in
+	let _ = print_endline "connected" in
+	let thr = Thread.create (handle_client tg) desc in
+	Thread.join thr;
+	begin_service_temp tg
 
 
-let _ = begin_service (init_server ())
+
+let _ = begin_service_temp (init_server ())
+
+
+
+
+
+

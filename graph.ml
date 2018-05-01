@@ -280,11 +280,6 @@ module Map : MapGraph = struct
 		let lon = n |> member "lon" |> to_string |> float_of_string in
 		let tags = n |> member "tags" |> to_assoc |> 
 			List.map (fun (x,y) -> x, to_string y) in
-		(* let name = 
-		(match List.filter (fun (x,_) -> x = "name") tags with
-			| [] -> "" 
-			| h::_ -> (snd h)
-		)  in *)
 		let name = match List.assoc_opt "name" tags with
 		| None -> ""
 		| Some s -> s in
@@ -656,7 +651,11 @@ module Map : MapGraph = struct
 
 	(* Expand a node (nid * dist * path list) triple into a list of triples *)
 	let expand (id,dist,path) nd_table eg_table =
-		let neighbor_ids = H.find eg_table id in
+		let _ = print_endline "step 1" in
+		let neighbor_ids = 
+			try H.find eg_table id
+			with _ -> [] in
+		let _ = print_endline "step 2" in
 		let nodes = List.map (H.find nd_table) neighbor_ids in
 		let exp_func n =
 			let new_dist = dist +. distance id n.nid nd_table in
@@ -782,23 +781,7 @@ module Map : MapGraph = struct
 
 end
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+let g = Map.init_graph "graph/full.json"
+let n1 = Map.get_node_by_coord 42.813746 (-76.7116266) g
+let n2 = Map.get_node_by_coord 42.6753 (-76.11712) g
 
