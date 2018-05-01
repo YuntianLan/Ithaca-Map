@@ -28,7 +28,7 @@ type t
 
 (* [init_server] builds the pre-processed tree
  * and graph and creates the server. *)
-val init_server : t
+val init_server : unit -> t
 
 (* [begin_service t] makes the server to start
  * listening to client requests continuously
