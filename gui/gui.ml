@@ -55,7 +55,7 @@ let iter_nodeList nodeList f =
   done
 (* close all autocomplete lists in the document,
 except the one passed as an argument: *)
-let closeAllList elt inp =
+(* let closeAllList elt inp =
   match elt with
   | None -> failwith "ua"
   (* let element = Html.createDiv doc in
@@ -71,8 +71,31 @@ let closeAllList elt inp =
   (fun i ->
   if(element <> i && element <> inp) 
   then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i)
-  ) 
+  )  *)
 
+
+let closeAllList elt inp y =
+  match elt with
+  | None -> let element =  (Html.createDiv doc) in
+  let x = doc##getElementsByClassName (js "autocomplete-items") in
+  (* let childNodes = x##childNodes in *)
+  for i = 0 to x##length - 1 do
+   Js.Opt.iter (x##item (i))
+   (fun i ->
+   if(element <> i && element <> inp) 
+   then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
+  done
+
+  | Some element -> 
+
+   let x = doc##getElementsByClassName (js "autocomplete-items") in
+   (* let childNodes = x##childNodes in *)
+   for i = 0 to x##length - 1 do
+    Js.Opt.iter (x##item (i))
+    (fun i ->
+    if(element <> i && element <> inp) 
+    then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
+   done
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
   (* let doc = Html.document in *)
@@ -219,7 +242,7 @@ let onload _ =
       let a = Html.createDiv doc in
       (* let i = ref (input_1##value) in *)
       let v = Js.to_string input_1##value in
-      (* closeAllList None input_1; *)
+      closeAllList None input_1;
       (* if(v = "") then failwith "not possible"; *)
       currentFocus := -1;
 
@@ -246,8 +269,11 @@ let onload _ =
           Js.Opt.iter firstone 
           (fun i ->  
           let content = i##textContent in
-          !b##onclick <- Dom_html.handler
-          (fun _ -> input_1##value <- js content;Js._true));
+          begin
+          match Js.Opt.to_option content with
+          | None -> ()
+          | Some content -> !b##onclick <- Dom_html.handler (fun _ -> input_1##value <- content;Js._true)
+          end);
 
           Dom.appendChild a !b
       (* Js.Opt.iter (childNodes##item i) *)
