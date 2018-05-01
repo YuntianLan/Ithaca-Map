@@ -12,9 +12,9 @@
 
 
 let sip = Unix.inet_addr_of_string "10.132.12.66"
-let cip = Unix.inet_addr_of_string "127.0.0.1"
-let cport = 3411
-let sport = 4999
+let cip = Unix.inet_addr_of_string "10.132.4.191"
+let cport = 3423
+let sport = 4998
 
 (* Example string for service 1 *)
 (* Order: lat; lon *)
@@ -53,8 +53,10 @@ let eg_resp4_2 = Bytes.make 1024 ' '
 let init_client () =
 	let client_socket =
 		Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
+	let () = print_endline  "sdf" in
 	let _ = Unix.bind client_socket
 		(Unix.ADDR_INET(cip, cport)) in
+	let () = print_endline  "absa" in
 	let _ = Unix.connect
 		client_socket (Unix.ADDR_INET(sip,sport)) in
 	client_socket
