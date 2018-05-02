@@ -38,7 +38,9 @@ let doc = Html.document
 
 let countries = ["Afghanistan";"Albania";"Algeria";"Andorra";"Angola";"Anguilla";"Antigua & Barbuda";"Argentina";"Armenia";"Aruba";"Australia";"Austria";"Azerbaijan";"Bahamas";"Bahrain";"Bangladesh";"Barbados";"Belarus";"Belgium";"Belize";"Benin";"Bermuda";"Bhutan";"Bolivia";"Bosnia & Herzegovina";"Botswana";"Brazil";"British Virgin Islands";"Brunei";"Bulgaria";"Burkina Faso";"Burundi";"Cambodia";"Cameroon";"Canada";"Cape Verde";"Cayman Islands";"Central Arfrican Republic";"Chad";"Chile";"China";"Colombia";"Congo";"Cook Islands";"Costa Rica";"Cote D Ivoire";"Croatia";"Cuba";"Curacao";"Cyprus";"Czech Republic";"Denmark";"Djibouti";"Dominica";"Dominican Republic";"Ecuador";"Egypt";"El Salvador";"Equatorial Guinea";"Eritrea";"Estonia";"Ethiopia";"Falkland Islands";"Faroe Islands";"Fiji";"Finland";"France";"French Polynesia";"French West Indies";"Gabon";"Gambia";"Georgia";"Germany";"Ghana";"Gibraltar";"Greece";"Greenland";"Grenada";"Guam";"Guatemala";"Guernsey";"Guinea";"Guinea Bissau";"Guyana";"Haiti";"Honduras";"Hong Kong";"Hungary";"Iceland";"India";"Indonesia";"Iran";"Iraq";"Ireland";"Isle of Man";"Israel";"Italy";"Jamaica";"Japan";"Jersey";"Jordan";"Kazakhstan";"Kenya";"Kiribati";"Kosovo";"Kuwait";"Kyrgyzstan";"Laos";"Latvia";"Lebanon";"Lesotho";"Liberia";"Libya";"Liechtenstein";"Lithuania";"Luxembourg";"Macau";"Macedonia";"Madagascar";"Malawi";"Malaysia";"Maldives";"Mali";"Malta";"Marshall Islands";"Mauritania";"Mauritius";"Mexico";"Micronesia";"Moldova";"Monaco";"Mongolia";"Montenegro";"Montserrat";"Morocco";"Mozambique";"Myanmar";"Namibia";"Nauro";"Nepal";"Netherlands";"Netherlands Antilles";"New Caledonia";"New Zealand";"Nicaragua";"Niger";"Nigeria";"North Korea";"Norway";"Oman";"Pakistan";"Palau";"Palestine";"Panama";"Papua New Guinea";"Paraguay";"Peru";"Philippines";"Poland";"Portugal";"Puerto Rico";"Qatar";"Reunion";"Romania";"Russia";"Rwanda";"Saint Pierre & Miquelon";"Samoa";"San Marino";"Sao Tome and Principe";"Saudi Arabia";"Senegal";"Serbia";"Seychelles";"Sierra Leone";"Singapore";"Slovakia";"Slovenia";"Solomon Islands";"Somalia";"South Africa";"South Korea";"South Sudan";"Spain";"Sri Lanka";"St Kitts & Nevis";"St Lucia";"St Vincent";"Sudan";"Suriname";"Swaziland";"Sweden";"Switzerland";"Syria";"Taiwan";"Tajikistan";"Tanzania";"Thailand";"Timor L'Este";"Togo";"Tonga";"Trinidad & Tobago";"Tunisia";"Turkey";"Turkmenistan";"Turks & Caicos";"Tuvalu";"Uganda";"Ukraine";"United Arab Emirates";"United Kingdom";"United States of America";"Uruguay";"Uzbekistan";"Vanuatu";"Vatican City";"Venezuela";"Vietnam";"Virgin Islands (US)";"Yemen";"Zambia";"Zimbabwe"]
 
+(* Set the class of an Html element *)
 let setClass elt s = elt##className <- js s
+(* Set the ID of an Html element *)
 let setId elt s = elt##id <- js s
 
 let append_text e s = Dom.appendChild e (doc##createTextNode (js s))
@@ -48,22 +50,23 @@ let get_element_by_id id =
   Js.Opt.get (Html.document##getElementById (js id)) fail
 
 
-let closeAllList elt input =
-  Js.Opt.iter input (fun inp ->
-      match elt with
-      | None -> let element =  (Html.createDiv doc) in
-        let x = doc##getElementsByClassName (js "autocomplete-items") in
-        for i = 0 to x##length - 1 do
-          Js.Opt.iter (x##item (i))
-            (fun i ->
-               if(element <> i && element <> inp)
-               then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
-        done
-      | Some element ->
-        let x = doc##getElementsByClassName (js "autocomplete-items") in
-        for i = 0 to x##length - 1 do
-          Js.Opt.iter (x##item (i))
-            (fun i -> if(element <> i && element <> inp)
+(* close all autocomplete lists in the document*)
+    let closeAllList elt input =
+      Js.Opt.iter input (fun inp ->
+          match elt with
+          | None -> let element =  (Html.createDiv doc) in
+            let x = doc##getElementsByClassName (js "autocomplete-items") in
+            for i = 0 to x##length - 1 do
+              Js.Opt.iter (x##item (i))
+                (fun i ->
+                   if(element <> i && element <> inp)
+                   then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
+            done
+          | Some element ->
+            let x = doc##getElementsByClassName (js "autocomplete-items") in
+            for i = 0 to x##length - 1 do
+              Js.Opt.iter (x##item (i))
+                (fun i -> if(element <> i && element <> inp)
               then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
         done
     )
@@ -186,6 +189,7 @@ let onload _ =
   Dom.appendChild span_icons_container a_zoomout;
   Dom.appendChild span_icons_container a_info;
 
+  (* When the question mark icon is clicked, show the info subtext *)
   a_info##onclick <- Dom_html.handler
       (fun _ ->
          if div_info_text##style##display = Js.string "none" then
@@ -198,6 +202,7 @@ let onload _ =
   let div_nothing = Html.createDiv doc in
   Dom.appendChild div_actions div_nothing;
 
+  (* Clear the text in the textbox when "Clear Route" is clicked *)
   let a_clear = Html.createA doc in
   setClass a_clear "clear waves-effect btn";
   append_text a_clear "clear route";
@@ -207,15 +212,17 @@ let onload _ =
          Js._true);
   Dom.appendChild div_nothing a_clear;
 
+
+
+  (* the autocompletion functionality *)
   let currentFocus = ref 0 in
   input_1##oninput <- Html.handler
     (fun _ ->
       doc##onclick <- Html.handler (fun ev -> (closeAllList (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element input_1));Js._true);
+      (* Create a new div to contain all the relevant autocomplete item *)
       let a = Html.createDiv doc in
-      (* let i = ref (input_1##value) in *)
       let v = Js.to_string input_1##value in
       closeAllList None (Dom_html.CoerceTo.element input_1);
-         (* if(v = "") then failwith "not possible"; *)
       currentFocus := -1;
 
          (* let newDiv = Html.createDiv doc in *)
@@ -228,14 +235,20 @@ let onload _ =
       for i = 0 to List.length countries - 1 do
       let word = List.nth countries i in
       if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)
+      (* create a DIV element for each matching element: *)
       then let b = ref (Html.createDiv doc) in
+      (* make the matching letters bold: *)
       let inn = "<strong>" ^ (String.sub word 0 (String.length v)) ^ "</strong>" ^
         (String.sub word (String.length v) (String.length word-String.length v))^
         "<input type='hidden' value='" ^ word ^ "'>" in
         !b##innerHTML <- js inn;
+        (* execute a function when someone clicks on the item value (DIV element): *)
+        (* When one of the suggested text is clicked, change the input to that word. *)
         !b##onclick <- Html.handler
-          (fun _ ->
+            (fun _ ->
+            (* returns a Dom.nodeList *)
             let inputfield = (!b)##getElementsByTagName (js "input") in
+            (* the first item of the list *)
             let firstone = inputfield##item (0) in
             Js.Opt.iter firstone
               (fun node ->
@@ -245,14 +258,10 @@ let onload _ =
                   let input = Dom_html.CoerceTo.input elt in
                   Js.Opt.iter input
                   (fun i ->
+                    (* change the value in the textbox to the clicked text *)
                     let content = i##value in
                     input_1##value <- content
 
-                  (* begin
-                  match Js.Opt.to_option content with
-                  | None -> ()
-                  | Some content -> input_1##value <- content
-                  end *)
                   )
                 )
             )
@@ -266,5 +275,6 @@ let onload _ =
       Js._true);
   Js._false
 
+(* Start to load the page *)
 let () =
   Dom_html.window##onload <- Dom_html.handler onload
