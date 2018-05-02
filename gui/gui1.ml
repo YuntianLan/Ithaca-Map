@@ -12,8 +12,7 @@ let init_upleft_lon = -76.5527
 let init_upleft_lat = 42.4883
 let init_lowright_lon = -76.4649
 let init_lowright_lat = 42.4235
-let safe_width = 1120
-let safe_height = 800
+
 
 type params = {
   upleft_lon: float;
@@ -54,49 +53,27 @@ let iter_nodeList nodeList f =
     (* Unsafe.get is ten time faster than nodeList##item *)
     f (Js.Unsafe.get nodeList i)
   done
-(* close all autocomplete lists in the document,
-   except the one passed as an argument: *)
-(* let closeAllList elt inp =
-   match elt with
-   | None -> failwith "ua"
-   (* let element = Html.createDiv doc in
-   let lst = Html.document##getElementsByClassName (js "autocomplete-items") in
-   iter_nodeList lst
-   (fun i ->
-   if(element <> i && element <> inp)
-   then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i)
-   )  *)
-   | Some element ->
-   let lst = Html.document##getElementsByClassName (js "autocomplete-items") in
-   iter_nodeList lst
-   (fun i ->
-   if(element <> i && element <> inp)
-   then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i)
-   )  *)
 
 
-let closeAllList elt inp y =
+let closeAllList elt input =
+  Js.Opt.iter input (fun inp ->
   match elt with
   | None -> let element =  (Html.createDiv doc) in
     let x = doc##getElementsByClassName (js "autocomplete-items") in
-    (* let childNodes = x##childNodes in *)
     for i = 0 to x##length - 1 do
       Js.Opt.iter (x##item (i))
         (fun i ->
            if(element <> i && element <> inp)
            then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
     done
-
   | Some element ->
-
     let x = doc##getElementsByClassName (js "autocomplete-items") in
-    (* let childNodes = x##childNodes in *)
     for i = 0 to x##length - 1 do
       Js.Opt.iter (x##item (i))
-        (fun i ->
-           if(element <> i && element <> inp)
+        (fun i -> if(element <> i && element <> inp)
            then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
     done
+  )
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
   (* let doc = Html.document in *)
@@ -218,10 +195,10 @@ let onload _ =
 
   a_info##onclick <- Dom_html.handler
       (fun _ ->
-         if div_info_text##style##display = js "none" then
-           (div_info_text##style##display <- js "block";Js._true)
+         if div_info_text##style##display = Js.string "none" then
+           (div_info_text##style##display <- Js.string "block";Js._true)
          else
-           (div_info_text##style##display <- js "none";Js._true));
+           (div_info_text##style##display <- Js.string "none";Js._true));
 
   (* ==================== end icons ==================== *)
 
@@ -239,57 +216,61 @@ let onload _ =
 
   let currentFocus = ref 0 in
   input_1##oninput <- Html.handler
-      (fun _ ->
-         let a = Html.createDiv doc in
-         (* let i = ref (input_1##value) in *)
-         let v = Js.to_string input_1##value in
-         closeAllList None input_1;
+    (fun _ ->
+      doc##onclick <- Html.handler (fun ev -> (closeAllList (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element input_1));Js._true);
+      let a = Html.createDiv doc in
+      (* let i = ref (input_1##value) in *)
+      let v = Js.to_string input_1##value in
+      closeAllList None (Dom_html.CoerceTo.element input_1);
          (* if(v = "") then failwith "not possible"; *)
-         currentFocus := -1;
+      currentFocus := -1;
 
          (* let newDiv = Html.createDiv doc in *)
-         setId a (Js.to_string input_1##id^ "autocomplete-list");
-         setClass a "autocomplete-items";
-         (match Js.Opt.to_option input_1##parentNode with
-          | None -> failwith "error"
-          | Some x -> Dom.appendChild x a);
-         (* Dom.appendChild div_card_content a; *)
-         for i = 0 to List.length countries - 1 do
-           let word = List.nth countries i in
-           if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)
-           then
-             let b = ref (Html.createDiv doc) in
-             let inn = "<strong>" ^ (String.sub word 0 (String.length v)) ^ "</strong>" ^
-                       (String.sub word (String.length v) (String.length word-String.length v))^
-                       "<input type='hidden' value='" ^ word ^ "'>" in
-             !b##innerHTML <- js inn;
-             (* this.getElementsByTagName("input")[0].value; *)
-             let inputfield = Html.document##getElementsByTagName (js "input") in
-             (* ((page##(getElementsByTagName (Js.string "head")))##(item (0))) *)
-             let firstone = inputfield##item (0) in
-             Js.Opt.iter firstone
-               (fun i ->
-                  let content = i##textContent in
-                  begin
-                    match Js.Opt.to_option content with
-                    | None -> ()
-                    | Some content -> !b##onclick <- Dom_html.handler (fun _ -> input_1##value <- content;Js._true)
-                  end);
+      setId a (Js.to_string input_1##id^ "autocomplete-list");
+      setClass a "autocomplete-items";
+      (match Js.Opt.to_option input_1##parentNode with
+      | None -> failwith "error"
+      | Some x -> Dom.appendChild x a);
+      (* Dom.appendChild div_card_content a; *)
+      for i = 0 to List.length countries - 1 do
+      let word = List.nth countries i in
+      if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)
+      then let b = ref (Html.createDiv doc) in
+      let inn = "<strong>" ^ (String.sub word 0 (String.length v)) ^ "</strong>" ^
+        (String.sub word (String.length v) (String.length word-String.length v))^
+        "<input type='hidden' value='" ^ word ^ "'>" in
+        !b##innerHTML <- js inn;
+        !b##onclick <- Html.handler
+          (fun _ ->
+            let inputfield = (!b)##getElementsByTagName (js "input") in
+            let firstone = inputfield##item (0) in
+            Js.Opt.iter firstone
+              (fun node ->
+                let elt = Dom_html.CoerceTo.element node in
+                Js.Opt.iter elt
+                (fun elt ->
+                  let input = Dom_html.CoerceTo.input elt in
+                  Js.Opt.iter input
+                  (fun i ->
+                    let content = i##value in
+                    input_1##value <- content
 
-             Dom.appendChild a !b
+                  (* begin
+                  match Js.Opt.to_option content with
+                  | None -> ()
+                  | Some content -> input_1##value <- content
+                  end *)
+                  )
+                )
+            )
+            ;Js._true
+          );
+           (* ((page##(getElementsByTagName (Js.string "head")))##(item (0))) *)
+      Dom.appendChild a !b
              (* Js.Opt.iter (childNodes##item i) *)
              (* (fun node -> node##classList##remove (js "autocomplete-active")) *)
-         done;
-
-
-
-         (* let div_autocomplete_list = Html.createDiv doc in
-            setClass div_autocomplete_list "autocomplete-items";
-            setId div_autocomplete_list (input##id##toString ^ "autocomplete-list");
-            Dom.appendChild input##parentNode div_autocomplete_list;
-            append_text div_autocomplete_list "Hello"; *)
-         Js._true
-      );
+      done;
+      Js._true);
 
   Js._false
 

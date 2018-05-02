@@ -28,6 +28,7 @@ type gui_state = {
 }
 
 
+
 (* [fail] is a failure/exception handler *)
 let fail = fun _ -> assert false
 
@@ -35,6 +36,7 @@ module Html = Dom_html
 let js = Js.string
 let doc = Html.document
 
+let countries = ["Afghanistan";"Albania";"Algeria";"Andorra";"Angola";"Anguilla";"Antigua & Barbuda";"Argentina";"Armenia";"Aruba";"Australia";"Austria";"Azerbaijan";"Bahamas";"Bahrain";"Bangladesh";"Barbados";"Belarus";"Belgium";"Belize";"Benin";"Bermuda";"Bhutan";"Bolivia";"Bosnia & Herzegovina";"Botswana";"Brazil";"British Virgin Islands";"Brunei";"Bulgaria";"Burkina Faso";"Burundi";"Cambodia";"Cameroon";"Canada";"Cape Verde";"Cayman Islands";"Central Arfrican Republic";"Chad";"Chile";"China";"Colombia";"Congo";"Cook Islands";"Costa Rica";"Cote D Ivoire";"Croatia";"Cuba";"Curacao";"Cyprus";"Czech Republic";"Denmark";"Djibouti";"Dominica";"Dominican Republic";"Ecuador";"Egypt";"El Salvador";"Equatorial Guinea";"Eritrea";"Estonia";"Ethiopia";"Falkland Islands";"Faroe Islands";"Fiji";"Finland";"France";"French Polynesia";"French West Indies";"Gabon";"Gambia";"Georgia";"Germany";"Ghana";"Gibraltar";"Greece";"Greenland";"Grenada";"Guam";"Guatemala";"Guernsey";"Guinea";"Guinea Bissau";"Guyana";"Haiti";"Honduras";"Hong Kong";"Hungary";"Iceland";"India";"Indonesia";"Iran";"Iraq";"Ireland";"Isle of Man";"Israel";"Italy";"Jamaica";"Japan";"Jersey";"Jordan";"Kazakhstan";"Kenya";"Kiribati";"Kosovo";"Kuwait";"Kyrgyzstan";"Laos";"Latvia";"Lebanon";"Lesotho";"Liberia";"Libya";"Liechtenstein";"Lithuania";"Luxembourg";"Macau";"Macedonia";"Madagascar";"Malawi";"Malaysia";"Maldives";"Mali";"Malta";"Marshall Islands";"Mauritania";"Mauritius";"Mexico";"Micronesia";"Moldova";"Monaco";"Mongolia";"Montenegro";"Montserrat";"Morocco";"Mozambique";"Myanmar";"Namibia";"Nauro";"Nepal";"Netherlands";"Netherlands Antilles";"New Caledonia";"New Zealand";"Nicaragua";"Niger";"Nigeria";"North Korea";"Norway";"Oman";"Pakistan";"Palau";"Palestine";"Panama";"Papua New Guinea";"Paraguay";"Peru";"Philippines";"Poland";"Portugal";"Puerto Rico";"Qatar";"Reunion";"Romania";"Russia";"Rwanda";"Saint Pierre & Miquelon";"Samoa";"San Marino";"Sao Tome and Principe";"Saudi Arabia";"Senegal";"Serbia";"Seychelles";"Sierra Leone";"Singapore";"Slovakia";"Slovenia";"Solomon Islands";"Somalia";"South Africa";"South Korea";"South Sudan";"Spain";"Sri Lanka";"St Kitts & Nevis";"St Lucia";"St Vincent";"Sudan";"Suriname";"Swaziland";"Sweden";"Switzerland";"Syria";"Taiwan";"Tajikistan";"Tanzania";"Thailand";"Timor L'Este";"Togo";"Tonga";"Trinidad & Tobago";"Tunisia";"Turkey";"Turkmenistan";"Turks & Caicos";"Tuvalu";"Uganda";"Ukraine";"United Arab Emirates";"United Kingdom";"United States of America";"Uruguay";"Uzbekistan";"Vanuatu";"Vatican City";"Venezuela";"Vietnam";"Virgin Islands (US)";"Yemen";"Zambia";"Zimbabwe"]
 
 let setClass elt s = elt##className <- js s
 let setId elt s = elt##id <- js s
@@ -45,9 +47,29 @@ let append_text e s = Dom.appendChild e (doc##createTextNode (js s))
 let get_element_by_id id =
   Js.Opt.get (Html.document##getElementById (js id)) fail
 
+
+let closeAllList elt input =
+  Js.Opt.iter input (fun inp ->
+      match elt with
+      | None -> let element =  (Html.createDiv doc) in
+        let x = doc##getElementsByClassName (js "autocomplete-items") in
+        for i = 0 to x##length - 1 do
+          Js.Opt.iter (x##item (i))
+            (fun i ->
+               if(element <> i && element <> inp)
+               then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
+        done
+      | Some element ->
+        let x = doc##getElementsByClassName (js "autocomplete-items") in
+        for i = 0 to x##length - 1 do
+          Js.Opt.iter (x##item (i))
+            (fun i -> if(element <> i && element <> inp)
+              then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
+        done
+    )
+
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
-  (* let doc = Html.document in *)
   let img_dest = Html.createImg doc in
   setId img_dest "dest";
   img_dest##src <- js "marker.gif";
@@ -78,37 +100,50 @@ let onload _ =
 
   let div_markers = Html.createDiv doc in
   setId div_markers "markers";
-  (* let img_marker = Html.createImg doc in
-     setClass img_marker "rmarker";
-     img_marker##src <- js "marker.gif";
-     Dom.appendChild div_markers img_marker; *)
   Dom.appendChild doc##body div_markers;
 
   let div_actions = Html.createDiv doc in
   setClass div_actions "actions";
   Dom.appendChild doc##body div_actions;
 
-  let div_widget_card = Html.createDiv doc in
-  setClass div_widget_card "widget card";
-  Dom.appendChild div_actions div_widget_card;
+  (* let div_widget_card = Html.createDiv doc in
+     setClass div_widget_card "widget card";
+     Dom.appendChild div_actions div_widget_card; *)
 
   let div_card_content = Html.createDiv doc in
   setClass div_card_content "card-content";
-  Dom.appendChild div_widget_card div_card_content;
+  Dom.appendChild div_actions div_card_content;
 
-  let span_search_container = Html.createSpan doc in
-  setClass span_search_container "search-container";
-  Dom.appendChild div_card_content span_search_container;
+  let div_autocomplete = Html.createDiv doc in
+  setClass div_autocomplete "autocomplete";
+  Dom.appendChild div_card_content div_autocomplete;
 
-  let label_for_tags = Html.createLabel doc in
-  label_for_tags##htmlFor <- js "tags";
-  Dom.appendChild span_search_container label_for_tags;
+  let div_bottom = Html.createDiv doc in
+  setClass div_bottom "bottom";
+  Dom.appendChild div_autocomplete div_bottom;
 
-  let input_search = Html.createInput doc in
-  setClass input_search "search";
-  setId input_search "tags";
-  input_search##placeholder <- js "Search locations";
-  Dom.appendChild span_search_container input_search;
+  let input_1 = Html.createInput doc in
+  setId input_1 "input1";
+  input_1##placeholder <- js "Start Location";
+  Dom.appendChild div_bottom input_1;
+
+  let input_2 = Html.createInput doc in
+  setId input_2 "input2";
+  input_2##placeholder <- js "Destination";
+  Dom.appendChild div_autocomplete input_2;
+  (* let span_search_container = Html.createSpan doc in
+     setClass span_search_container "search-container";
+     Dom.appendChild div_card_content span_search_container;
+
+     let label_for_tags = Html.createLabel doc in
+     label_for_tags##htmlFor <- js "tags";
+     Dom.appendChild span_search_container label_for_tags;
+
+     let input_1 = Html.createInput doc in
+     setClass input_1 "search";
+     setId input_1 "tags";
+     input_1##placeholder <- js "Search locations";
+     Dom.appendChild span_search_container input_1; *)
 
   (* ==================== begin icons ==================== *)
 
@@ -153,10 +188,10 @@ let onload _ =
 
   a_info##onclick <- Dom_html.handler
       (fun _ ->
-         if div_info_text##style##display = js "none" then
-           (div_info_text##style##display <- js "block";Js._true)
+         if div_info_text##style##display = Js.string "none" then
+           (div_info_text##style##display <- Js.string "block";Js._true)
          else
-           (div_info_text##style##display <- js "none";Js._true));
+           (div_info_text##style##display <- Js.string "none";Js._true));
 
   (* ==================== end icons ==================== *)
 
@@ -168,34 +203,67 @@ let onload _ =
   append_text a_clear "clear route";
   a_clear##onclick <- Html.handler
       (fun _ ->
-         input_search##value <- js "";
+         input_1##value <- js "";
          Js._true);
   Dom.appendChild div_nothing a_clear;
 
-  (* let _ =
-     Lwt_js_events.clicks button
-      (fun _ev _  ->
-        (* h2##textContent <- Js.some(Js.string "WOWWWW"); *)
-          let s = sbox1##value in
-          h2##textContent <- Js.some s;
-       Lwt.return()) in *)
+  let currentFocus = ref 0 in
+  input_1##oninput <- Html.handler
+    (fun _ ->
+      doc##onclick <- Html.handler (fun ev -> (closeAllList (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element input_1));Js._true);
+      let a = Html.createDiv doc in
+      (* let i = ref (input_1##value) in *)
+      let v = Js.to_string input_1##value in
+      closeAllList None (Dom_html.CoerceTo.element input_1);
+         (* if(v = "") then failwith "not possible"; *)
+      currentFocus := -1;
 
+         (* let newDiv = Html.createDiv doc in *)
+      setId a (Js.to_string input_1##id^ "autocomplete-list");
+      setClass a "autocomplete-items";
+      (match Js.Opt.to_option input_1##parentNode with
+      | None -> failwith "error"
+      | Some x -> Dom.appendChild x a);
+      (* Dom.appendChild div_card_content a; *)
+      for i = 0 to List.length countries - 1 do
+      let word = List.nth countries i in
+      if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)
+      then let b = ref (Html.createDiv doc) in
+      let inn = "<strong>" ^ (String.sub word 0 (String.length v)) ^ "</strong>" ^
+        (String.sub word (String.length v) (String.length word-String.length v))^
+        "<input type='hidden' value='" ^ word ^ "'>" in
+        !b##innerHTML <- js inn;
+        !b##onclick <- Html.handler
+          (fun _ ->
+            let inputfield = (!b)##getElementsByTagName (js "input") in
+            let firstone = inputfield##item (0) in
+            Js.Opt.iter firstone
+              (fun node ->
+                let elt = Dom_html.CoerceTo.element node in
+                Js.Opt.iter elt
+                (fun elt ->
+                  let input = Dom_html.CoerceTo.input elt in
+                  Js.Opt.iter input
+                  (fun i ->
+                    let content = i##value in
+                    input_1##value <- content
 
-  (* let h2 = Html.createH2 doc in
-     let img = Html.createImg doc in
-     Dom.appendChild div img;
-     img##src <- js "texture.jpg";
-     let sbox1 = Html.createInput doc in
-     let sbox2 = Html.createInput doc in
-     Dom.appendChild div sbox1;
-     Dom.appendChild div sbox2;
-     sbox1##className <- js "action-icon fa fa-2x fa-search-plus";
-     sbox2##className <- js "action-icon fa fa-2x fa-search-plus";
-     let button = Html.createButton ~_type:(Js.string "button") doc in
-     h2##textContent <- Js.some (Js.string "Let AJAX change this text");
-     button##onclick <- Dom_html
-     Dom.appendChild div h2;
-     Dom.appendChild doc##body button; *)
+                  (* begin
+                  match Js.Opt.to_option content with
+                  | None -> ()
+                  | Some content -> input_1##value <- content
+                  end *)
+                  )
+                )
+            )
+            ;Js._true
+          );
+           (* ((page##(getElementsByTagName (Js.string "head")))##(item (0))) *)
+      Dom.appendChild a !b
+             (* Js.Opt.iter (childNodes##item i) *)
+             (* (fun node -> node##classList##remove (js "autocomplete-active")) *)
+      done;
+      Js._true);
   Js._false
 
 let () =
