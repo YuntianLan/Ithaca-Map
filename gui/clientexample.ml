@@ -99,4 +99,4 @@ let decode_service4 () =
   let img_str = String.sub res (sep+1) (String.length res - sep - 1) in
   (* let meta_l = String.split_on_char ' ' meta in *)
   let img_bts = Bytes.of_string img_str in
-  decode_img img_bts
+  decode_img img_bts "test.png"
