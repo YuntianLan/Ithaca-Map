@@ -5,7 +5,9 @@ build:
 	js_of_ocaml gui.byte
 
 gui:
+	ocamlbuild -use-ocamlfind "clientexample.cmo"
 	ocamlbuild -use-ocamlfind -plugin-tag "package(js_of_ocaml.ocamlbuild)" -no-links gui.d.js
+
 gui1:
 	ocamlbuild -use-ocamlfind -plugin-tag "package(js_of_ocaml.ocamlbuild)" -no-links gui1.d.js
 clean:

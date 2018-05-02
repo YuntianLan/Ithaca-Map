@@ -2,7 +2,6 @@ open Js_of_ocaml
 open Js_of_ocaml_lwt
 open Js
 
-
 (* ========= constants ========== *)
 let max_depth = 6
 let min_depth = 1
@@ -35,7 +34,6 @@ let fail = fun _ -> assert false
 module Html = Dom_html
 let js = Js.string
 let doc = Html.document
-
 
 
 let setClass elt s = elt##className <- js s

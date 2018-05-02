@@ -47,11 +47,12 @@ type client_state = {
   img_h : float;
   markers : marker list;
 }
-(* [decode buf fname] outputs the bytes into [fname] *)
-let decode (buf:bytes) (fname:string): unit =
+(* [decode_img buf fname] outputs the bytes into [fname] *)
+let decode_img (buf:bytes) (fname:string): string =
   let ch = open_out_bin fname in
   output_bytes ch buf;
-  close_out ch
+  close_out ch;
+  fname
 
 let real_lrlat st =
   st.params.upleft_lat -. (st.hdpp *. st.params.height)
