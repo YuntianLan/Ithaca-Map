@@ -93,7 +93,7 @@ let decode_img (buf:bytes) (fname:string): string =
 (* return image path for now! *)
 
     (* "4 43 -77 42 -76 256 256" *)
-let decode_service4 scok req =
+let decode_service4 sock req =
   let res = let _ = send_info sock req in recv_info sock in
   let sep = String.index res '$' in
   (* let meta = String.sub res 0 sep in *)
