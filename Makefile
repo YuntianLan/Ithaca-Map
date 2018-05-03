@@ -12,6 +12,7 @@ zip:
 install-dep:
 	opam update
 	opam install js_of_ocaml js_of_ocaml-ocamlbuild js_of_ocaml-camlp4 js_of_ocaml-lwt
+	opam install cohttp cohttp-lwt-unix
 	opam install yojson
 	opam install camlimages
 clean:
