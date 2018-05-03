@@ -1,7 +1,7 @@
 open Js_of_ocaml
 open Js_of_ocaml_lwt
 open Js
-
+open Lwt
 
 (* ========= constants ========== *)
 let max_depth = 6
@@ -28,14 +28,27 @@ type gui_state = {
   current_depth: int;
 }
 
-
+(* let body =
+  Client.get (Uri.of_string "http://localhost:8000") >>= fun (resp, body) ->
+  let code = resp |> Response.status |> Code.code_of_status in
+  Printf.printf "Response code: %d\n" code;
+  Printf.printf "Headers: %s\n" (resp |> Response.headers |> Header.to_string);
+  body |> Cohttp_lwt.Body.to_string >|= fun body ->
+  Printf.printf "Body of length: %d\n" (String.length body);
+  body *)
+let http_get url =
+  XmlHttpRequest.get url >>= fun r ->
+  let cod = r.XmlHttpRequest.code in
+  let msg = r.XmlHttpRequest.content in
+  if cod = 0 || cod = 200
+  then Lwt.return msg
+  else fst (Lwt.wait ())
 (* [fail] is a failure/exception handler *)
 let fail = fun _ -> assert false
 
 module Html = Dom_html
 let js = Js.string
 let doc = Html.document
-
 
 let countries = ["Afghanistan";"Albania";"Algeria";"Andorra";"Angola";"Anguilla";"Antigua & Barbuda";"Argentina";"Armenia";"Aruba";"Australia";"Austria";"Azerbaijan";"Bahamas";"Bahrain";"Bangladesh";"Barbados";"Belarus";"Belgium";"Belize";"Benin";"Bermuda";"Bhutan";"Bolivia";"Bosnia & Herzegovina";"Botswana";"Brazil";"British Virgin Islands";"Brunei";"Bulgaria";"Burkina Faso";"Burundi";"Cambodia";"Cameroon";"Canada";"Cape Verde";"Cayman Islands";"Central Arfrican Republic";"Chad";"Chile";"China";"Colombia";"Congo";"Cook Islands";"Costa Rica";"Cote D Ivoire";"Croatia";"Cuba";"Curacao";"Cyprus";"Czech Republic";"Denmark";"Djibouti";"Dominica";"Dominican Republic";"Ecuador";"Egypt";"El Salvador";"Equatorial Guinea";"Eritrea";"Estonia";"Ethiopia";"Falkland Islands";"Faroe Islands";"Fiji";"Finland";"France";"French Polynesia";"French West Indies";"Gabon";"Gambia";"Georgia";"Germany";"Ghana";"Gibraltar";"Greece";"Greenland";"Grenada";"Guam";"Guatemala";"Guernsey";"Guinea";"Guinea Bissau";"Guyana";"Haiti";"Honduras";"Hong Kong";"Hungary";"Iceland";"India";"Indonesia";"Iran";"Iraq";"Ireland";"Isle of Man";"Israel";"Italy";"Jamaica";"Japan";"Jersey";"Jordan";"Kazakhstan";"Kenya";"Kiribati";"Kosovo";"Kuwait";"Kyrgyzstan";"Laos";"Latvia";"Lebanon";"Lesotho";"Liberia";"Libya";"Liechtenstein";"Lithuania";"Luxembourg";"Macau";"Macedonia";"Madagascar";"Malawi";"Malaysia";"Maldives";"Mali";"Malta";"Marshall Islands";"Mauritania";"Mauritius";"Mexico";"Micronesia";"Moldova";"Monaco";"Mongolia";"Montenegro";"Montserrat";"Morocco";"Mozambique";"Myanmar";"Namibia";"Nauro";"Nepal";"Netherlands";"Netherlands Antilles";"New Caledonia";"New Zealand";"Nicaragua";"Niger";"Nigeria";"North Korea";"Norway";"Oman";"Pakistan";"Palau";"Palestine";"Panama";"Papua New Guinea";"Paraguay";"Peru";"Philippines";"Poland";"Portugal";"Puerto Rico";"Qatar";"Reunion";"Romania";"Russia";"Rwanda";"Saint Pierre & Miquelon";"Samoa";"San Marino";"Sao Tome and Principe";"Saudi Arabia";"Senegal";"Serbia";"Seychelles";"Sierra Leone";"Singapore";"Slovakia";"Slovenia";"Solomon Islands";"Somalia";"South Africa";"South Korea";"South Sudan";"Spain";"Sri Lanka";"St Kitts & Nevis";"St Lucia";"St Vincent";"Sudan";"Suriname";"Swaziland";"Sweden";"Switzerland";"Syria";"Taiwan";"Tajikistan";"Tanzania";"Thailand";"Timor L'Este";"Togo";"Tonga";"Trinidad & Tobago";"Tunisia";"Turkey";"Turkmenistan";"Turks & Caicos";"Tuvalu";"Uganda";"Ukraine";"United Arab Emirates";"United Kingdom";"United States of America";"Uruguay";"Uzbekistan";"Vanuatu";"Vatican City";"Venezuela";"Vietnam";"Virgin Islands (US)";"Yemen";"Zambia";"Zimbabwe"]
 
@@ -48,35 +61,29 @@ let append_text e s = Dom.appendChild e (doc##createTextNode (js s))
 let get_element_by_id id =
   Js.Opt.get (Html.document##getElementById (js id)) fail
 
-let iter_nodeList nodeList f =
-  for i = 0 to nodeList##length - 1 do
-    (* Unsafe.get is ten time faster than nodeList##item *)
-    f (Js.Unsafe.get nodeList i)
-  done
-
 
 let closeAllList elt input =
   Js.Opt.iter input (fun inp ->
-  match elt with
-  | None -> let element =  (Html.createDiv doc) in
-    let x = doc##getElementsByClassName (js "autocomplete-items") in
-    for i = 0 to x##length - 1 do
-      Js.Opt.iter (x##item (i))
-        (fun i ->
-           if(element <> i && element <> inp)
-           then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
-    done
-  | Some element ->
-    let x = doc##getElementsByClassName (js "autocomplete-items") in
-    for i = 0 to x##length - 1 do
-      Js.Opt.iter (x##item (i))
-        (fun i -> if(element <> i && element <> inp)
-           then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
-    done
-  )
+      match elt with
+      | None -> let element =  (Html.createDiv doc) in
+        let x = doc##getElementsByClassName (js "autocomplete-items") in
+        for i = 0 to x##length - 1 do
+          Js.Opt.iter (x##item (i))
+            (fun i ->
+               if(element <> i && element <> inp)
+               then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
+        done
+      | Some element ->
+        let x = doc##getElementsByClassName (js "autocomplete-items") in
+        for i = 0 to x##length - 1 do
+          Js.Opt.iter (x##item (i))
+            (fun i -> if(element <> i && element <> inp)
+              then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
+        done
+    )
+
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
-  (* let doc = Html.document in *)
   let img_dest = Html.createImg doc in
   setId img_dest "dest";
   img_dest##src <- js "marker.gif";
@@ -205,75 +212,81 @@ let onload _ =
   let div_nothing = Html.createDiv doc in
   Dom.appendChild div_actions div_nothing;
 
+
+
   let a_clear = Html.createA doc in
   setClass a_clear "clear waves-effect btn";
   append_text a_clear "clear route";
   a_clear##onclick <- Html.handler
       (fun _ ->
-         input_1##value <- js "";
-         Js._true);
+
+         let url = "http://127.0.0.1:8000/" in
+            let start () = 
+            http_get url >>= (fun s -> 
+               input_1##value <- js s;
+               Lwt.return ()) in
+            ignore(start ());
+            Js._true);
   Dom.appendChild div_nothing a_clear;
 
   let currentFocus = ref 0 in
   input_1##oninput <- Html.handler
-    (fun _ ->
-      doc##onclick <- Html.handler (fun ev -> (closeAllList (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element input_1));Js._true);
-      let a = Html.createDiv doc in
-      (* let i = ref (input_1##value) in *)
-      let v = Js.to_string input_1##value in
-      closeAllList None (Dom_html.CoerceTo.element input_1);
+      (fun _ ->
+         doc##onclick <- Html.handler (fun ev -> (closeAllList (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element input_1));Js._true);
+         let a = Html.createDiv doc in
+         (* let i = ref (input_1##value) in *)
+         let v = Js.to_string input_1##value in
+         closeAllList None (Dom_html.CoerceTo.element input_1);
          (* if(v = "") then failwith "not possible"; *)
-      currentFocus := -1;
+         currentFocus := -1;
 
          (* let newDiv = Html.createDiv doc in *)
-      setId a (Js.to_string input_1##id^ "autocomplete-list");
-      setClass a "autocomplete-items";
-      (match Js.Opt.to_option input_1##parentNode with
-      | None -> failwith "error"
-      | Some x -> Dom.appendChild x a);
-      (* Dom.appendChild div_card_content a; *)
-      for i = 0 to List.length countries - 1 do
-      let word = List.nth countries i in
-      if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)
-      then let b = ref (Html.createDiv doc) in
-      let inn = "<strong>" ^ (String.sub word 0 (String.length v)) ^ "</strong>" ^
-        (String.sub word (String.length v) (String.length word-String.length v))^
-        "<input type='hidden' value='" ^ word ^ "'>" in
-        !b##innerHTML <- js inn;
-        !b##onclick <- Html.handler
-          (fun _ ->
-            let inputfield = (!b)##getElementsByTagName (js "input") in
-            let firstone = inputfield##item (0) in
-            Js.Opt.iter firstone
-              (fun node ->
-                let elt = Dom_html.CoerceTo.element node in
-                Js.Opt.iter elt
-                (fun elt ->
-                  let input = Dom_html.CoerceTo.input elt in
-                  Js.Opt.iter input
-                  (fun i ->
-                    let content = i##value in
-                    input_1##value <- content
+         setId a (Js.to_string input_1##id^ "autocomplete-list");
+         setClass a "autocomplete-items";
+         (match Js.Opt.to_option input_1##parentNode with
+          | None -> failwith "error"
+          | Some x -> Dom.appendChild x a);
+         (* Dom.appendChild div_card_content a; *)
+         for i = 0 to List.length countries - 1 do
+           let word = List.nth countries i in
+           if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)
+           then let b = ref (Html.createDiv doc) in
+             let inn = "<strong>" ^ (String.sub word 0 (String.length v)) ^ "</strong>" ^
+                       (String.sub word (String.length v) (String.length word-String.length v))^
+                       "<input type='hidden' value='" ^ word ^ "'>" in
+             !b##innerHTML <- js inn;
+             !b##onclick <- Html.handler
+                 (fun _ ->
+                    let inputfield = (!b)##getElementsByTagName (js "input") in
+                    let firstone = inputfield##item (0) in
+                    Js.Opt.iter firstone
+                      (fun node ->
+                         let elt = Dom_html.CoerceTo.element node in
+                         Js.Opt.iter elt
+                           (fun elt ->
+                              let input = Dom_html.CoerceTo.input elt in
+                              Js.Opt.iter input
+                                (fun i ->
+                                   let content = i##value in
+                                   input_1##value <- content
 
-                  (* begin
-                  match Js.Opt.to_option content with
-                  | None -> ()
-                  | Some content -> input_1##value <- content
-                  end *)
-                  )
-                )
-            )
-            ;Js._true
-          );
-           (* ((page##(getElementsByTagName (Js.string "head")))##(item (0))) *)
-      Dom.appendChild a !b
+                                 (* begin
+                                    match Js.Opt.to_option content with
+                                    | None -> ()
+                                    | Some content -> input_1##value <- content
+                                    end *)
+                                )
+                           )
+                      )
+                  ;Js._true
+                 );
+             (* ((page##(getElementsByTagName (Js.string "head")))##(item (0))) *)
+             Dom.appendChild a !b
              (* Js.Opt.iter (childNodes##item i) *)
              (* (fun node -> node##classList##remove (js "autocomplete-active")) *)
-      done;
-      Js._true);
-
+         done;
+         Js._true);
   Js._false
 
-(* let read_lrlat () = *)
 let () =
   Dom_html.window##onload <- Dom_html.handler onload

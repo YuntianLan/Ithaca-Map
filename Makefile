@@ -1,5 +1,5 @@
 build:
-	ocamlbuild -use-ocamlfind trie.cmo graph.cmo image.cmo server.cmo client.cmo
+	ocamlbuild -use-ocamlfind trie.cmo graph.cmo image.cmo server.cmo
 runserver:
 	ocamlbuild -use-ocamlfind server.byte
 	./server.byte

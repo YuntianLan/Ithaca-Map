@@ -211,6 +211,7 @@ let rec handle_client tg desc : unit =
   let len = get_len () in
   let _ = print_endline "received message from client" in
   let s = Bytes.to_string (Bytes.sub str 0 len) in
+  let _ = print_endline s in
   if ((s = "exit") || (s = "quit")) then
     let _ = Unix.close desc in
     Thread.exit ()

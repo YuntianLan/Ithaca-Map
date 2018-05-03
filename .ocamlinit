@@ -2,6 +2,9 @@
 #require "camlimages"
 #require "camlimages.png"
 #require "yojson"
+#require "cohttp"
+#require "lwt"
+#require "cohttp-lwt-unix"
 #directory "_build";;
 #load "image.cmo";;
 #load "trie.cmo";;
