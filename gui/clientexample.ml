@@ -91,9 +91,10 @@ let decode_img (buf:bytes) (fname:string): string =
   close_out ch;
   fname
 (* return image path for now! *)
-let decode_service4 () =
-  let sock = init_client () in
-  let res = let _ = send_info sock "4 43 -77 42 -76 256 256" in recv_info sock in
+
+    (* "4 43 -77 42 -76 256 256" *)
+let decode_service4 scok req =
+  let res = let _ = send_info sock req in recv_info sock in
   let sep = String.index res '$' in
   (* let meta = String.sub res 0 sep in *)
   let img_str = String.sub res (sep+1) (String.length res - sep - 1) in

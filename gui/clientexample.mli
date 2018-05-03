@@ -12,5 +12,3 @@
 
 val init_client : unit -> Unix.file_descr
 
-val decode_service4 : unit -> string
-(* return image path for now! *)
