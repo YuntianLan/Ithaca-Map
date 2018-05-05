@@ -49,28 +49,61 @@ let append_text e s = Dom.appendChild e (doc##createTextNode (js s))
 let get_element_by_id id =
   Js.Opt.get (Html.document##getElementById (js id)) fail
 
+let create_canvas w h =
+  let c = Html.createCanvas Html.document in
+  c##width <- w; c##height <- h; c
 
+let draw_line context =
+  context##beginPath ();
+  context##moveTo (10.0,1.0);
+  context##lineTo (30.0,40.0);
+  context##stroke ();
+  context##closePath ()
+
+let draw_background canvas context onload src =
+  let img_map = Html.createImg doc in
+  img_map##onload <- Html.handler
+      (fun ev ->
+         context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+         context##drawImage (img_map, (10.), (10.));
+        onload context;
+        Js._false);
+  setId img_map "map";
+  img_map##src <- src;
+  img_map
+
+let clear_background i canvas context =
+  let img_map = i in
+  img_map##onload <- Html.handler
+      (fun ev ->
+         context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+         context##drawImage (img_map, (10.), (10.));
+        Js._false);
+  setId img_map "map"
+  (* img_map##src <- src *)
+  (* img_map##src <- js "../tiles/1.png" *)
 (* close all autocomplete lists in the document*)
-    let closeAllList elt input =
-      Js.Opt.iter input (fun inp ->
-          match elt with
-          | None -> let element =  (Html.createDiv doc) in
-            let x = doc##getElementsByClassName (js "autocomplete-items") in
-            for i = 0 to x##length - 1 do
-              Js.Opt.iter (x##item (i))
-                (fun i ->
-                   if(element <> i && element <> inp)
-                   then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
-            done
-          | Some element ->
-            let x = doc##getElementsByClassName (js "autocomplete-items") in
-            for i = 0 to x##length - 1 do
-              Js.Opt.iter (x##item (i))
-                (fun i -> if(element <> i && element <> inp)
-              then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
+let closeAllList elt input =
+  Js.Opt.iter input (fun inp ->
+      match elt with
+      | None -> let element =  (Html.createDiv doc) in
+        let x = doc##getElementsByClassName (js "autocomplete-items") in
+        for i = 0 to x##length - 1 do
+          Js.Opt.iter (x##item (i))
+            (fun i ->
+               if(element <> i && element <> inp)
+               then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
+        done
+      | Some element ->
+        let x = doc##getElementsByClassName (js "autocomplete-items") in
+        for i = 0 to x##length - 1 do
+          Js.Opt.iter (x##item (i))
+            (fun i -> if(element <> i && element <> inp)
+          then Js.Opt.iter (i##parentNode) (fun x -> Dom.removeChild x i))
         done
     )
 
+let debug f = Printf.ksprintf (fun s -> Firebug.console##log (Js.string s)) f
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
   let img_dest = Html.createImg doc in
@@ -84,20 +117,48 @@ let onload _ =
   Dom.appendChild doc##body div_map_container;
   (* append_text div_map_container "Loading.."; *)
 
-  let div_mapbody = Html.createDiv doc in
+  (* let div_mapbody = Html.createDiv doc in
   setClass div_mapbody "mapbody";
-  Dom.appendChild div_map_container div_mapbody;
-  (* append_text div_mapbody "Hi"; *)
-  div_mapbody##ondblclick <- Dom_html.handler
-      (fun _ ->
+  Dom.appendChild div_map_container div_mapbody; *)
+  div_map_container##ondblclick <- Dom_html.handler
+      (fun ev ->
          img_dest##style##visibility <- js "visible";
-         img_dest##style##transform <- js "translateX(500px)translateY(500px)";Js._true);
-
-  let img_map = Html.createImg doc in
+         (* img_dest##style##transform <- js ("translateX("^(string_of_int ev##clientX)^")translateY("^(string_of_int ev##clientY)^")"); *)
+         img_dest##style##left <- js ((string_of_int (ev##clientX-12))^"px");
+         img_dest##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+         Dom_html.window##alert (js "happ");
+         (* debug (string_of_int (ev##clientX)); *)
+         Js._true);
+  (* let img_map = Html.createImg doc in
   setId img_map "map";
   img_map##src <- js "../tiles/1.png";
-  Dom.appendChild div_mapbody img_map;
+     Dom.appendChild div_mapbody img_map; *)
+  let canvas = create_canvas 600 600 in
+  Dom.appendChild div_map_container canvas;
+  let context = canvas##getContext (Html._2d_) in
+  (* draw_background canvas context draw_line (js "../tiles/1.png"); *)
+  let i = draw_background canvas context draw_line (js "../tiles/2.png") in
+  clear_background i canvas context;
+  (* clear_background canvas context (js "../tiles/2.png"); *)
 
+
+
+  (* context##clearRect (10.0,10.0,50.0,50.0); *)
+  (* Dom_html.window##alert (js "clearing"); *)
+
+
+  (* let img_map = Html.createImg doc in *)
+     (* Dom.appendChild div_mapbody img_map; *)
+  (* img_map##onload <- Html.handler
+      (fun ev -> context##drawImage (img_map, (10.), (10.)); Js._false);
+  setId img_map "map"; *)
+  (* img_map##src <- js "../tiles/1.png"; *)
+  (* context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+  context##drawImage (img_map, (10.), (10.));
+  context##beginPath ();
+  context##moveTo (10.0,1.0);
+  context##lineTo (30.0,40.0);
+  context##stroke (); *)
   (* ==================== end div map-container ==================== *)
 
 
