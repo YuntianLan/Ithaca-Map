@@ -27,7 +27,7 @@ type gui_state = {
   current_depth: int;
 }
 
-
+let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
 
 (* [fail] is a failure/exception handler *)
 let fail = fun _ -> assert false
@@ -53,20 +53,34 @@ let create_canvas w h =
   let c = Html.createCanvas Html.document in
   c##width <- w; c##height <- h; c
 
-let draw_line context =
-  context##beginPath ();
-  context##moveTo (10.0,1.0);
-  context##lineTo (30.0,40.0);
-  context##stroke ();
-  context##closePath ()
+let draw_line context lst =
 
-let draw_background canvas context onload src =
+  List.fold_left
+    (fun acc cor  ->
+       let prevX = (fst acc) in
+       let prevY = (snd acc) in
+       let x = fst cor in
+       let y = snd cor in
+         context##beginPath ();
+         context##moveTo (prevX,prevY);
+         context##lineTo (x,y);
+         context##stroke ();
+         context##closePath ();
+         (x,y)
+    )
+    (List.nth lst 0) lst
+  (* context##closePath () *)
+  (* context##moveTo (10.0,1.0);
+  context##lineTo (30.0,40.0); *)
+  (* context##stroke (); *)
+
+let draw_background canvas context onload src lst =
   let img_map = Html.createImg doc in
   img_map##onload <- Html.handler
       (fun ev ->
          context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
          context##drawImage (img_map, (10.), (10.));
-        onload context;
+         onload context lst;
         Js._false);
   setId img_map "map";
   img_map##src <- src;
@@ -78,10 +92,7 @@ let clear_background i canvas context =
       (fun ev ->
          context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
          context##drawImage (img_map, (10.), (10.));
-        Js._false);
-  setId img_map "map"
-  (* img_map##src <- src *)
-  (* img_map##src <- js "../tiles/1.png" *)
+        Js._false)
 (* close all autocomplete lists in the document*)
 let closeAllList elt input =
   Js.Opt.iter input (fun inp ->
@@ -120,7 +131,7 @@ let onload _ =
   (* let div_mapbody = Html.createDiv doc in
   setClass div_mapbody "mapbody";
   Dom.appendChild div_map_container div_mapbody; *)
-  div_map_container##ondblclick <- Dom_html.handler
+  div_map_container##ondblclick <- Html.handler
       (fun ev ->
          img_dest##style##visibility <- js "visible";
          (* img_dest##style##transform <- js ("translateX("^(string_of_int ev##clientX)^")translateY("^(string_of_int ev##clientY)^")"); *)
@@ -133,14 +144,20 @@ let onload _ =
   setId img_map "map";
   img_map##src <- js "../tiles/1.png";
      Dom.appendChild div_mapbody img_map; *)
+  let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)] in
   let canvas = create_canvas 600 600 in
   Dom.appendChild div_map_container canvas;
   let context = canvas##getContext (Html._2d_) in
   (* draw_background canvas context draw_line (js "../tiles/1.png"); *)
-  let i = draw_background canvas context draw_line (js "../tiles/2.png") in
-  clear_background i canvas context;
+  let i = draw_background canvas context draw_line (js "../tiles/2.png") coordinates in
+  (* clear_background i canvas context; *)
   (* clear_background canvas context (js "../tiles/2.png"); *)
-
+  let button = Dom_html.createButton ~_type:(Js.string "button") doc in
+  Dom.appendChild div_map_container button;
+  button##style##left <- js ((string_of_int 500)^"px");
+  button##style##top <- js ((string_of_int 200)^"px");
+  button##style##position <- js "absolute";
+  button##style##zIndex <- js "2";
 
 
   (* context##clearRect (10.0,10.0,50.0,50.0); *)
@@ -191,10 +208,23 @@ let onload _ =
   input_1##placeholder <- js "Start Location";
   Dom.appendChild div_bottom input_1;
 
+  let input_submit_1 =  Html.createInput doc in
+  setId input_submit_1 "input1_submit";
+  input_submit_1##setAttribute(js "type", js "submit");
+  input_submit_1##setAttribute(js "value", js "Find");
+  (* input_submit_1##value <- js "Find"; *)
+  Dom.appendChild div_bottom input_submit_1;
+
   let input_2 = Html.createInput doc in
   setId input_2 "input2";
   input_2##placeholder <- js "Destination";
   Dom.appendChild div_autocomplete input_2;
+
+  let input_submit_2 =  Html.createInput doc in
+  setId input_submit_2 "input2_submit";
+  input_submit_2##setAttribute(js "type", js "submit");
+  input_submit_2##setAttribute(js "value", js "Find");
+  Dom.appendChild div_autocomplete input_submit_2;
   (* let span_search_container = Html.createSpan doc in
      setClass span_search_container "search-container";
      Dom.appendChild div_card_content span_search_container;
@@ -264,6 +294,16 @@ let onload _ =
   Dom.appendChild div_actions div_nothing;
 
   (* Clear the text in the textbox when "Clear Route" is clicked *)
+
+  let a_go = Html.createA doc in
+  setClass a_go "clear waves-effect btn";
+  append_text a_go "go";
+  a_go##onclick <- Html.handler
+      (fun _ ->
+         input_1##value <- js "";
+         Js._true);
+  Dom.appendChild div_nothing a_go;
+
   let a_clear = Html.createA doc in
   setClass a_clear "clear waves-effect btn";
   append_text a_clear "clear route";
@@ -272,6 +312,8 @@ let onload _ =
          input_1##value <- js "";
          Js._true);
   Dom.appendChild div_nothing a_clear;
+
+
 
 
 
