@@ -48,7 +48,7 @@ type t = {
 }
 
 
-let sip = Unix.inet_addr_of_string "127.0.0.1"
+let sip = Unix.inet_addr_of_string "10.148.9.217"
 let sport = 4996
 
 
@@ -222,6 +222,8 @@ let rec handle_client tg desc : unit =
   else
     let res = response_bytes tg s in
     let _ = Unix.send desc res 0 (Bytes.length res) [] in
+    let _ = print_endline "res sending complete" in
+    let _ = print_endline (string_of_int (Bytes.length res)) in
     handle_client tg desc
 
 
