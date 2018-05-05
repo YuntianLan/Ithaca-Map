@@ -11,9 +11,9 @@
  *)
 
 
-let sip = Unix.inet_addr_of_string "127.0.0.1"
-let cip = Unix.inet_addr_of_string "127.0.0.1"
-let cport = 3418
+let sip = Unix.inet_addr_of_string "10.148.9.217"
+let cip = Unix.inet_addr_of_string "10.148.9.222"
+let cport = 3413
 let sport = 4996
 
 (* Example string for service 1 *)
@@ -26,7 +26,7 @@ let eg_service2 = "2 Texas Roadhouse"
 let eg_resp2 = "42.813646 -76.7116234"
 
 (* Example string for service 3 *)
-let eg_service3 = "3 drive 42.813746 -76.7116266 42.6753 -76.11712"
+let eg_service3 = "3 drive 42.4451475 -76.481154 42.4308431 -76.5076772"
 
 
 (* Example string for service 4 *)
@@ -61,6 +61,12 @@ let init_client () =
 		client_socket (Unix.ADDR_INET(sip,sport)) in
 	client_socket
 
+
+let print_all str = 
+	let lst = String.split_on_char ' ' str in 
+	let _ = print_endline (List.hd lst) in
+	let coords = String.split_on_char ';' (List.nth lst 1) in
+	List.map print_endline coords
 
 (* Send a string of information to the server *)
 let send_info sock info : int =

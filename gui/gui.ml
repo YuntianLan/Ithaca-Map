@@ -334,6 +334,85 @@ let onload _ =
              (* (fun node -> node##classList##remove (js "autocomplete-active")) *)
       done;
       Js._true);
+  
+
+(* let handle_drag element move stop click =
+  let fuzz = 4 in
+  element##id.onmousedown := Html.handler
+    (fun ev ->
+       let x0 = ev##id.clientX and y0 = ev##id.clientY in
+(*
+debug_msg (Format.sprintf "Mouse down %d %d" x0 y0);
+*)
+       let started = ref false in
+       let c1 =
+         Html.addEventListener Html.document Html.Event.mousemove
+           (Html.handler
+              (fun ev ->
+                 let x = ev##id.clientX and y = ev##id.clientY in
+(*
+debug_msg (Format.sprintf "Mouse move %d %d %d %d" x0 y0 x y);
+*)
+                 if
+                   not !started && (abs (x - x0) > fuzz || abs (y - y0) > fuzz)
+                 then begin
+                   started := true;
+                   element##id.style##id.cursor := Js.string "move"
+                 end;
+                 if !started then move x0 y0 x y;
+                 Html.stopPropagation ev;
+                 Js._true))
+           Js._true
+       in
+       let c2 = ref Js.null in
+       c2 := Js.some
+         (Html.addEventListener Html.document Html.Event.mouseup
+            (Html.handler
+               (fun ev ->
+(*
+debug_msg (Format.sprintf "Mouse up %d %d %d %d" x0 y0 ev##clientX ev##clientY);
+*)
+                  Html.removeEventListener c1;
+                  Js.Opt.iter !c2 Html.removeEventListener;
+                  if !started then begin
+                    element##id.style##id.cursor := Js.string "";
+                    stop ev##id.clientX ev##id.clientY
+                  end else
+                    click ev##id.clientX ev##id.clientY;
+                  Js._true))
+            Js._true);
+       Js._true) *)
+
+  let mx = ref 0 in
+    let my = ref 0 in
+    canvas##onmousedown <- Dom_html.handler
+      (fun ev ->
+         mx := ev##clientX; my := ev##clientY;
+         let c1 =
+           Html.addEventListener Html.document Html.Event.mousemove
+             (Dom_html.handler
+                (fun ev ->
+                   let x = ev##clientX and y = ev##clientY in
+                   let dx = x - !mx and dy = y - !my in
+                   if dy != 0 then
+                     failwith "unimplemented";
+                   if dx != 0 then
+                     failwith "unimplemented";
+                   mx := x; my := y;
+                   Js._true))
+             Js._true
+         in
+         let c2 = ref Js.null in
+         c2 := Js.some
+           (Html.addEventListener Html.document Html.Event.mouseup
+              (Dom_html.handler
+                 (fun _ ->
+                    Html.removeEventListener c1;
+                    Js.Opt.iter !c2 Html.removeEventListener;
+                    Js._true))
+              Js._true);
+         Js._false);
+
   Js._false
 
 (* Start to load the page *)
