@@ -1,3 +1,28 @@
+(*
+                       _oo0oo_
+                      o8888888o
+                      88" . "88
+                      (| -_- |)
+                      0\  =  /0
+                    ___/`---'\___
+                  .' \\|     |// '.
+                 / \\|||  :  |||// \
+                / _||||| -:- |||||- \
+               |   | \\\  -  /// |   |
+               | \_|  ''\---/''  |_/ |
+               \  .-\__  '-'  ___/-. /
+             ___'. .'  /--.--\  `. .'___
+          ."" '<  `.___\_<|>_/___.' >' "".
+         | | :  `- \`.;`\ _ /`;.`/ - ` : | |
+         \  \ `_.   \_ __\ /__ _/   .-` /  /
+     =====`-.____`.___ \_____/___.-`___.-'=====
+                       `=---='
+
+
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+               佛祖保佑         永无BUG
+*)
 open Lwt
 open Cohttp
 open Cohttp_lwt_unix
@@ -44,7 +69,7 @@ open Pervasives
  *
  * Parameters for index = 6:
  * -- input: string
- * 
+ *
  *)
 
 let eg_resp1 = "42.813646 -76.7116234"
@@ -93,7 +118,7 @@ let response_str tg uri =
 			begin try
 				let lat = float_of_string slat in
 				let lon = float_of_string slon in
-				let nd = 
+				let nd =
 					MapGraph.get_node_by_coord lat lon tg.mapgraph in
 				let rlat, rlon = MapGraph.node_to_coord nd in
 				(string_of_float rlat) ^ " " ^ (string_of_float rlon)
@@ -101,7 +126,7 @@ let response_str tg uri =
 			end
 		| _, _ -> "Error: idx = 1, lat/lon not found"
 		end
-	
+
 	(* Location name to node coord *)
 	else if idx = "2" then
 		let name_opt = Uri.get_query_param uri "name" in
@@ -118,7 +143,7 @@ let response_str tg uri =
 					let accum a b = a ^ ";" ^ b in
 					List.fold_left accum (List.hd strs) (List.tl strs)
 				end
-			with _ -> "Error: idx = 2, exception in parsing uri" 
+			with _ -> "Error: idx = 2, exception in parsing uri"
 			end
 
 	(* Path from one coord to another coord *)
@@ -130,11 +155,11 @@ let response_str tg uri =
 		let elon_opt = Uri.get_query_param uri "elon" in
 		match drive_opt, slat_opt, slon_opt, elat_opt, elon_opt with
 		| Some drive, Some slat, Some slon, Some elat, Some elon ->
-			begin try 
+			begin try
 				let dflag = drive = "true" in
-				let ns = MapGraph.get_node_by_coord 
+				let ns = MapGraph.get_node_by_coord
 					(float_of_string slat) (float_of_string slon) tg.mapgraph in
-				let ne = MapGraph.get_node_by_coord 
+				let ne = MapGraph.get_node_by_coord
 					(float_of_string elat) (float_of_string elon) tg.mapgraph in
 				let trip_len, path = MapGraph.find_path dflag ns ne tg.mapgraph in
 				let floats = List.map MapGraph.node_to_coord path in
@@ -143,7 +168,7 @@ let response_str tg uri =
 				let accum a b = a ^ ";" ^ b in
 				let total_str = List.fold_left accum (List.hd strs) (List.tl strs) in
 				(string_of_float trip_len) ^ " " ^ total_str
-			with _ -> "Error: idx = 3, exception in parsing uri" 
+			with _ -> "Error: idx = 3, exception in parsing uri"
 			end
 		| _, _, _, _, _ -> "Error: idx = 3, parameter not found"
 
@@ -172,7 +197,7 @@ let response_str tg uri =
 			with _ -> "Error: idx = 4, exception in parsing uri"
 			end
 		| _, _, _, _, _, _ -> "Error: idx = 4, parameter not found"
-	
+
 	(* List of auto-completed names given a string input *)
 	else if idx = "6" then
 		let input_opt = Uri.get_query_param uri "input" in
@@ -198,10 +223,10 @@ let server =
 	let callback _conn req body =
 		let uri = req |> Request.uri in
 		body |> Cohttp_lwt.Body.to_string >|= (fun body -> ())
-		>>= (fun body -> 
+		>>= (fun body ->
 			if (Uri.get_query_param uri "index") = Some "5" then
 				match Uri.get_query_param uri "path" with
-				| None -> 
+				| None ->
 					Server.respond_string
 					~headers:(Header.init_with "Access-Control-Allow-Origin" "*")
 					~status:`OK ~body:("Error: idx = 5, no path provided") ()
@@ -218,21 +243,3 @@ let server =
 
 
 let () = ignore (Lwt_main.run server)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
