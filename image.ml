@@ -363,8 +363,12 @@ module Images : MapImage = struct
                 Rgb24.blit bmp 0 0 buffer_rgb (i*int_tilesize) (j*int_tilesize) w h;
               | _ -> failwith "Only supports RGB24"
             ) imglst) img_grid;
-      let fname_coord = List.fold_left (fun acc i -> (string_of_float i)^"_") "" [res.res_upleft_lon;res.res_upleft_lat;res.res_lowright_lon;res.res_lowright_lat] in
-      let fname = fname_coord^(res.tree_depth |> string_of_int) in
+      let fname_coord = List.fold_left (fun acc i -> (string_of_float i)^"_") ""
+          [res.res_upleft_lon;res.res_upleft_lat;res.res_lowright_lon;res.res_lowright_lat] in
+      let fname = fname_coord^(string_of_int res.tree_depth)^"_"^
+                  (string_of_int fullimg_w)^"_"^
+                  (string_of_int fullimg_h)^
+                  ".png" in
       Png.save fname [] (Rgb24 buffer_rgb);
       fname
 
