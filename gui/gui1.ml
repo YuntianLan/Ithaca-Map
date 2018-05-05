@@ -2,7 +2,7 @@ open Js_of_ocaml
 open Js_of_ocaml_lwt
 open Js
 open Lwt
-
+open Clientgui
 (* ========= constants ========== *)
 let max_depth = 6
 let min_depth = 1
@@ -28,14 +28,7 @@ type gui_state = {
   current_depth: int;
 }
 
-(* let body =
-  Client.get (Uri.of_string "http://localhost:8000") >>= fun (resp, body) ->
-  let code = resp |> Response.status |> Code.code_of_status in
-  Printf.printf "Response code: %d\n" code;
-  Printf.printf "Headers: %s\n" (resp |> Response.headers |> Header.to_string);
-  body |> Cohttp_lwt.Body.to_string >|= fun body ->
-  Printf.printf "Body of length: %d\n" (String.length body);
-  body *)
+
 let http_get url =
   XmlHttpRequest.get url >>= fun r ->
   let cod = r.XmlHttpRequest.code in
@@ -106,7 +99,7 @@ let onload _ =
 
   let img_map = Html.createImg doc in
   setId img_map "map";
-  img_map##src <- js "../tiles/1.png";
+  img_map##src <- js "http://10.145.18.75:8000/";
   Dom.appendChild div_mapbody img_map;
 
   (* ==================== end div map-container ==================== *)
@@ -220,10 +213,10 @@ let onload _ =
   a_clear##onclick <- Html.handler
       (fun _ ->
 
-         let url = "http://127.0.0.1:8000/" in
+         let url = "http://10.145.18.75:8000/" in
             let start () = 
             http_get url >>= (fun s -> 
-               input_1##value <- js s;
+              img_map##src <- js s;
                Lwt.return ()) in
             ignore(start ());
             Js._true);
