@@ -53,10 +53,10 @@ module type MapImage = sig
    * information [params] *)
   val query_image : t -> params -> result
 
-  (* [build_full_map res] is the byte array of a single png that covers the
+  (* [build_full_map res] is the file path  a single png that covers the
    * area discribed by [res]
-   * returns empty byte if no image can be built from [res] *)
-  val build_full_map : result -> bytes*(int*int)
+   * returns "error" if no image can be built from [res] *)
+  val build_full_map : result -> string
 
 end
 
@@ -99,7 +99,6 @@ module Images : MapImage = struct
     all_lon_dpp:float list;
   }
 
-  let build_full_map r = ()
 
   (* [make_singlenode_tree qn] is the quadtree with node [qn] and children are Leaf*)
   let make_singlenode_tree (qn:qnode) : quadtree =
@@ -344,90 +343,11 @@ module Images : MapImage = struct
         status = false;
       }
 
-  (* let get_img_rgb24 (img_path:string) : Rgb24.elt array array =
-     let img_rgb24 = Png.load_as_rgb24 img_path [] in
-     match img_rgb24 with
-     | Rgb24 bmp ->
-      let w = bmp.Rgb24.width in
-      let h = bmp.Rgb24.height in
-      Array.init h (fun j ->
-          Array.init w (fun i ->
-            Rgb24.get bmp i j))
-     | _ -> failwith "Only supports RGB24"
-
-     let build_full_map_rgb (img_grid:string list list) : Rgb24.elt array array =
-     let int_tilesize = int_of_float tile_size in
-     let fullimg_h = (img_grid |> List.length) * int_tilesize in
-     let dummy_rgb = {Color.r = 0; g = 0; b = 0} in
-     let buffer = Array.make fullimg_h (Array.make 0 dummy_rgb) in
-     List.iteri (fun j imglst ->
-        List.iteri (fun i img_path_i ->
-            let rgb_elm = get_img_rgb24 img_path_i in
-            Array.iteri (fun rgb_j row_of_rgb ->
-                buffer.(j*int_tilesize+rgb_j) <- Array.append buffer.(j*int_tilesize+rgb_j) row_of_rgb)
-              rgb_elm) imglst) img_grid;
-     buffer
-
-     let build_full_map (res:result) =
-     let img_grid = res.img_grid in
-     if (res.status = false || List.length img_grid = 0
-        || img_grid |> List.hd |> List.length = 0) then
-      Bytes.empty
-     else
-      let int_tilesize = int_of_float tile_size in
-      let fullimg_h = (img_grid |> List.length) * int_tilesize in
-      let fullimg_w = (img_grid |> List.hd |> List.length) * int_tilesize in
-      let full_map_rgb = build_full_map_rgb img_grid in
-      let buffer_byte = Bytes.create (fullimg_w*fullimg_h*3) in
-      for j = 0 to (fullimg_h-1) do
-        for i = 0 to (fullimg_w-1) do
-          let color = full_map_rgb.(j).(i) in
-          let r, g, b = char_of_int color.r,
-                        char_of_int color.g,
-                        char_of_int color.b in
-          Bytes.set buffer_byte (j * fullimg_w + i + 0) r;
-     Bytes.set buffer_byte (j * fullimg_w + i + 1) g;
-     Bytes.set buffer_byte (j * fullimg_w + i + 2) b;
-        done
-      done;
-      buffer_byte *)
-
-  (* let build_full_map (res:result) =
-     let img_grid = res.img_grid in
-     let int_tilesize = int_of_float tile_size in
-     let fullimg_h = (img_grid |> List.length) * int_tilesize in
-     let fullimg_w = (img_grid |> List.hd |> List.length) * int_tilesize in
-     let buffer_rgb = Rgb24.create fullimg_w fullimg_h in
-     List.iteri (fun j imglst ->
-        List.iteri (fun i img_path_i ->
-            let img_rgb24 = Png.load_as_rgb24 img_path_i [] in
-            match img_rgb24 with
-            | Rgb24 bmp ->
-              let w = bmp.Rgb24.width in
-              let h = bmp.Rgb24.height in
-              Rgb24.blit bmp 0 0 buffer_rgb (i*int_tilesize) (j*int_tilesize) w h;
-            | _ -> failwith "Only supports RGB24"
-          ) imglst) img_grid;
-     (* Png.save "testcheap.png" [] (Rgb24 buffer_rgb); *)
-     let buffer_byte = Bytes.create (fullimg_w*fullimg_h*3) in
-     for j = 0 to (fullimg_h-1) do
-      for i = 0 to (fullimg_w-1) do
-        let color = Rgb24.get buffer_rgb i j in
-        let r, g, b = char_of_int color.r,
-                      char_of_int color.g,
-                      char_of_int color.b in
-        Bytes.set buffer_byte (j * fullimg_w + i + 0) r;
-        Bytes.set buffer_byte (j * fullimg_w + i + 1) g;
-        Bytes.set buffer_byte (j * fullimg_w + i + 2) b;
-      done
-     done;
-     buffer_byte *)
-
   let build_full_map (res:result) =
     let img_grid = res.img_grid in
     if (res.status = false || List.length img_grid = 0
         || img_grid |> List.hd |> List.length = 0) then
-      (Bytes.empty, (0,0))
+      "error"
     else
       let int_tilesize = int_of_float tile_size in
       let fullimg_h = (img_grid |> List.length) * int_tilesize in
@@ -443,14 +363,10 @@ module Images : MapImage = struct
                 Rgb24.blit bmp 0 0 buffer_rgb (i*int_tilesize) (j*int_tilesize) w h;
               | _ -> failwith "Only supports RGB24"
             ) imglst) img_grid;
-      Png.save "testcheap.png" [] (Rgb24 buffer_rgb);
-      let ch = open_in "testcheap.png" in
-      let buf = Buffer.create max_img_size in
-      try
-        Buffer.add_channel buf ch max_img_size;
-        close_in ch;
-        (Buffer.to_bytes buf, (fullimg_w, fullimg_h))
-      with
-      | _ -> (Buffer.to_bytes buf, (fullimg_w, fullimg_h))
+      let fname_coord = List.fold_left (fun acc i -> (string_of_float i)^"_") "" [res.res_upleft_lon;res.res_upleft_lat;res.res_lowright_lon;res.res_lowright_lat] in
+      let fname = fname_coord^(res.tree_depth |> string_of_int) in
+      Png.save fname [] (Rgb24 buffer_rgb);
+      fname
+
 
 end

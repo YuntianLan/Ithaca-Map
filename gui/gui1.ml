@@ -106,7 +106,7 @@ let onload _ =
 
   let img_map = Html.createImg doc in
   setId img_map "map";
-  img_map##src <- js "../tiles/1.png";
+  img_map##src <- js "http://10.145.18.75:8000/";
   Dom.appendChild div_mapbody img_map;
 
   (* ==================== end div map-container ==================== *)
@@ -220,10 +220,10 @@ let onload _ =
   a_clear##onclick <- Html.handler
       (fun _ ->
 
-         let url = "http://127.0.0.1:8000/" in
+         let url = "http://10.145.18.75:8000/" in
             let start () = 
             http_get url >>= (fun s -> 
-               input_1##value <- js s;
+              img_map##src <- js s;
                Lwt.return ()) in
             ignore(start ());
             Js._true);
