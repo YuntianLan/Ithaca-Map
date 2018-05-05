@@ -1,5 +1,4 @@
 
-true: package(oUnit), package(yojson), package(str), package(camlimages), package(camlimages.png)
+true: package(oUnit), package(yojson), package(str), package(camlimages), package(camlimages.png), package(cohttp), package(lwt), package(cohttp-lwt-unix)
 
-<server.ml> : thread
-<server.{native,byte}> : thread
+
