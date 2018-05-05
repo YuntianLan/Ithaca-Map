@@ -13,6 +13,7 @@ open Pervasives
  * 		3. Path from one coord to another coord
  * 		4. Result given a query parameter
  * 		5. Image (png) given a result
+ * 		6. List of auto-completed names given a string input
  *
  * Additional parameters:
  *
@@ -40,6 +41,9 @@ open Pervasives
  *
  * Parameters for index = 5:
  * -- path: string
+ *
+ * Parameters for index = 6:
+ * -- input: string
  * 
  *)
 
@@ -106,10 +110,13 @@ let response_str tg uri =
 		| Some name ->
 			begin try
 				begin match MapGraph.get_node_by_name name tg.mapgraph with
-				| None -> "Error: idx = 2, location not found"
-				| Some nd ->
-					let lat, lon = MapGraph.node_to_coord nd in
-						(string_of_float lat) ^ " " ^ (string_of_float lon)
+				| [] -> "[]"
+				| nlst ->
+					let floats = List.map MapGraph.node_to_coord nlst in
+					let strs = List.map (fun (la,lo) ->
+						(string_of_float la) ^ "," ^ (string_of_float lo)) floats in
+					let accum a b = a ^ ";" ^ b in
+					List.fold_left accum (List.hd strs) (List.tl strs)
 				end
 			with _ -> "Error: idx = 2, exception in parsing uri" 
 			end
@@ -165,6 +172,20 @@ let response_str tg uri =
 			with _ -> "Error: idx = 4, exception in parsing uri"
 			end
 		| _, _, _, _, _, _ -> "Error: idx = 4, parameter not found"
+	
+	(* List of auto-completed names given a string input *)
+	else if idx = "6" then
+		let input_opt = Uri.get_query_param uri "input" in
+		begin match input_opt with
+		| None -> "Error: idx = 6, parameter 'input' not found"
+		| Some input ->
+			begin match MapGraph.autocomplete tg.mapgraph input with
+			| [] -> "[]"
+			| lst ->
+				let accum a b = a ^ ";" ^ b in
+				List.fold_left accum (List.hd lst) (List.tl lst)
+			end
+		end
 	else "Error: invalid service index"
 
 

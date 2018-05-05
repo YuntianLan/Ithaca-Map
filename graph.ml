@@ -9,9 +9,10 @@ module type MapGraph = sig
 
 	val init_graph : string -> t
 	val get_node_by_coord : float -> float -> t -> node
-	val get_node_by_name : string -> t -> node option
+	val get_node_by_name : string -> t -> node list
 	val find_path : bool -> node -> node -> t -> float * node list
 	val node_to_coord : node -> (float * float)
+	val autocomplete : t -> string -> string list
 
 end
 
@@ -233,6 +234,7 @@ module Map : MapGraph = struct
 	module H = IntHashtbl
 
 	type place_trie = (place list) Trie.trie
+	type auto_trie = (string) Trie.trie
 
 	type node = nd
 
@@ -257,6 +259,9 @@ module Map : MapGraph = struct
 
 		(* Given a place's name, find the "place" of that name *)
 		name_trie: place_trie;
+
+		(* Given a string s, find at most 10 strings begin with s *)
+		auto_trie: auto_trie;
 
 		(* 	Given a node id (int), find all the nid of
 		 * the nodes reachable by walk/drive *)
@@ -548,7 +553,20 @@ module Map : MapGraph = struct
 		let way_table = build_way_table way_lst in
 
 		let walk_table = build_edge_table walk_ways in
-		let drive_table = build_edge_table drive_ways in 
+		let drive_table = build_edge_table drive_ways in
+
+		let nd_names = node_lst |> 
+			List.filter (fun (n:nd) -> not (n.name = "")) |>
+			List.map (fun (n:nd) -> n.name) in
+		let way_names = way_lst |>
+			List.filter (fun (w:way) -> not (w.name = "")) |>
+			List.map (fun (w:way) -> w.name) in
+		let auto_trie_empty = Trie.empty in
+		let auto_insert auto str = Trie.insert auto str str in
+		let interm = List.fold_left
+			auto_insert auto_trie_empty nd_names in
+		let auto_trie = List.fold_left
+			auto_insert interm way_names in
 
 		let tree = build_kdtree node_lst true in
 		{
@@ -562,8 +580,26 @@ module Map : MapGraph = struct
 			way_table = way_table;
 			way_lst = way_lst;
 			node_kdtree = tree;
+			auto_trie = auto_trie;
 		}
 
+
+	let autocomplete map input = 
+		if input = "" then []
+		else
+			let filt = fun s -> (not (s = "")) in
+			let found = 
+				Trie.begin_with map.auto_trie filt input in
+			let comp a b = 
+				if a < b then (-1) else if a > b then 1 else 0 in
+			let sorted = List.sort comp found in
+			if (List.length sorted) < 11 then sorted
+			else
+				let rec take n lst acc = 
+					if n=0 then acc
+					else take (n-1) (List.tl lst) (acc@[List.hd lst])
+				in
+				take 10 sorted []
 
 	(*[node_to_coord n] returns the latitude 
 	and longitude of the given node *)
@@ -734,18 +770,20 @@ module Map : MapGraph = struct
 		} in
 		nearest dummy_node map.node_kdtree
 
-	(* TODO: improve when multiple nodes possible? *)
+
 	let get_node_by_name name map =
 		match Trie.find map.name_trie name with
-		| None -> None
-		| Some p ->
-			(* If multiple entries, select the first one *)
-			match (List.hd p) with
-			| Nodeid nid -> Some (H.find map.node_table nid)
-			| Wayid wid -> 
-				let w = H.find map.way_table wid in
-				let nid = List.hd w.nodes in
-				Some (H.find map.node_table nid)
+		| None -> []
+		| Some lst ->
+			let process (p : place) = 
+				match p with
+				| Nodeid nid -> H.find map.node_table nid
+				| Wayid wid -> 
+					let w = H.find map.way_table wid in
+					let nid = List.hd w.nodes in
+					H.find map.node_table nid
+			in
+			List.map process lst
 
 	let get_snd (_,e,_) = e
 	let get_trd (_,_,e) = e
@@ -772,16 +810,17 @@ module Map : MapGraph = struct
 	starting location and ending location*)
 	let path_by_names drive s e map = 
 		let ns = match get_node_by_name s map with
-			| None -> failwith "start name not found"
-			| Some p -> p in
+			| [] -> failwith "start name not found"
+			| s::t -> s in
 		let ne = match get_node_by_name e map with
-			| None -> failwith "end name not found"
-			| Some q -> q in
+			| [] -> failwith "end name not found"
+			| e::t -> e in
 		find_path drive ns ne map
 
 end
 
+(*
 let g = Map.init_graph "graph/full.json"
 let n1 = Map.get_node_by_coord 42.813746 (-76.7116266) g
 let n2 = Map.get_node_by_coord 42.6753 (-76.11712) g
-
+*)
