@@ -66,8 +66,6 @@ type t = {
 }
 
 
-let sip = Unix.inet_addr_of_string "127.0.0.1"
-let sport = 5001
 
 let init_server () =
 	let gr = MapGraph.init_graph "graph/full.json" in
@@ -167,114 +165,38 @@ let response_str tg uri =
 			with _ -> "Error: idx = 4, exception in parsing uri"
 			end
 		| _, _, _, _, _, _ -> "Error: idx = 4, parameter not found"
-	else "Error: not implemented"
+	else "Error: invalid service index"
 
 
-
-(*
-
-	(* Result and image given client param *)
-	else if idx = "4" then
-		let _ = print_endline "entered 4" in
-		let prm : param option = try Some({
-				param_upleft_lon = float_of_string (List.nth args 2);
-				param_upleft_lat = float_of_string (List.nth args 1);
-				param_lowright_lon = float_of_string (List.nth args 4);
-				param_lowright_lat = float_of_string (List.nth args 3);
-				width = float_of_string (List.nth args 5);
-				height = float_of_string (List.nth args 6);
-			})
-			with _ -> None in
-		let _ = print_endline "build param" in
-		begin match prm with
-			| None ->
-				let _ = print_endline "nothing, sending" in
-					"Error: exception in parsing parameter!"
-			| Some pm ->
-				let _ = print_endline "something, sending" in
-				let rt = ImageTree.query_image tg.imagetree pm in
-				let fullmap_info = ImageTree.build_full_map rt in
-				let bts = fst fullmap_info in
-				let fullw = fullmap_info |> snd |> fst |> string_of_int in
-				let fullh = fullmap_info |> snd |> fst |> string_of_int in
-				let lol1 = string_of_float rt.res_upleft_lon in
-				let lal1 = string_of_float rt.res_upleft_lat in
-				let lor1 = string_of_float rt.res_lowright_lon in
-				let lar1 = string_of_float rt.res_lowright_lat in
-				let depth = string_of_int rt.tree_depth in
-				let status = if rt.status then "1" else "0" in
-				let res1 = fullw ^ " " ^ fullh ^ " " ^ lal1 ^ " " ^ lol1 ^ " " ^
-									 lar1 ^ " " ^ lor1 ^ " " ^ depth ^ " " ^ status ^ "$" in
-				res1
-		end
-	(* Error *)
-	else
-		"Error: improper request"
-
-*)
-
-
-
-
-
-
-
-
+let sip = Unix.inet_addr_of_string "127.0.0.1"
+let sport = 5001
 
 
 let server =
-	let callback _conn req body =
-		let uri = req |> Request.uri |> Uri.to_string in
-		let meth = req |> Request.meth |> Code.string_of_method in
-		let headers = req |> Request.headers |> Header.to_string in
-		let _ = print_endline (uri) in
-		body |> Cohttp_lwt.Body.to_string >|= (fun body ->
-				(Printf.sprintf "Uri: %s\nMethod: %s\nHeaders\nHeaders: %s\nBody: %s"
-					uri meth headers body))
-		>>= (fun body -> Server.respond_string 
-			~headers:(Header.init_with "Access-Control-Allow-Origin" "*")
-			~status:`OK ~body:"hello world" ())
-		(* (body |> Cohttp_lwt.Body.to_string) >>= 
-			 (fun body -> Server.respond_string ~status:`OK ~body:"hello world" ()) *)
-	in
-	Server.create ~mode:(`TCP (`Port 8001)) (Server.make ~callback ())
-(* 
-let server2 =
-	let tg = init_server () in
-	let callback _conn req body =
-		let uri = req |> Request.uri in
-		let meth = req |> Request.meth |> Code.string_of_method in
-		let headers = req |> Request.headers |> Header.to_string in
-		(* let _ = print_endline (uri) in *)
-		body |> Cohttp_lwt.Body.to_string >|= (fun body ->
-				(* let _ = print_endline body in *)
-				(* let _ = print_int (String.length body) in *)
-				(Printf.sprintf "Uri: %s\nMethod: %s\nHeaders\nHeaders: %s\nBody: %s"
-					uri meth headers body))
-		>>= (fun body -> Server.respond_file
-			~headers:(Header.init_with "Access-Control-Allow-Origin" "*")
-			~fname: "testcheap.png" ())
-		(* (body |> Cohttp_lwt.Body.to_string) >>= 
-			 (fun body -> Server.respond_string ~status:`OK ~body:"hello world" ()) *)
-	in
-	Server.create ~mode:(`TCP (`Port 8002)) (Server.make ~callback ()) *)
-
-
-let server2 =
 	let tg = init_server () in
 	let callback _conn req body =
 		let uri = req |> Request.uri in
 		body |> Cohttp_lwt.Body.to_string >|= (fun body -> ())
-		>>= (fun body -> Server.respond_string
+		>>= (fun body -> 
+			if (Uri.get_query_param uri "index") = Some "5" then
+				match Uri.get_query_param uri "path" with
+				| None -> 
+					Server.respond_string
+					~headers:(Header.init_with "Access-Control-Allow-Origin" "*")
+					~status:`OK ~body:("Error: idx = 5, no path provided") ()
+				| Some path ->
+					Server.respond_file
+					~headers:(Header.init_with "Access-Control-Allow-Origin" "*")
+					~fname: path ()
+			else
+			Server.respond_string
 			~headers:(Header.init_with "Access-Control-Allow-Origin" "*")
 			~status:`OK ~body:(response_str tg uri) ())
-		(* (body |> Cohttp_lwt.Body.to_string) >>= 
-			 (fun body -> Server.respond_string ~status:`OK ~body:"hello world" ()) *)
 	in
 	Server.create ~mode:(`TCP (`Port 8000)) (Server.make ~callback ())
 
 
-let () = ignore (Lwt_main.run server2)
+let () = ignore (Lwt_main.run server)
 
 
 
