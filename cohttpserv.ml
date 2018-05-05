@@ -6,6 +6,48 @@ open Graph
 open Camlimages
 open Pervasives
 
+(* Parameter keys:
+ * index: int {1,2,3,4}
+ * 		1. Nearest node coord given coord
+ * 		2. Nearest node coord given location name
+ * 		3. Path from one coord to another coord
+ * 		4. Result given a query parameter
+ * 		5. Image (png) given a result
+ *
+ * Additional parameters:
+ *
+ * Parameters for index = 1:
+ * -- lat: float, eg: 42.813746
+ * -- lon: float, eg: -76.7116266
+ *
+ * Parameter for index = 2:
+ * -- name: string, eg: Texas Roadhouse
+ *
+ * Parameters for index = 3:
+ * -- drive: true / false
+ * -- slat: lat for start, float
+ * -- slon: lon for start, float
+ * -- elat: lat for end, float
+ * -- elon: lon for end, float
+ *
+ * Parameters for index = 4:
+ * -- upleft_lat: float
+ * -- upleft_lon: float
+ * -- lowright_lat: float
+ * -- lowright_lon: float
+ * -- width: float
+ * -- height: float
+ *
+ * Parameters for index = 5:
+ * -- path: string
+ * 
+ *)
+
+let eg_resp1 = "42.813646 -76.7116234"
+let eg_resp2 = "42.813646,-76.7116234;42.813646,-76.7116234"
+(* Service 3, first float represent length of route,
+ * seperated by a space, the remaining coords have no space in between *)
+let eg_resp3 = "3.45 42.813646,-76.7116234;42.813646,-76.7116234"
 
 
 module ImageTree = Image.Images
@@ -36,62 +78,102 @@ let init_server () =
 
 (* [responst_bytes] tg s takes in the tree/graph and
  * the request string, respond with a stream of bytes *)
-let response_str tg s =
-	let args = String.split_on_char ' ' s in
-	let idx = List.hd args in
+let response_str tg uri =
+	let idx = match Uri.get_query_param uri "index" with
+	| None -> "0" | Some s -> s in
+
+	(* Nearest node coord given coord *)
 	if idx = "1" then
-		let res = try
-				if (List.length args) < 3 then
-						"Error: too few arguments for service 1"
-				else
-					let lat = float_of_string (List.nth args 1) in
-					let lon = float_of_string (List.nth args 2) in
-					let nd =
-						MapGraph.get_node_by_coord lat lon tg.mapgraph in
-					let rlat, rlon = MapGraph.node_to_coord nd in
-					let slat = string_of_float rlat in
-					let slon = string_of_float rlon in
-						slat ^ " " ^ slon
-			with _ ->
-				"Error: invalid command for service 1"
-		in res
-		(* Location name to node coord *)
+		let slat_opt = Uri.get_query_param uri "lat" in
+		let slon_opt = Uri.get_query_param uri "lon" in
+		begin match slat_opt, slon_opt with
+		| Some slat, Some slon ->
+			begin try
+				let lat = float_of_string slat in
+				let lon = float_of_string slon in
+				let nd = 
+					MapGraph.get_node_by_coord lat lon tg.mapgraph in
+				let rlat, rlon = MapGraph.node_to_coord nd in
+				(string_of_float rlat) ^ " " ^ (string_of_float rlon)
+			with _ -> "Error: idx = 1, exception in parsing uri"
+			end
+		| _, _ -> "Error: idx = 1, lat/lon not found"
+		end
+	
+	(* Location name to node coord *)
 	else if idx = "2" then
-		let res = try
-				if (String.length s) < 3 then
-					"Error: string length for service 2 too short"
-				else
-					let name = String.sub s 2 ((String.length s)-2) in
-					match MapGraph.get_node_by_name name tg.mapgraph with
-					| None -> "Error: location not found"
-					| Some nd ->
-						let lat, lon = MapGraph.node_to_coord nd in
-							(string_of_float lat) ^ " " ^ (string_of_float lon)
-			with _ ->
-				"Error: invalid command for service 2"
-		in res
-		(* Path from one coord to another coord *)
+		let name_opt = Uri.get_query_param uri "name" in
+		match name_opt with
+		| None -> "Error: idx = 2, name not found"
+		| Some name ->
+			begin try
+				begin match MapGraph.get_node_by_name name tg.mapgraph with
+				| None -> "Error: idx = 2, location not found"
+				| Some nd ->
+					let lat, lon = MapGraph.node_to_coord nd in
+						(string_of_float lat) ^ " " ^ (string_of_float lon)
+				end
+			with _ -> "Error: idx = 2, exception in parsing uri" 
+			end
+
+	(* Path from one coord to another coord *)
 	else if idx = "3" then
-		try
-			let drive = (List.nth args 1) = "drive" in
-			let slat = float_of_string (List.nth args 2) in
-			let slon = float_of_string (List.nth args 3) in
-			let elat = float_of_string (List.nth args 4) in
-			let elon = float_of_string (List.nth args 5) in
-			let ns = MapGraph.get_node_by_coord slat slon tg.mapgraph in
-			let ne = MapGraph.get_node_by_coord elat elon tg.mapgraph in
-			let trip_len, path = MapGraph.find_path drive
-					ns ne tg.mapgraph in
-			let floats = List.map MapGraph.node_to_coord path in
-			let strs = List.map (fun (la,lo) ->
-					(string_of_float la) ^ "," ^ (string_of_float lo)) floats in
-			let accum a b = a ^ ";" ^ b in
-			let total_str = List.fold_left accum (List.hd strs) (List.tl strs) in
-			let res_bts = (string_of_float trip_len) ^ " " ^ total_str in
-				res_bts
-		with
-			| _ -> "illegal arguments for service 3"
-		(* Result and image given client param *)
+		let drive_opt = Uri.get_query_param uri "drive" in
+		let slat_opt = Uri.get_query_param uri "slat" in
+		let slon_opt = Uri.get_query_param uri "slon" in
+		let elat_opt = Uri.get_query_param uri "elat" in
+		let elon_opt = Uri.get_query_param uri "elon" in
+		match drive_opt, slat_opt, slon_opt, elat_opt, elon_opt with
+		| Some drive, Some slat, Some slon, Some elat, Some elon ->
+			begin try 
+				let dflag = drive = "true" in
+				let ns = MapGraph.get_node_by_coord 
+					(float_of_string slat) (float_of_string slon) tg.mapgraph in
+				let ne = MapGraph.get_node_by_coord 
+					(float_of_string elat) (float_of_string elon) tg.mapgraph in
+				let trip_len, path = MapGraph.find_path dflag ns ne tg.mapgraph in
+				let floats = List.map MapGraph.node_to_coord path in
+				let strs = List.map (fun (la,lo) ->
+						(string_of_float la) ^ "," ^ (string_of_float lo)) floats in
+				let accum a b = a ^ ";" ^ b in
+				let total_str = List.fold_left accum (List.hd strs) (List.tl strs) in
+				(string_of_float trip_len) ^ " " ^ total_str
+			with _ -> "Error: idx = 3, exception in parsing uri" 
+			end
+		| _, _, _, _, _ -> "Error: idx = 3, parameter not found"
+
+	(* Result and image given client param *)
+	else if idx = "4" then
+		let ulat_opt = Uri.get_query_param uri "upleft_lat" in
+		let ulon_opt = Uri.get_query_param uri "upleft_lon" in
+		let llat_opt = Uri.get_query_param uri "lowright_lat" in
+		let llon_opt = Uri.get_query_param uri "lowright_lon" in
+		let width_opt = Uri.get_query_param uri "width" in
+		let height_opt = Uri.get_query_param uri "height" in
+		match ulat_opt, ulon_opt, llat_opt, llon_opt, width_opt, height_opt with
+		| Some ulat, Some ulon, Some llat, Some llon, Some width, Some height ->
+			begin try
+				let prm : param = {
+					param_upleft_lon = float_of_string ulon;
+					param_upleft_lat = float_of_string ulat;
+					param_lowright_lon = float_of_string llon;
+					param_lowright_lat = float_of_string llat;
+					width = float_of_string width;
+					height = float_of_string height;
+				} in
+				let rt = ImageTree.query_image tg.imagetree prm in
+				let path = ImageTree.build_full_map rt in
+				path
+			with _ -> "Error: idx = 4, exception in parsing uri"
+			end
+		| _, _, _, _, _, _ -> "Error: idx = 4, parameter not found"
+	else "Error: not implemented"
+
+
+
+(*
+
+	(* Result and image given client param *)
 	else if idx = "4" then
 		let _ = print_endline "entered 4" in
 		let prm : param option = try Some({
@@ -125,11 +207,11 @@ let response_str tg s =
 									 lar1 ^ " " ^ lor1 ^ " " ^ depth ^ " " ^ status ^ "$" in
 				res1
 		end
-		(* Error *)
+	(* Error *)
 	else
 		"Error: improper request"
 
-
+*)
 
 
 
@@ -156,14 +238,17 @@ let server =
 			 (fun body -> Server.respond_string ~status:`OK ~body:"hello world" ()) *)
 	in
 	Server.create ~mode:(`TCP (`Port 8001)) (Server.make ~callback ())
-
+(* 
 let server2 =
+	let tg = init_server () in
 	let callback _conn req body =
-		let uri = req |> Request.uri |> Uri.to_string in
+		let uri = req |> Request.uri in
 		let meth = req |> Request.meth |> Code.string_of_method in
 		let headers = req |> Request.headers |> Header.to_string in
-		let _ = print_endline (uri) in
+		(* let _ = print_endline (uri) in *)
 		body |> Cohttp_lwt.Body.to_string >|= (fun body ->
+				(* let _ = print_endline body in *)
+				(* let _ = print_int (String.length body) in *)
 				(Printf.sprintf "Uri: %s\nMethod: %s\nHeaders\nHeaders: %s\nBody: %s"
 					uri meth headers body))
 		>>= (fun body -> Server.respond_file
@@ -172,8 +257,21 @@ let server2 =
 		(* (body |> Cohttp_lwt.Body.to_string) >>= 
 			 (fun body -> Server.respond_string ~status:`OK ~body:"hello world" ()) *)
 	in
-	Server.create ~mode:(`TCP (`Port 8000)) (Server.make ~callback ())
+	Server.create ~mode:(`TCP (`Port 8002)) (Server.make ~callback ()) *)
 
+
+let server2 =
+	let tg = init_server () in
+	let callback _conn req body =
+		let uri = req |> Request.uri in
+		body |> Cohttp_lwt.Body.to_string >|= (fun body -> ())
+		>>= (fun body -> Server.respond_string
+			~headers:(Header.init_with "Access-Control-Allow-Origin" "*")
+			~status:`OK ~body:(response_str tg uri) ())
+		(* (body |> Cohttp_lwt.Body.to_string) >>= 
+			 (fun body -> Server.respond_string ~status:`OK ~body:"hello world" ()) *)
+	in
+	Server.create ~mode:(`TCP (`Port 8000)) (Server.make ~callback ())
 
 
 let () = ignore (Lwt_main.run server2)
