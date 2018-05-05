@@ -2,7 +2,7 @@ open Js_of_ocaml
 open Js_of_ocaml_lwt
 open Js
 open Lwt
-
+open Clientgui
 (* ========= constants ========== *)
 let max_depth = 6
 let min_depth = 1
@@ -28,14 +28,7 @@ type gui_state = {
   current_depth: int;
 }
 
-(* let body =
-  Client.get (Uri.of_string "http://localhost:8000") >>= fun (resp, body) ->
-  let code = resp |> Response.status |> Code.code_of_status in
-  Printf.printf "Response code: %d\n" code;
-  Printf.printf "Headers: %s\n" (resp |> Response.headers |> Header.to_string);
-  body |> Cohttp_lwt.Body.to_string >|= fun body ->
-  Printf.printf "Body of length: %d\n" (String.length body);
-  body *)
+
 let http_get url =
   XmlHttpRequest.get url >>= fun r ->
   let cod = r.XmlHttpRequest.code in

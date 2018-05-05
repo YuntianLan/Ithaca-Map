@@ -75,7 +75,8 @@ let http_get url =
   else fst (Lwt.wait ())
 
 let http_get_node_by_coord lat lon http_res =
-  let url = base_url^"?index=1"^"&lat="^lat^"&lon="^lon in
+  let url = base_url^"?index=1"^"&lat="^(string_of_float lat)^
+            "&lon="^(string_of_float lon) in
   let start () =
     http_get url >>= (fun res ->
         let params = String.split_on_char ' ' res in
@@ -107,7 +108,8 @@ let http_get_nodes_by_name name http_res =
 
 let http_get_route (drive:bool) slat slon elat elon http_res =
   let url = base_url^"?index=3"^"&drive="^(string_of_bool drive)^"&slat="
-            ^slat^"&slon="^slon^"&elat="^elat^"&elon="^elon in
+            ^(string_of_float slat)^"&slon="^(string_of_float slon)^"&elat="
+            ^(string_of_float elat)^"&elon="^(string_of_float elon) in
   let start () =
     http_get url >>= (fun res ->
         let params = String.split_on_char ' ' res in
@@ -142,7 +144,7 @@ let http_get_res (params:params) st http_res =
   ignore(start ())
 
 
-let http_get_autocomp (s:string) (http_res:http_res) string list =
+let http_get_autocomp (s:string) (http_res:http_res) : unit =
   let url = base_url^"?index=6"^"&input="^s in
   let start () =
     http_get url >>= (fun res ->
