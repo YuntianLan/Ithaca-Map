@@ -10,5 +10,4 @@ cohttpserver:
 	./cohttpserv.native
 clean:
 	ocamlbuild -clean
-	rm -rf *.js
 	rm -rf *.cmi *.cmo *.byte
