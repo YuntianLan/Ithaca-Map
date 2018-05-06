@@ -10,7 +10,6 @@ let root_upleft_lat = 42.4883
 let root_lowright_lon = -76.4649
 let root_lowright_lat = 42.4235
 let tile_size = 256.0
-let max_img_size = 6000000
 (* ============================== *)
 
 module type MapImage = sig
