@@ -1,9 +1,5 @@
-(* reference: https://www.lri.fr/~filliatr/ftp/ocaml/ds/trie.ml.html *)
+(* reference: part of the code is inspired by https://www.lri.fr/~filliatr/ftp/ocaml/ds/trie.ml.html *)
 
-
-
-
-(* type value = M.t *)
 
 (* AF: the Node(Some v, [(c1, Node(v1, [sub1])), (c2,Node(v2, [sub2])),...,(cn,Node(vn, [subn]))])
  * represents the Trie with root vaule v, and children with keys [c1...cn] associated to
