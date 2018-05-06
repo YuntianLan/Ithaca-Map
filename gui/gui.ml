@@ -13,21 +13,6 @@ let init_upleft_lat = 42.4883
 let init_lowright_lon = -76.4649
 let init_lowright_lat = 42.4235
 
-
-type params = {
-  upleft_lon: float;
-  upleft_lat: float;
-  lowright_lon: float;
-  lowright_lat: float;
-  width: float;
-  height: float;
-}
-(* TODO *)
-type gui_state = {
-  params: params;
-  current_depth: int;
-}
-
 let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
 
 (* [fail] is a failure/exception handler *)
