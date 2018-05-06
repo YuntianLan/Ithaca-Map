@@ -55,6 +55,12 @@ type client_state = {
   mutable markers : marker list;
 }
 
+(* Dummy mutable values *)
+let by_coord = ref (0.,0.)
+let by_name = ref [(0.,0.)]
+let route = ref (0.,[(0.,0.)])
+let img_path = ref ""
+let autocomp = ref [""]
 
 (* ========= HTTP requests ========== *)
 let http_get url =
@@ -66,7 +72,6 @@ let http_get url =
   else fst (Lwt.wait ())
 
 let http_get_node_by_coord lat lon =
-  let by_coord = ref (0.,0.) in
   let url = base_url^"?index=1"^"&lat="^(string_of_float lat)^
             "&lon="^(string_of_float lon) in
   let start () =
@@ -92,7 +97,6 @@ let split_coord_list (s:string) : (float*float) list =
   tups
 
 let http_get_nodes_by_name name =
-  let by_name = ref [(0.,0.)] in
   let url = base_url^"?index=2"^"&name="^name in
   let start () =
     http_get url >>= (fun res ->
@@ -102,7 +106,6 @@ let http_get_nodes_by_name name =
   !by_name
 
 let http_get_route (drive:bool) slat slon elat elon =
-  let route = ref (0.,[(0.,0.)]) in
   let url = base_url^"?index=3"^"&drive="^(string_of_bool drive)^"&slat="
             ^(string_of_float slat)^"&slon="^(string_of_float slon)^"&elat="
             ^(string_of_float elat)^"&elon="^(string_of_float elon) in
@@ -118,7 +121,6 @@ let http_get_route (drive:bool) slat slon elat elon =
   !route
 
 let http_get_res (params:params) st =
-  let img_path = ref "" in
   let url = base_url^"?index=4"^
             "&upleft_lat"^string_of_float params.upleft_lat^
             "&upleft_lon"^string_of_float params.upleft_lon^
@@ -144,7 +146,6 @@ let http_get_res (params:params) st =
 
 
 let http_get_autocomp (s:string) =
-  let autocomp = ref ["abc"] in
   let url = base_url^"?index=6"^"&input="^s in
   let start () =
     http_get url >>= (fun res ->

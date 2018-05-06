@@ -336,7 +336,6 @@ let onload _ =
       | Some x -> Dom.appendChild x a);
       (* Dom.appendChild div_card_content a; *)
       let lst = http_get_autocomp v in
-      Dom_html.window##alert (js (List.hd lst));
       for i = 0 to List.length lst - 1 do
       let word = List.nth lst i in
       if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)

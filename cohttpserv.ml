@@ -214,9 +214,6 @@ let response_str tg uri =
 	else "Error: invalid service index"
 
 
-let sip = Unix.inet_addr_of_string "127.0.0.1"
-let sport = 5001
-
 
 let server =
 	let tg = init_server () in
