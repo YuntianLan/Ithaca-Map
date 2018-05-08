@@ -100,6 +100,26 @@ let closeAllList elt input =
     )
 
 let debug f = Printf.ksprintf (fun s -> Firebug.console##log (Js.string s)) f
+
+
+let get_geo () =
+  if (Geolocation.is_supported()) then
+    let geo = Geolocation.geolocation in
+    let options = Geolocation.empty_position_options() in
+    let () = options##enableHighAccuracy <- true in
+    let f_success pos =
+      let coords = pos##coords in
+      let latitude = coords##latitude in
+      (* Firebug.console##debug(latitude); *)
+      Dom_html.window##alert (js ((string_of_float latitude)^(string_of_float coords##longitude)));
+    in
+    let f_error err =
+      let code = err##code in
+      let msg = err##message in
+      if code = err##_TIMEOUT then Firebug.console##debug(msg)
+    in
+    geo##getCurrentPosition(Js.wrap_callback f_success, Js.wrap_callback f_error, options)
+
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
   let img_dest = Html.createImg doc in
@@ -122,7 +142,7 @@ let onload _ =
          (* img_dest##style##transform <- js ("translateX("^(string_of_int ev##clientX)^")translateY("^(string_of_int ev##clientY)^")"); *)
          img_dest##style##left <- js ((string_of_int (ev##clientX-12))^"px");
          img_dest##style##top <- js ((string_of_int (ev##clientY-25))^"px");
-         Dom_html.window##alert (js "happ");
+         (* Dom_html.window##alert (js "happ"); *)
          (* debug (string_of_int (ev##clientX)); *)
          Js._true);
   (* let img_map = Html.createImg doc in
@@ -294,7 +314,8 @@ let onload _ =
   append_text a_clear "clear route";
   a_clear##onclick <- Html.handler
       (fun _ ->
-         input_1##value <- js "";
+         get_geo ();
+         (* input_1##value <- js ""; *)
          Js._true);
   Dom.appendChild div_nothing a_clear;
 
@@ -423,9 +444,9 @@ debug_msg (Format.sprintf "Mouse up %d %d %d %d" x0 y0 ev##clientX ev##clientY);
                    let x = ev##clientX and y = ev##clientY in
                    let dx = x - !mx and dy = y - !my in
                    if dy != 0 then
-                     Dom_html.window##alert (js ("dy" ^ string_of_int dy));
+                     (* Dom_html.window##alert (js ("dy" ^ string_of_int dy)); *)
                    if dx != 0 then
-                     Dom_html.window##alert (js ("dx" ^ string_of_int dx));
+                     (* Dom_html.window##alert (js ("dx" ^ string_of_int dx)); *)
                    mx := x; my := y;
                    Js._true))
              Js._true
