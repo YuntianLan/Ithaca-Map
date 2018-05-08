@@ -593,13 +593,14 @@ module Map : MapGraph = struct
 			let comp a b = 
 				if a < b then (-1) else if a > b then 1 else 0 in
 			let sorted = List.sort comp found in
-			if (List.length sorted) < 11 then sorted
+			sorted
+			(* if (List.length sorted) < 11 then sorted
 			else
 				let rec take n lst acc = 
 					if n=0 then acc
 					else take (n-1) (List.tl lst) (acc@[List.hd lst])
 				in
-				take 10 sorted []
+				take 10 sorted [] *)
 
 	(*[node_to_coord n] returns the latitude 
 	and longitude of the given node *)

@@ -55,15 +55,12 @@ type client_state = {
   mutable markers : marker list;
 }
 
-type http_res = {
-  mutable by_coord : float*float;
-  mutable by_name : (float*float) list;
-  mutable route : float*((float*float) list);
-  mutable img_path : string;
-  mutable autocomplete : string list;
-}
-
-
+(* Dummy mutable values *)
+let by_coord = ref (0.,0.)
+let by_name = ref [(0.,0.)]
+let route = ref (0.,[(0.,0.)])
+let img_path = ref ""
+let autocomp = ref [""]
 
 (* ========= HTTP requests ========== *)
 let http_get url =
@@ -74,7 +71,7 @@ let http_get url =
   then Lwt.return msg
   else fst (Lwt.wait ())
 
-let http_get_node_by_coord lat lon http_res =
+let http_get_node_by_coord lat lon =
   let url = base_url^"?index=1"^"&lat="^(string_of_float lat)^
             "&lon="^(string_of_float lon) in
   let start () =
@@ -82,9 +79,10 @@ let http_get_node_by_coord lat lon http_res =
         let params = String.split_on_char ' ' res in
         let res_lat = List.nth params 0 |> float_of_string in
         let res_lon = List.nth params 1 |> float_of_string in
-        http_res.by_coord <- (res_lat, res_lon);
+        by_coord := (res_lat, res_lon);
         Lwt.return ()) in
-  ignore(start ())
+  ignore(start ());
+  !by_coord
 
 (* [split_coord_list s] is the list of coordinate tuples parsed from [s]
  * requries: [s] must be in the form "coord1,coord2;coord3,coord4;..."*)
@@ -98,15 +96,16 @@ let split_coord_list (s:string) : (float*float) list =
     ) params in
   tups
 
-let http_get_nodes_by_name name http_res =
+let http_get_nodes_by_name name =
   let url = base_url^"?index=2"^"&name="^name in
   let start () =
     http_get url >>= (fun res ->
-        http_res.by_name <- split_coord_list res;
+        by_name := split_coord_list res;
         Lwt.return ()) in
-  ignore(start ())
+  ignore(start ());
+  !by_name
 
-let http_get_route (drive:bool) slat slon elat elon http_res =
+let http_get_route (drive:bool) slat slon elat elon =
   let url = base_url^"?index=3"^"&drive="^(string_of_bool drive)^"&slat="
             ^(string_of_float slat)^"&slon="^(string_of_float slon)^"&elat="
             ^(string_of_float elat)^"&elon="^(string_of_float elon) in
@@ -116,11 +115,12 @@ let http_get_route (drive:bool) slat slon elat elon http_res =
         let length = List.nth params 0 |> float_of_string in
         let coord_params = List.nth params 1 in
         let tups = split_coord_list coord_params in
-        http_res.route <- (length, tups);
+        route := (length, tups);
         Lwt.return ()) in
-  ignore(start ())
+  ignore(start ());
+  !route
 
-let http_get_res (params:params) st http_res =
+let http_get_res (params:params) st =
   let url = base_url^"?index=4"^
             "&upleft_lat"^string_of_float params.upleft_lat^
             "&upleft_lon"^string_of_float params.upleft_lon^
@@ -139,19 +139,21 @@ let http_get_res (params:params) st http_res =
         st.current_depth <- List.nth params 4 |> int_of_string;
         st.img_w <- List.nth params 5 |> float_of_string;
         st.img_h <- List.nth params 6 |> float_of_string;
-        http_res.img_path <- res;
+        img_path := res;
         Lwt.return ()) in
-  ignore(start ())
+  ignore(start ());
+  !img_path
 
 
-let http_get_autocomp (s:string) (http_res:http_res) : unit =
+let http_get_autocomp (s:string) =
   let url = base_url^"?index=6"^"&input="^s in
   let start () =
     http_get url >>= (fun res ->
         let params = String.split_on_char ';' res in
-        http_res.autocomplete <- params;
+        autocomp := params;
         Lwt.return ()) in
-  ignore(start ())
+  ignore(start ());
+  !autocomp
 
 
 let real_lrlat st =

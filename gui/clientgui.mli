@@ -37,20 +37,12 @@ type client_state = {
   mutable markers : marker list;
 }
 
-type http_res = {
-  mutable by_coord : float*float;
-  mutable by_name : (float*float) list;
-  mutable route : float*((float*float) list);
-  mutable img_path : string;
-  mutable autocomplete : string list;
-}
+val http_get_node_by_coord : float -> float -> float*float
 
-val http_get_node_by_coord : float -> float -> http_res -> unit
+val http_get_nodes_by_name : string -> (float*float) list
 
-val http_get_nodes_by_name : string -> http_res -> unit
+val http_get_route : bool -> float -> float -> float -> float -> float*((float*float) list)
 
-val http_get_route : bool -> float -> float -> float -> float -> http_res -> unit
+val http_get_res : params -> client_state -> string
 
-val http_get_res : params -> client_state -> http_res -> unit
-
-val http_get_autocomp : string -> http_res -> unit
+val http_get_autocomp : string -> string list

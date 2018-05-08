@@ -115,7 +115,7 @@ $(function() {
                 if (data.query_success) {
                     $loadingStatus.hide();
                     map.src = 'data:image/png;base64,' + data.b64_encoded_image_data;
-                    console.log('Updating map with image length: ' +
+                    console.log('Updating map with image length: ' + 
                                 data.b64_encoded_image_data.length);
                     ullon_bound = data.raster_ul_lon;
                     ullat_bound = data.raster_ul_lat;
