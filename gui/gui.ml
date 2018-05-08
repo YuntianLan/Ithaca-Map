@@ -376,7 +376,7 @@ let onload _ =
              (* (fun node -> node##classList##remove (js "autocomplete-active")) *)
       done;
       Js._true);
-  
+
 
 (* let handle_drag element move stop click =
   let fuzz = 4 in
@@ -437,9 +437,9 @@ debug_msg (Format.sprintf "Mouse up %d %d %d %d" x0 y0 ev##clientX ev##clientY);
                    let x = ev##clientX and y = ev##clientY in
                    let dx = x - !mx and dy = y - !my in
                    if dy != 0 then
-                     failwith "unimplemented";
+                     Dom_html.window##alert (js ("dy" ^ string_of_int dy));
                    if dx != 0 then
-                     failwith "unimplemented";
+                     Dom_html.window##alert (js ("dx" ^ string_of_int dx));
                    mx := x; my := y;
                    Js._true))
              Js._true
