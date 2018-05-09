@@ -151,7 +151,6 @@ let autocomplete textbox =
                                    (* change the value in the textbox to the clicked text *)
                                    let content = i##value in
                                    textbox##value <- content
-
                                 )
                            )
                       )
@@ -382,70 +381,6 @@ let onload _ =
 
   autocomplete input_1;
   autocomplete input_2;
-
-
-  (* the autocompletion functionality *)
-  let currentFocus = ref 0 in
-  input_1##oninput <- Html.handler
-    (fun _ ->
-      closeAllList None (Dom_html.CoerceTo.element input_1);
-      doc##onclick <- Html.handler (fun ev -> (closeAllList (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element input_1));Js._true);
-      (* Create a new div to contain all the relevant autocomplete item *)
-      let a = Html.createDiv doc in
-      let v = Js.to_string input_1##value in
-      let lst = http_get_autocomp v in
-      (* Dom_html.window##alert (js v); *)
-
-      currentFocus := -1;
-
-         (* let newDiv = Html.createDiv doc in *)
-      setId a (Js.to_string input_1##id^ "autocomplete-list");
-      setClass a "autocomplete-items";
-      (match Js.Opt.to_option input_1##parentNode with
-      | None -> failwith "error"
-      | Some x -> Dom.appendChild x a);
-      (* Dom.appendChild div_card_content a; *)
-
-
-      for i = 0 to List.length lst - 1 do
-      let word = List.nth lst i in
-      (* Dom_html.window##alert (js word); *)
-      if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)
-      (* create a DIV element for each matching element: *)
-      then let b = ref (Html.createDiv doc) in
-      (* make the matching letters bold: *)
-      let inn = "<strong>" ^ (String.sub word 0 (String.length v)) ^ "</strong>" ^
-        (String.sub word (String.length v) (String.length word-String.length v))^
-        "<input type='hidden' value='" ^ word ^ "'>" in
-        !b##innerHTML <- js inn;
-        (* execute a function when someone clicks on the item value (DIV element): *)
-        (* When one of the suggested text is clicked, change the input to that word. *)
-        !b##onclick <- Html.handler
-          (fun _ ->
-            (* returns a Dom.nodeList *)
-            let inputfield = (!b)##getElementsByTagName (js "input") in
-            (* the first item of the list *)
-            let firstone = inputfield##item (0) in
-            Js.Opt.iter firstone
-              (fun node ->
-                let elt = Dom_html.CoerceTo.element node in
-                Js.Opt.iter elt
-                (fun elt ->
-                  let input = Dom_html.CoerceTo.input elt in
-                  Js.Opt.iter input
-                  (fun i ->
-                    (* change the value in the textbox to the clicked text *)
-                    let content = i##value in
-                    input_1##value <- content
-
-                  )
-                )
-            )
-            ;Js._true
-          );
-      Dom.appendChild a !b
-      done;
-      Js._true);
 
   let mx = ref 0 in
   let my = ref 0 in
