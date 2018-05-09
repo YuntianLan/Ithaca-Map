@@ -202,14 +202,12 @@ let onload _ =
          (* img_dest##style##transform <- js ("translateX("^(string_of_int ev##clientX)^")translateY("^(string_of_int ev##clientY)^")"); *)
          img_dest##style##left <- js ((string_of_int (ev##clientX-12))^"px");
          img_dest##style##top <- js ((string_of_int (ev##clientY-25))^"px");
-<<<<<<< HEAD
          Dom_html.window##alert (js "happ");
          Js._true); *)
-=======
+
          (* Dom_html.window##alert (js "happ"); *)
-         (* debug (string_of_int (ev##clientX)); *)
-         Js._true);
->>>>>>> 6bf4e2c8515cc086251ded2ae9a0776c8c27cc9b
+
+
   (* let img_map = Html.createImg doc in
   setId img_map "map";
   img_map##src <- js "../tiles/1.png";
@@ -493,62 +491,8 @@ let onload _ =
                  Html.removeEventListener c1;
                  Js.Opt.iter !c2 Html.removeEventListener;
                  Js._true))
-<<<<<<< HEAD
            Js._true);
       Js._false);
-=======
-           Js._true
-       in
-       let c2 = ref Js.null in
-       c2 := Js.some
-         (Html.addEventListener Html.document Html.Event.mouseup
-            (Html.handler
-               (fun ev ->
-(*
-debug_msg (Format.sprintf "Mouse up %d %d %d %d" x0 y0 ev##clientX ev##clientY);
-*)
-                  Html.removeEventListener c1;
-                  Js.Opt.iter !c2 Html.removeEventListener;
-                  if !started then begin
-                    element##id.style##id.cursor := Js.string "";
-                    stop ev##id.clientX ev##id.clientY
-                  end else
-                    click ev##id.clientX ev##id.clientY;
-                  Js._true))
-            Js._true);
-       Js._true) *)
-
-  let mx = ref 0 in
-    let my = ref 0 in
-    canvas##onmousedown <- Dom_html.handler
-      (fun ev ->
-         mx := ev##clientX; my := ev##clientY;
-         let c1 =
-           Html.addEventListener Html.document Html.Event.mousemove
-             (Dom_html.handler
-                (fun ev ->
-                   let x = ev##clientX and y = ev##clientY in
-                   let dx = x - !mx and dy = y - !my in
-                   if dy != 0 then
-                     (* Dom_html.window##alert (js ("dy" ^ string_of_int dy)); *)
-                   if dx != 0 then
-                     (* Dom_html.window##alert (js ("dx" ^ string_of_int dx)); *)
-                   mx := x; my := y;
-                   Js._true))
-             Js._true
-         in
-         let c2 = ref Js.null in
-         c2 := Js.some
-           (Html.addEventListener Html.document Html.Event.mouseup
-              (Dom_html.handler
-                 (fun _ ->
-                    Html.removeEventListener c1;
-                    Js.Opt.iter !c2 Html.removeEventListener;
-                    Js._true))
-              Js._true);
-         Js._false);
->>>>>>> 6bf4e2c8515cc086251ded2ae9a0776c8c27cc9b
-
   Js._false
 
 (* Start to load the page *)
