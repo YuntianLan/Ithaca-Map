@@ -314,7 +314,8 @@ let onload _ =
   append_text a_clear "clear route";
   a_clear##onclick <- Html.handler
       (fun _ ->
-         input_1##value <- js "";
+         get_geo ();
+         (* input_1##value <- js ""; *)
          Js._true);
   Dom.appendChild div_nothing a_clear;
 
