@@ -54,17 +54,15 @@ let draw_line context lst =
          (x,y)
     )
     (List.nth lst 0) lst
-  (* context##closePath () *)
-  (* context##moveTo (10.0,1.0);
-  context##lineTo (30.0,40.0); *)
-  (* context##stroke (); *)
+
 
 let draw_background canvas context onload src lst =
   let img_map = Html.createImg doc in
   img_map##onload <- Html.handler
       (fun ev ->
          context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
-         context##drawImage (img_map, (10.), (10.));
+         (* context##drawImage (img_map, 0., 0.); *)
+         context##drawImage_withSize (img_map, 0., 0., (float_of_int canvas##width), (float_of_int canvas##height));
          onload context lst;
         Js._false);
   setId img_map "map";
@@ -99,13 +97,97 @@ let closeAllList elt input =
         done
     )
 
+
+let autocomplete textbox =
+  let currentFocus = ref 0 in
+  textbox##oninput <- Html.handler
+      (fun _ ->
+         closeAllList None (Dom_html.CoerceTo.element textbox);
+         doc##onclick <- Html.handler (fun ev -> (closeAllList (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element textbox));Js._true);
+         (* Create a new div to contain all the relevant autocomplete item *)
+         let a = Html.createDiv doc in
+         let v = Js.to_string textbox##value in
+         let lst = http_get_autocomp v in
+         (* Dom_html.window##alert (js v); *)
+
+         currentFocus := -1;
+
+         (* let newDiv = Html.createDiv doc in *)
+         setId a (Js.to_string textbox##id^ "autocomplete-list");
+         setClass a "autocomplete-items";
+         (match Js.Opt.to_option textbox##parentNode with
+          | None -> failwith "error"
+          | Some x -> Dom.appendChild x a);
+         (* Dom.appendChild div_card_content a; *)
+
+
+         for i = 0 to List.length lst - 1 do
+           let word = List.nth lst i in
+           (* Dom_html.window##alert (js word); *)
+           if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)
+           (* create a DIV element for each matching element: *)
+           then let b = ref (Html.createDiv doc) in
+             (* make the matching letters bold: *)
+             let inn = "<strong>" ^ (String.sub word 0 (String.length v)) ^ "</strong>" ^
+                       (String.sub word (String.length v) (String.length word-String.length v))^
+                       "<input type='hidden' value='" ^ word ^ "'>" in
+             !b##innerHTML <- js inn;
+             (* execute a function when someone clicks on the item value (DIV element): *)
+             (* When one of the suggested text is clicked, change the input to that word. *)
+             !b##onclick <- Html.handler
+                 (fun _ ->
+                    (* returns a Dom.nodeList *)
+                    let inputfield = (!b)##getElementsByTagName (js "input") in
+                    (* the first item of the list *)
+                    let firstone = inputfield##item (0) in
+                    Js.Opt.iter firstone
+                      (fun node ->
+                         let elt = Dom_html.CoerceTo.element node in
+                         Js.Opt.iter elt
+                           (fun elt ->
+                              let input = Dom_html.CoerceTo.input elt in
+                              Js.Opt.iter input
+                                (fun i ->
+                                   (* change the value in the textbox to the clicked text *)
+                                   let content = i##value in
+                                   textbox##value <- content
+
+                                )
+                           )
+                      )
+                  ;Js._true
+                 );
+             Dom.appendChild a !b
+         done;
+         Js._true)
+
 let debug f = Printf.ksprintf (fun s -> Firebug.console##log (Js.string s)) f
+
+
+let get_geo () =
+  if (Geolocation.is_supported()) then
+    let geo = Geolocation.geolocation in
+    let options = Geolocation.empty_position_options() in
+    let () = options##enableHighAccuracy <- true in
+    let f_success pos =
+      let coords = pos##coords in
+      let latitude = coords##latitude in
+      (* Firebug.console##debug(latitude); *)
+      Dom_html.window##alert (js ((string_of_float latitude)^(string_of_float coords##longitude)));
+    in
+    let f_error err =
+      let code = err##code in
+      let msg = err##message in
+      if code = err##_TIMEOUT then Firebug.console##debug(msg)
+    in
+    geo##getCurrentPosition(Js.wrap_callback f_success, Js.wrap_callback f_error, options)
+
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
-  let img_dest = Html.createImg doc in
+  (* let img_dest = Html.createImg doc in
   setId img_dest "dest";
   img_dest##src <- js "marker.gif";
-  Dom.appendChild doc##body img_dest;
+  Dom.appendChild doc##body img_dest; *)
   (* ==================== begin div map-container ==================== *)
 
   let div_map_container = Html.createDiv doc in
@@ -113,24 +195,29 @@ let onload _ =
   Dom.appendChild doc##body div_map_container;
   (* append_text div_map_container "Loading.."; *)
 
-  (* let div_mapbody = Html.createDiv doc in
-  setClass div_mapbody "mapbody";
-  Dom.appendChild div_map_container div_mapbody; *)
+(*
   div_map_container##ondblclick <- Html.handler
       (fun ev ->
          img_dest##style##visibility <- js "visible";
          (* img_dest##style##transform <- js ("translateX("^(string_of_int ev##clientX)^")translateY("^(string_of_int ev##clientY)^")"); *)
          img_dest##style##left <- js ((string_of_int (ev##clientX-12))^"px");
          img_dest##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+<<<<<<< HEAD
          Dom_html.window##alert (js "happ");
+         Js._true); *)
+=======
+         (* Dom_html.window##alert (js "happ"); *)
          (* debug (string_of_int (ev##clientX)); *)
          Js._true);
+>>>>>>> 6bf4e2c8515cc086251ded2ae9a0776c8c27cc9b
   (* let img_map = Html.createImg doc in
   setId img_map "map";
   img_map##src <- js "../tiles/1.png";
      Dom.appendChild div_mapbody img_map; *)
+  let canvas_w = div_map_container##clientWidth in
+  let canvas_h = div_map_container##clientHeight in
   let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)] in
-  let canvas = create_canvas 600 600 in
+  let canvas = create_canvas canvas_w canvas_h in
   Dom.appendChild div_map_container canvas;
   let context = canvas##getContext (Html._2d_) in
   (* draw_background canvas context draw_line (js "../tiles/1.png"); *)
@@ -143,11 +230,6 @@ let onload _ =
   button##style##top <- js ((string_of_int 200)^"px");
   button##style##position <- js "absolute";
   button##style##zIndex <- js "2";
-
-
-  (* context##clearRect (10.0,10.0,50.0,50.0); *)
-  (* Dom_html.window##alert (js "clearing"); *)
-
 
   (* let img_map = Html.createImg doc in *)
      (* Dom.appendChild div_mapbody img_map; *)
@@ -295,22 +377,27 @@ let onload _ =
   a_clear##onclick <- Html.handler
       (fun _ ->
          input_1##value <- js "";
+         input_2##value <- js "";
          Js._true);
   Dom.appendChild div_nothing a_clear;
 
 
-
+  autocomplete input_1;
+  autocomplete input_2;
 
 
   (* the autocompletion functionality *)
   let currentFocus = ref 0 in
   input_1##oninput <- Html.handler
     (fun _ ->
+      closeAllList None (Dom_html.CoerceTo.element input_1);
       doc##onclick <- Html.handler (fun ev -> (closeAllList (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element input_1));Js._true);
       (* Create a new div to contain all the relevant autocomplete item *)
       let a = Html.createDiv doc in
       let v = Js.to_string input_1##value in
-      closeAllList None (Dom_html.CoerceTo.element input_1);
+      let lst = http_get_autocomp v in
+      (* Dom_html.window##alert (js v); *)
+
       currentFocus := -1;
 
          (* let newDiv = Html.createDiv doc in *)
@@ -320,9 +407,11 @@ let onload _ =
       | None -> failwith "error"
       | Some x -> Dom.appendChild x a);
       (* Dom.appendChild div_card_content a; *)
-      let lst = http_get_autocomp v in
+
+
       for i = 0 to List.length lst - 1 do
       let word = List.nth lst i in
+      (* Dom_html.window##alert (js word); *)
       if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)
       (* create a DIV element for each matching element: *)
       then let b = ref (Html.createDiv doc) in
@@ -334,7 +423,7 @@ let onload _ =
         (* execute a function when someone clicks on the item value (DIV element): *)
         (* When one of the suggested text is clicked, change the input to that word. *)
         !b##onclick <- Html.handler
-            (fun _ ->
+          (fun _ ->
             (* returns a Dom.nodeList *)
             let inputfield = (!b)##getElementsByTagName (js "input") in
             (* the first item of the list *)
@@ -356,40 +445,58 @@ let onload _ =
             )
             ;Js._true
           );
-           (* ((page##(getElementsByTagName (Js.string "head")))##(item (0))) *)
       Dom.appendChild a !b
-             (* Js.Opt.iter (childNodes##item i) *)
-             (* (fun node -> node##classList##remove (js "autocomplete-active")) *)
       done;
       Js._true);
 
-
-(* let handle_drag element move stop click =
-  let fuzz = 4 in
-  element##id.onmousedown := Html.handler
-    (fun ev ->
-       let x0 = ev##id.clientX and y0 = ev##id.clientY in
-(*
-debug_msg (Format.sprintf "Mouse down %d %d" x0 y0);
-*)
-       let started = ref false in
-       let c1 =
-         Html.addEventListener Html.document Html.Event.mousemove
-           (Html.handler
+  let mx = ref 0 in
+  let my = ref 0 in
+  (* let startx = ref 0 in
+  let starty = ref 0 in
+  let endx = ref 0 in
+  let endy = ref 0 in *)
+  canvas##onmousedown <- Dom_html.handler
+   (fun ev ->
+      mx := ev##clientX; my := ev##clientY;
+      (* startx := ev##clientX; starty := ev##clientY; *)
+      let c1 =
+        Html.addEventListener Html.document Html.Event.mousemove
+          (Dom_html.handler
+             (fun ev ->
+                let x = ev##clientX and y = ev##clientY in
+                let dx = x - !mx and dy = y - !my in
+                if dy != 0 then
+                  debug "y";
+                  (* Dom_html.window##alert (js ("y is "^string_of_int dy)); *)
+                if dx != 0 then
+                  debug "x";
+                  (* Dom_html.window##alert (js ("x is "^string_of_int dx)); *)
+                mx := x; my := y;
+                Js._true))
+          Js._true
+      in
+      let c2 = ref Js.null in
+      c2 := Js.some
+        (Html.addEventListener Html.document Html.Event.mouseup
+           (Dom_html.handler
               (fun ev ->
-                 let x = ev##id.clientX and y = ev##id.clientY in
-(*
-debug_msg (Format.sprintf "Mouse move %d %d %d %d" x0 y0 x y);
-*)
-                 if
-                   not !started && (abs (x - x0) > fuzz || abs (y - y0) > fuzz)
-                 then begin
-                   started := true;
-                   element##id.style##id.cursor := Js.string "move"
-                 end;
-                 if !started then move x0 y0 x y;
-                 Html.stopPropagation ev;
+                 (* endx := ev##clientX; endy := ev##clientY;
+                 let dx = !startx - !endx and dy = !starty - !endy in
+                 if dy != 0 then
+                   debug_msg (Format.sprintf "Mouse up y %d" dy);
+                   debug (string_of_int dy);
+                   Dom_html.window##alert (js ("y is "^string_of_int dy));
+                 if dx != 0 then
+                   debug_msg (Format.sprintf "Mouse up x %d" dx);
+                   debug (string_of_int dx);
+                   Dom_html.window##alert (js ("x is "^string_of_int dx)); *)
+                 Html.removeEventListener c1;
+                 Js.Opt.iter !c2 Html.removeEventListener;
                  Js._true))
+<<<<<<< HEAD
+           Js._true);
+      Js._false);
+=======
            Js._true
        in
        let c2 = ref Js.null in
@@ -423,9 +530,9 @@ debug_msg (Format.sprintf "Mouse up %d %d %d %d" x0 y0 ev##clientX ev##clientY);
                    let x = ev##clientX and y = ev##clientY in
                    let dx = x - !mx and dy = y - !my in
                    if dy != 0 then
-                     Dom_html.window##alert (js ("dy" ^ string_of_int dy));
+                     (* Dom_html.window##alert (js ("dy" ^ string_of_int dy)); *)
                    if dx != 0 then
-                     Dom_html.window##alert (js ("dx" ^ string_of_int dx));
+                     (* Dom_html.window##alert (js ("dx" ^ string_of_int dx)); *)
                    mx := x; my := y;
                    Js._true))
              Js._true
@@ -440,6 +547,7 @@ debug_msg (Format.sprintf "Mouse up %d %d %d %d" x0 y0 ev##clientX ev##clientY);
                     Js._true))
               Js._true);
          Js._false);
+>>>>>>> 6bf4e2c8515cc086251ded2ae9a0776c8c27cc9b
 
   Js._false
 
