@@ -53,6 +53,9 @@ type client_state = {
   mutable lrlon_bound : float;
   mutable lrlat_bound : float;
   mutable markers : marker list;
+
+  mutable 
+
 }
 
 (* Dummy mutable values *)
@@ -207,9 +210,6 @@ let update_markers st =
         }
       ) st.markers in
   st.markers <- new_markers
-
-
-let update_img (path:string) = ()
   
 
 let zoom_in st = 
