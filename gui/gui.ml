@@ -3,6 +3,13 @@ open Js_of_ocaml_lwt
 open Js
 open Clientgui
 
+(* [fail] is a failure/exception handler *)
+let fail = fun _ -> assert false
+
+module Html = Dom_html
+let js = Js.string
+let doc = Html.document
+
 (* ========= constants ========== *)
 let max_depth = 6
 let min_depth = 1
@@ -13,14 +20,16 @@ let init_upleft_lat = 42.4883
 let init_lowright_lon = -76.4649
 let init_lowright_lat = 42.4235
 
+let buttonlist = ref [(100,200); (350,400); (150,500)]
+let buttondisplay = ref []
+let buttontuple = ref Js.null
+let buttonlist2 = ref [(400,200); (650,400); (450,500)]
+let buttondisplay2 = ref []
+let buttontuple2 = ref Js.null
+
 let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
 
-(* [fail] is a failure/exception handler *)
-let fail = fun _ -> assert false
 
-module Html = Dom_html
-let js = Js.string
-let doc = Html.document
 
 
 (* Set the class of an Html element *)
@@ -182,6 +191,60 @@ let get_geo () =
     in
     geo##getCurrentPosition(Js.wrap_callback f_success, Js.wrap_callback f_error, options)
 
+
+
+  let addbutton div = 
+    let display_a_button (a,b) =
+      let button = Dom_html.createButton ~_type:(Js.string "button") doc in
+      Dom.appendChild div button;
+      buttondisplay := button::(!buttondisplay);
+      button##style##left <- js ((string_of_int a)^"px");
+      button##style##top <- js ((string_of_int b)^"px");
+      button##style##position <- js "absolute";
+      button##style##zIndex <- js "2";
+      button##onclick <- Html.handler 
+          (fun _ ->
+          List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
+          let button = Dom_html.createButton ~_type:(Js.string "button") doc in
+          Dom.appendChild div button;
+          buttondisplay := [];
+          buttontuple := Js.some (button);
+          button##style##left <- js ((string_of_int a)^"px");
+          button##style##top <- js ((string_of_int b)^"px");
+          button##style##position <- js "absolute";
+          button##style##zIndex <- js "2";
+          button##style##background <- js "red";
+          (* Dom_html.window##alert (js (string_of_int a)); *)
+          Js._true) in
+
+    List.iter display_a_button (!buttonlist)
+
+    let addbutton2 div = 
+    let display_a_button (a,b) =
+      let button = Dom_html.createButton ~_type:(Js.string "button") doc in
+      Dom.appendChild div button;
+      buttondisplay2 := button::(!buttondisplay2);
+      button##style##left <- js ((string_of_int a)^"px");
+      button##style##top <- js ((string_of_int b)^"px");
+      button##style##position <- js "absolute";
+      button##style##zIndex <- js "2";
+      button##onclick <- Html.handler 
+          (fun _ ->
+          List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
+          let button = Dom_html.createButton ~_type:(Js.string "button") doc in
+          Dom.appendChild div button;
+          buttondisplay2 := [];
+          buttontuple2 := Js.some (button);
+          button##style##left <- js ((string_of_int a)^"px");
+          button##style##top <- js ((string_of_int b)^"px");
+          button##style##position <- js "absolute";
+          button##style##zIndex <- js "2";
+          button##style##background <- js "green";
+          (* Dom_html.window##alert (js (string_of_int a)); *)
+          Js._true) in
+
+    List.iter display_a_button (!buttonlist2)
+
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
   (* let img_dest = Html.createImg doc in
@@ -222,12 +285,12 @@ let onload _ =
   let i = draw_background canvas context draw_line (js "../tiles/2.png") coordinates in
   (* clear_background i canvas context; *)
   (* clear_background canvas context (js "../tiles/2.png"); *)
-  let button = Dom_html.createButton ~_type:(Js.string "button") doc in
+(*   let button = Dom_html.createButton ~_type:(Js.string "button") doc in
   Dom.appendChild div_map_container button;
   button##style##left <- js ((string_of_int 500)^"px");
   button##style##top <- js ((string_of_int 200)^"px");
   button##style##position <- js "absolute";
-  button##style##zIndex <- js "2";
+  button##style##zIndex <- js "2"; *)
 
   (* let img_map = Html.createImg doc in *)
      (* Dom.appendChild div_mapbody img_map; *)
@@ -279,17 +342,35 @@ let onload _ =
   input_submit_1##setAttribute(js "value", js "Find");
   (* input_submit_1##value <- js "Find"; *)
   Dom.appendChild div_bottom input_submit_1;
-
+  input_submit_1##onclick <- Html.handler
+      (fun _ ->
+        (match Js.Opt.to_option !buttontuple with
+          | None -> ()
+          | Some x -> Dom.removeChild div_map_container (x);
+                      buttontuple := Js.null);
+        addbutton div_map_container;
+        Js._true);
+  
   let input_2 = Html.createInput doc in
   setId input_2 "input2";
   input_2##placeholder <- js "Destination";
   Dom.appendChild div_autocomplete input_2;
+
 
   let input_submit_2 =  Html.createInput doc in
   setId input_submit_2 "input2_submit";
   input_submit_2##setAttribute(js "type", js "submit");
   input_submit_2##setAttribute(js "value", js "Find");
   Dom.appendChild div_autocomplete input_submit_2;
+    input_submit_2##onclick <- Html.handler
+      (fun _ ->
+        (match Js.Opt.to_option !buttontuple2 with
+          | None -> ()
+          | Some x -> Dom.removeChild div_map_container (x);
+                      buttontuple2 := Js.null);
+        addbutton2 div_map_container;
+        Js._true);
+
   (* let span_search_container = Html.createSpan doc in
      setClass span_search_container "search-container";
      Dom.appendChild div_card_content span_search_container;
@@ -383,69 +464,8 @@ let onload _ =
   autocomplete input_1;
   autocomplete input_2;
 
+  
 
-  (* the autocompletion functionality *)
-  let currentFocus = ref 0 in
-  input_1##oninput <- Html.handler
-    (fun _ ->
-      closeAllList None (Dom_html.CoerceTo.element input_1);
-      doc##onclick <- Html.handler (fun ev -> (closeAllList (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element input_1));Js._true);
-      (* Create a new div to contain all the relevant autocomplete item *)
-      let a = Html.createDiv doc in
-      let v = Js.to_string input_1##value in
-      let lst = http_get_autocomp v in
-      (* Dom_html.window##alert (js v); *)
-
-      currentFocus := -1;
-
-         (* let newDiv = Html.createDiv doc in *)
-      setId a (Js.to_string input_1##id^ "autocomplete-list");
-      setClass a "autocomplete-items";
-      (match Js.Opt.to_option input_1##parentNode with
-      | None -> failwith "error"
-      | Some x -> Dom.appendChild x a);
-      (* Dom.appendChild div_card_content a; *)
-
-
-      for i = 0 to List.length lst - 1 do
-      let word = List.nth lst i in
-      (* Dom_html.window##alert (js word); *)
-      if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)
-      (* create a DIV element for each matching element: *)
-      then let b = ref (Html.createDiv doc) in
-      (* make the matching letters bold: *)
-      let inn = "<strong>" ^ (String.sub word 0 (String.length v)) ^ "</strong>" ^
-        (String.sub word (String.length v) (String.length word-String.length v))^
-        "<input type='hidden' value='" ^ word ^ "'>" in
-        !b##innerHTML <- js inn;
-        (* execute a function when someone clicks on the item value (DIV element): *)
-        (* When one of the suggested text is clicked, change the input to that word. *)
-        !b##onclick <- Html.handler
-          (fun _ ->
-            (* returns a Dom.nodeList *)
-            let inputfield = (!b)##getElementsByTagName (js "input") in
-            (* the first item of the list *)
-            let firstone = inputfield##item (0) in
-            Js.Opt.iter firstone
-              (fun node ->
-                let elt = Dom_html.CoerceTo.element node in
-                Js.Opt.iter elt
-                (fun elt ->
-                  let input = Dom_html.CoerceTo.input elt in
-                  Js.Opt.iter input
-                  (fun i ->
-                    (* change the value in the textbox to the clicked text *)
-                    let content = i##value in
-                    input_1##value <- content
-
-                  )
-                )
-            )
-            ;Js._true
-          );
-      Dom.appendChild a !b
-      done;
-      Js._true);
 
   let mx = ref 0 in
   let my = ref 0 in
@@ -494,6 +514,9 @@ let onload _ =
            Js._true);
       Js._false);
   Js._false
+
+
+
 
 (* Start to load the page *)
 let () =
