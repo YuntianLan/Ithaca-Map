@@ -160,7 +160,6 @@ let autocomplete textbox =
                                    (* change the value in the textbox to the clicked text *)
                                    let content = i##value in
                                    textbox##value <- content
-
                                 )
                            )
                       )
@@ -463,9 +462,6 @@ let onload _ =
 
   autocomplete input_1;
   autocomplete input_2;
-
-  
-
 
   let mx = ref 0 in
   let my = ref 0 in
