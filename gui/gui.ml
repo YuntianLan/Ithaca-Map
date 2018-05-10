@@ -65,14 +65,13 @@ let draw_line context lst =
     (List.nth lst 0) lst
 
 
-let draw_background canvas context onload src lst =
+let draw_background canvas context onload src offset lst =
   let img_map = Html.createImg doc in
   img_map##onload <- Html.handler
       (fun ev ->
-         context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
-         (* context##drawImage (img_map, 0., 0.); *)
-         context##drawImage_withSize (img_map, 0., 0., (float_of_int canvas##width), (float_of_int canvas##height));
-         onload context lst;
+        context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+        context##drawImage_full (img_map, fst(offset), snd(offset), (float_of_int canvas##width), (float_of_int canvas##height),0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+        onload context lst;
         Js._false);
   setId img_map "map";
   img_map##src <- src;
@@ -192,7 +191,7 @@ let get_geo () =
 
 
 
-  let addbutton div = 
+  let addbutton div =
     let display_a_button (a,b) =
       let button = Dom_html.createButton ~_type:(Js.string "button") doc in
       Dom.appendChild div button;
@@ -201,7 +200,7 @@ let get_geo () =
       button##style##top <- js ((string_of_int b)^"px");
       button##style##position <- js "absolute";
       button##style##zIndex <- js "2";
-      button##onclick <- Html.handler 
+      button##onclick <- Html.handler
           (fun _ ->
           List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
           let button = Dom_html.createButton ~_type:(Js.string "button") doc in
@@ -218,7 +217,7 @@ let get_geo () =
 
     List.iter display_a_button (!buttonlist)
 
-    let addbutton2 div = 
+    let addbutton2 div =
     let display_a_button (a,b) =
       let button = Dom_html.createButton ~_type:(Js.string "button") doc in
       Dom.appendChild div button;
@@ -227,7 +226,7 @@ let get_geo () =
       button##style##top <- js ((string_of_int b)^"px");
       button##style##position <- js "absolute";
       button##style##zIndex <- js "2";
-      button##onclick <- Html.handler 
+      button##onclick <- Html.handler
           (fun _ ->
           List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
           let button = Dom_html.createButton ~_type:(Js.string "button") doc in
@@ -280,8 +279,9 @@ let onload _ =
   let canvas = create_canvas canvas_w canvas_h in
   Dom.appendChild div_map_container canvas;
   let context = canvas##getContext (Html._2d_) in
+  let offset = (5.0, 3.0) in
   (* draw_background canvas context draw_line (js "../tiles/1.png"); *)
-  let i = draw_background canvas context draw_line (js "../tiles/2.png") coordinates in
+  let i = draw_background canvas context draw_line (js "../tiles/2.png") offset coordinates in
   (* clear_background i canvas context; *)
   (* clear_background canvas context (js "../tiles/2.png"); *)
 (*   let button = Dom_html.createButton ~_type:(Js.string "button") doc in
@@ -349,7 +349,7 @@ let onload _ =
                       buttontuple := Js.null);
         addbutton div_map_container;
         Js._true);
-  
+
   let input_2 = Html.createInput doc in
   setId input_2 "input2";
   input_2##placeholder <- js "Destination";
@@ -454,9 +454,17 @@ let onload _ =
   append_text a_clear "clear route";
   a_clear##onclick <- Html.handler
       (fun _ ->
-         input_1##value <- js "";
-         input_2##value <- js "";
-         Js._true);
+        input_1##value <- js "";
+        input_2##value <- js "";
+        (match Js.Opt.to_option !buttontuple with
+          | None -> ()
+          | Some x -> Dom.removeChild div_map_container (x));
+        (match Js.Opt.to_option !buttontuple2 with
+          | None -> ()
+          | Some x -> Dom.removeChild div_map_container (x));
+        buttontuple := Js.null;
+        buttontuple2 := Js.null;
+        Js._true);
   Dom.appendChild div_nothing a_clear;
 
 
