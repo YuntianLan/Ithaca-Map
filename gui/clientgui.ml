@@ -21,10 +21,10 @@ let safe_width = 1120
 let safe_height = 800
 
 type params = {
-  upleft_lon: float;
-  upleft_lat: float;
-  lowright_lon: float;
-  lowright_lat: float;
+  param_upleft_lon: float;
+  param_upleft_lat: float;
+  param_lowright_lon: float;
+  param_lowright_lat: float;
   width: float;
   height: float;
 }
@@ -122,10 +122,10 @@ let http_get_route (drive:bool) slat slon elat elon =
 
 let http_get_res (params:params) st =
   let url = base_url^"?index=4"^
-            "&upleft_lat"^string_of_float params.upleft_lat^
-            "&upleft_lon"^string_of_float params.upleft_lon^
-            "&lowright_lat"^string_of_float params.lowright_lat^
-            "&lowright_lon"^string_of_float params.lowright_lon^
+            "&upleft_lat"^string_of_float params.param_upleft_lat^
+            "&upleft_lon"^string_of_float params.param_upleft_lon^
+            "&lowright_lat"^string_of_float params.param_lowright_lat^
+            "&lowright_lon"^string_of_float params.param_lowright_lon^
             "&width"^string_of_float params.width^
             "&height"^string_of_float params.height in
   let start () =
@@ -139,6 +139,10 @@ let http_get_res (params:params) st =
         st.current_depth <- List.nth params 4 |> int_of_string;
         st.img_w <- List.nth params 5 |> float_of_string;
         st.img_h <- List.nth params 6 |> float_of_string;
+        st.wdpp <- (st.lrlon_bound -. st.ullon_bound) /. st.img_w;
+        st.hdpp <- (st.ullat_bound -. st.lrlat_bound) /. st.img_h;
+        st.tx <- (st.ullon_bound -. st.params.param_upleft_lon) /. st.wdpp;
+        st.ty <- (st.params.param_upleft_lat -. st.ullat_bound) /. st.hdpp;
         img_path := res;
         Lwt.return ()) in
   ignore(start ());
@@ -157,36 +161,36 @@ let http_get_autocomp (s:string) =
 
 
 let real_lrlat st =
-  st.params.upleft_lat -. (st.hdpp *. st.params.height)
+  st.params.param_upleft_lat -. (st.hdpp *. st.params.height)
 
 let real_lrlat st =
-  st.params.upleft_lon +. (st.wdpp *. st.params.width)
+  st.params.param_upleft_lon +. (st.wdpp *. st.params.width)
 
 let shift_left (delta:float) st =
   let new_params = {
-    st.params with upleft_lon = st.params.upleft_lon -. delta;
-                   lowright_lon = st.params.lowright_lon -. delta;
+    st.params with param_upleft_lon = st.params.param_upleft_lon -. delta;
+                   param_lowright_lon = st.params.param_lowright_lon -. delta;
   } in
   st.params <- new_params
 
 let shift_right (delta:float) st =
   let new_params = {
-    st.params with upleft_lon = st.params.upleft_lon +. delta;
-                   lowright_lon = st.params.lowright_lon +. delta;
+    st.params with param_upleft_lon = st.params.param_upleft_lon +. delta;
+                   param_lowright_lon = st.params.param_lowright_lon +. delta;
   } in
   st.params <- new_params
 
 let shift_up (delta:float) st =
   let new_params = {
-    st.params with upleft_lat = st.params.upleft_lat +. delta;
-                   lowright_lat = st.params.lowright_lat +. delta;
+    st.params with param_upleft_lat = st.params.param_upleft_lat +. delta;
+                   param_lowright_lat = st.params.param_lowright_lat +. delta;
   } in
   st.params <- new_params
 
 let shift_down (delta:float) st =
   let new_params = {
-    st.params with upleft_lat = st.params.upleft_lat -. delta;
-                   lowright_lat = st.params.lowright_lat -. delta;
+    st.params with param_upleft_lat = st.params.param_upleft_lat -. delta;
+                   param_lowright_lat = st.params.param_lowright_lat -. delta;
   } in
   st.params <- new_params
 
@@ -198,11 +202,10 @@ let update_markers st =
   let new_markers =
     List.map (fun mk ->
         {
-          mk with mk_tx = (mk.lon -. st.params.upleft_lon) /. st.wdpp -.7. -. st.tx;
-                  mk_ty = (st.params.upleft_lat -. mk.lat) /. st.hdpp -.7. -. st.ty;
+          mk with mk_tx = (mk.lon -. st.params.param_upleft_lon) /. st.wdpp -.7. -. st.tx;
+                  mk_ty = (st.params.param_upleft_lat -. mk.lat) /. st.hdpp -.7. -. st.ty;
         }
       ) st.markers in
   st.markers <- new_markers
 
-let update_img (path:string) =
-  
+(* let update_img st = *)

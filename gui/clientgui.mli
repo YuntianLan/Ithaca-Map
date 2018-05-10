@@ -3,10 +3,10 @@ open Js_of_ocaml
 module Html = Dom_html
 
 type params = {
-  upleft_lon: float;
-  upleft_lat: float;
-  lowright_lon: float;
-  lowright_lat: float;
+  param_upleft_lon: float;
+  param_upleft_lat: float;
+  param_lowright_lon: float;
+  param_lowright_lat: float;
   width: float;
   height: float;
 }
@@ -16,7 +16,7 @@ type marker = {
   lon : float;
   mk_tx : float;
   mk_ty : float;
-  element : Html.imageElement Js.t;
+  element : Html.buttonElement Js.t;
 }
 
 type client_state = {
