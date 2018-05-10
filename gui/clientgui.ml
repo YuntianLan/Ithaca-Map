@@ -53,9 +53,6 @@ type client_state = {
   mutable lrlon_bound : float;
   mutable lrlat_bound : float;
   mutable markers : marker list;
-
-  mutable 
-
 }
 
 (* Dummy mutable values *)
@@ -215,7 +212,9 @@ let update_markers st =
 let zoom_in st = 
   ()
 
+let zoom_out st = ()
 
+let on_drag dx dy st = ()
 
 
 
