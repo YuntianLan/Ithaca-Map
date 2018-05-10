@@ -34,7 +34,7 @@ type marker = {
   lon : float;
   mk_tx : float;
   mk_ty : float;
-  element : Html.imageElement Js.t;
+  element : Html.buttonElement Js.t;
 }
 
 type client_state = {
@@ -203,3 +203,6 @@ let update_markers st =
         }
       ) st.markers in
   st.markers <- new_markers
+
+let update_img (path:string) =
+  

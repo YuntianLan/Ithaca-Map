@@ -346,7 +346,7 @@ module Images : MapImage = struct
     let img_grid = res.img_grid in
     if (res.status = false || List.length img_grid = 0
         || img_grid |> List.hd |> List.length = 0) then
-      "error"
+      failwith "query image failed"
     else
       let int_tilesize = int_of_float tile_size in
       let fullimg_h = (img_grid |> List.length) * int_tilesize in
@@ -362,7 +362,7 @@ module Images : MapImage = struct
                 Rgb24.blit bmp 0 0 buffer_rgb (i*int_tilesize) (j*int_tilesize) w h;
               | _ -> failwith "Only supports RGB24"
             ) imglst) img_grid;
-      let fname_coord = List.fold_left (fun acc i -> (string_of_float i)^"_") ""
+      let fname_coord = List.fold_left (fun acc i -> acc^(string_of_float i)^"_") ""
           [res.res_upleft_lon;res.res_upleft_lat;res.res_lowright_lon;res.res_lowright_lat] in
       let fname = fname_coord^(string_of_int res.tree_depth)^"_"^
                   (string_of_int fullimg_w)^"_"^
