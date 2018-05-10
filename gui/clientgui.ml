@@ -204,5 +204,28 @@ let update_markers st =
       ) st.markers in
   st.markers <- new_markers
 
-let update_img (path:string) =
+let update_img (path:string) = ()
   
+
+let zoom_in st = 
+  ()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

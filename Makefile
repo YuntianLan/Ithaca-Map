@@ -1,7 +1,7 @@
 build:
 	ocamlbuild -use-ocamlfind trie.cmo graph.cmo image.cmo
 
-cohttpserver:
+server:
 	ocamlbuild -use-ocamlfind cohttpserv.native
 	./cohttpserv.native
 test:

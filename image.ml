@@ -364,7 +364,7 @@ module Images : MapImage = struct
             ) imglst) img_grid;
       let fname_coord = List.fold_left (fun acc i -> acc^(string_of_float i)^"_") ""
           [res.res_upleft_lon;res.res_upleft_lat;res.res_lowright_lon;res.res_lowright_lat] in
-      let fname = fname_coord^(string_of_int res.tree_depth)^"_"^
+      let fname = "cache"^Filename.dir_sep^fname_coord^(string_of_int res.tree_depth)^"_"^
                   (string_of_int fullimg_w)^"_"^
                   (string_of_int fullimg_h)^
                   ".png" in

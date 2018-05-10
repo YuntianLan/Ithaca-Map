@@ -46,3 +46,19 @@ val http_get_route : bool -> float -> float -> float -> float -> float*((float*f
 val http_get_res : params -> client_state -> string
 
 val http_get_autocomp : string -> string list
+
+val zoom_in : client_state -> unit
+
+val zoom_out : client_state -> unit
+
+
+
+
+
+
+
+
+
+
+
+
