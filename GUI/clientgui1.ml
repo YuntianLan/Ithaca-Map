@@ -52,7 +52,9 @@ type client_state = {
   mutable ullat_bound : float;
   mutable lrlon_bound : float;
   mutable lrlat_bound : float;
+
   mutable markers : marker list;
+  mutable route : (int * int) list;
 
   mutable img_path : string;
 
