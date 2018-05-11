@@ -129,7 +129,7 @@ let http_get_autocomp (s:string) =
   ignore(start ());
   !autocomp
 
-let http_get_res (params:params) st callback canvas context =
+let http_get_res st callback canvas context =
   let url = base_url^"?index=4"^
             "&upleft_lat="^string_of_float st.params.param_upleft_lat^
             "&upleft_lon="^string_of_float st.params.param_upleft_lon^
@@ -168,9 +168,6 @@ let http_get_res (params:params) st callback canvas context =
         Lwt.return ()) in
   ignore(start ())
 (* ========= HTTP requests ========== *)
-
-
-
 
 
 
@@ -537,7 +534,7 @@ let onload _ =
   let context = canvas##getContext (Html._2d_) in
   let offset = (5.0, 3.0) in
   (* draw_background canvas context draw_line (js "../tiles/1.png"); *)
-  let _ = http_get_res st.params st draw_background canvas context in
+  let _ = http_get_res st draw_background canvas context in
   (* let _ = http_get_res st.params st in *)
 
   (* let i = draw_background canvas context (js ("http://127.0.0.1:8000/"^"?index=5&path="^(!img_path))) offset in *)
@@ -556,6 +553,125 @@ let onload _ =
       (fun ev -> context##drawImage (img_map, (10.), (10.)); Js._false);
      setId img_map "map"; *)
   (* ==================== end div map-container ==================== *)
+
+
+
+
+
+
+
+  let real_lrlat st =
+    st.params.param_upleft_lat -. (st.hdpp *. st.params.height) in
+
+  let real_lrlat st =
+    st.params.param_upleft_lon +. (st.wdpp *. st.params.width) in
+
+  let shift_left (delta:float) st =
+    let new_params = {
+      st.params with param_upleft_lon = st.params.param_upleft_lon -. delta;
+                     param_lowright_lon = st.params.param_lowright_lon -. delta;
+    } in
+    st.params <- new_params in
+
+  let shift_right (delta:float) st =
+    let new_params = {
+      st.params with param_upleft_lon = st.params.param_upleft_lon +. delta;
+                     param_lowright_lon = st.params.param_lowright_lon +. delta;
+    } in
+    st.params <- new_params in
+
+  let shift_up (delta:float) st =
+    let new_params = {
+      st.params with param_upleft_lat = st.params.param_upleft_lat +. delta;
+                     param_lowright_lat = st.params.param_lowright_lat +. delta;
+    } in
+    st.params <- new_params in
+
+  let shift_down (delta:float) st =
+    let new_params = {
+      st.params with param_upleft_lat = st.params.param_upleft_lat -. delta;
+                     param_lowright_lat = st.params.param_lowright_lat -. delta;
+    } in
+    st.params <- new_params in
+
+(*   let remove_markers (marker_dom : Html.divElement Js.t) st =
+    let _ = List.map (fun mk -> Dom.removeChild marker_dom mk.element) st.markers in
+    st.markers <- [] in
+
+  let update_markers st =
+    let new_markers =
+      List.map (fun mk ->
+          {
+            mk with mk_tx = (mk.lon -. st.params.param_upleft_lon) /. st.wdpp -.7. -. st.tx;
+                    mk_ty = (st.params.param_upleft_lat -. mk.lat) /. st.hdpp -.7. -. st.ty;
+          }
+        ) st.markers in
+    st.markers <- new_markers in *)
+
+
+
+
+
+
+
+
+
+  let on_drag dx dy st = ()  in
+    
+
+
+
+  let zoom_in st = 
+    if st.current_depth = max_depth then () else
+    let ullon = st.params.param_upleft_lon in
+    let ullat = st.params.param_upleft_lat in
+    let lrlon = st.params.param_lowright_lon in
+    let lrlat = st.params.param_lowright_lat in
+    let orig_width = st.params.width in
+    let orig_height = st.params.height in
+    let delta_lon = (lrlon -. ullon) /. 4. in
+    let delta_lat = (ullat -. lrlat) /. 4. in
+    let new_params = {
+      param_upleft_lon    =   ullon +. delta_lon;
+      param_upleft_lat    =   ullat -. delta_lat;
+      param_lowright_lon  =   lrlon -. delta_lon;
+      param_lowright_lat  =   lrlat +. delta_lat;
+      width               =   orig_width;
+      height              =   orig_height;
+    } in
+    st.params <- new_params;
+    http_get_res st draw_background canvas context in
+
+  let zoom_out st =
+    if st.current_depth = min_depth then () else
+    let ullon = st.params.param_upleft_lon in
+    let ullat = st.params.param_upleft_lat in
+    let lrlon = st.params.param_lowright_lon in
+    let lrlat = st.params.param_lowright_lat in
+    let orig_width = st.params.width in
+    let orig_height = st.params.height in
+    let delta_lon = (lrlon -. ullon) /. 2. in
+    let delta_lat = (ullat -. lrlat) /. 2. in
+    let new_params = {
+      param_upleft_lon    =   ullon -. delta_lon;
+      param_upleft_lat    =   ullat +. delta_lat;
+      param_lowright_lon  =   lrlon +. delta_lon;
+      param_lowright_lat  =   lrlat -. delta_lat;
+      width               =   orig_width;
+      height              =   orig_height;
+    } in
+    st.params <- new_params;
+    http_get_res st draw_background canvas context in
+
+
+
+
+
+
+
+
+
+
 
 
   let div_markers = Html.createDiv doc in
