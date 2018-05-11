@@ -691,10 +691,10 @@ let onload _ =
                       let dx = !endx- !startx and dy = !endy - !starty in
                       if dy != 0 then
                         (* debug_msg (Format.sprintf "Mouse up y %d" dy); *)
-                        (* Dom_html.window##alert (js ("y is "^string_of_int dy)); *)
+                        Dom_html.window##alert (js ("y is "^string_of_int dy));
                         if dx != 0 then
                           (* debug_msg (Format.sprintf "Mouse up x %d" dx); *)
-                          (* Dom_html.window##alert (js ("x is "^string_of_int dx)); *)
+                          Dom_html.window##alert (js ("x is "^string_of_int dx));
                           Html.removeEventListener c1;
                       Js.Opt.iter !c2 Html.removeEventListener;
                       Js._true))
