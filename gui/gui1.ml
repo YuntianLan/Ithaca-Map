@@ -40,6 +40,154 @@ let dbend = ref None
 
 let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
 
+
+
+
+
+
+
+(* Dummy mutable values *)
+let by_coord = ref (0.,0.)
+let by_name = ref [(0.,0.)]
+let route = ref (0.,[(0.,0.)])
+let img_path = ref ""
+let autocomp = ref [""]
+
+
+
+
+
+
+(* ========= HTTP requests ========== *)
+let http_get url =
+  XmlHttpRequest.get url >>= fun r ->
+  let cod = r.XmlHttpRequest.code in
+  let msg = r.XmlHttpRequest.content in
+  if cod = 0 || cod = 200
+  then Lwt.return msg
+  else fst (Lwt.wait ())
+
+let http_get_node_by_coord lat lon =
+  let url = base_url^"?index=1"^"&lat="^(string_of_float lat)^
+            "&lon="^(string_of_float lon) in
+  let start () =
+    http_get url >>= (fun res ->
+        let params = String.split_on_char ' ' res in
+        let res_lat = List.nth params 0 |> float_of_string in
+        let res_lon = List.nth params 1 |> float_of_string in
+        by_coord := (res_lat, res_lon);
+        Lwt.return ()) in
+  ignore(start ());
+  !by_coord
+
+(* [split_coord_list s] is the list of coordinate tuples parsed from [s]
+ * requries: [s] must be in the form "coord1,coord2;coord3,coord4;..."*)
+let split_coord_list (s:string) : (float*float) list =
+  let params = String.split_on_char ';' s in
+  let tups = List.map (fun i ->
+      let coords = String.split_on_char ',' i in
+      let res_lat = List.nth coords 0 |> float_of_string in
+      let res_lon = List.nth coords 1 |> float_of_string in
+      (res_lat, res_lon)
+    ) params in
+  tups
+
+let http_get_nodes_by_name name =
+  let url = base_url^"?index=2"^"&name="^name in
+  let start () =
+    http_get url >>= (fun res ->
+        by_name := split_coord_list res;
+        Lwt.return ()) in
+  ignore(start ());
+  !by_name
+
+let http_get_route (drive:bool) slat slon elat elon =
+  let url = base_url^"?index=3"^"&drive="^(string_of_bool drive)^"&slat="
+            ^(string_of_float slat)^"&slon="^(string_of_float slon)^"&elat="
+            ^(string_of_float elat)^"&elon="^(string_of_float elon) in
+  let start () =
+    http_get url >>= (fun res ->
+        let params = String.split_on_char ' ' res in
+        let length = List.nth params 0 |> float_of_string in
+        let coord_params = List.nth params 1 in
+        let tups = split_coord_list coord_params in
+        route := (length, tups);
+        Lwt.return ()) in
+  ignore(start ());
+  !route
+
+
+
+
+let http_get_autocomp (s:string) =
+  let url = base_url^"?index=6"^"&input="^s in
+  let start () =
+    http_get url >>= (fun res ->
+        let params = String.split_on_char ';' res in
+        autocomp := params;
+        Lwt.return ()) in
+  ignore(start ());
+  !autocomp
+
+let http_get_res (params:params) st callback canvas context =
+  let url = base_url^"?index=4"^
+            "&upleft_lat="^string_of_float st.params.param_upleft_lat^
+            "&upleft_lon="^string_of_float st.params.param_upleft_lon^
+            "&lowright_lat="^string_of_float st.params.param_lowright_lat^
+            "&lowright_lon="^string_of_float st.params.param_lowright_lon^
+            "&width="^string_of_float st.params.width^
+            "&height="^string_of_float st.params.height in
+  let start () =
+    http_get url >>= (fun res ->
+
+        let nopng = String.sub res 0 (String.length res - 4) in
+        let params = String.split_on_char '_' nopng in
+        let zero_cache = List.nth params 0 in
+        let ullon = String.sub zero_cache 6 (String.length zero_cache - 6) in
+        st.ullon_bound <- ullon |> float_of_string;
+        st.ullat_bound <- List.nth params 1 |> float_of_string;
+        st.lrlon_bound <- List.nth params 2 |> float_of_string;
+        st.lrlat_bound <- List.nth params 3 |> float_of_string;
+        st.current_depth <- List.nth params 4 |> int_of_string;
+        st.img_w <- List.nth params 5 |> float_of_string;
+        st.img_h <- List.nth params 6 |> float_of_string;
+        st.wdpp <- (st.lrlon_bound -. st.ullon_bound) /. st.img_w;
+        st.hdpp <- (st.ullat_bound -. st.lrlat_bound) /. st.img_h;
+        st.tx <- (st.params.param_upleft_lon -. st.ullon_bound) /. st.wdpp;
+        st.ty <- ( st.ullat_bound -. st.params.param_upleft_lat) /. st.hdpp;
+        let canvas_w = st.params.width in
+        let canvas_h = st.params.height in
+        let _ = Dom_html.window##alert(js 
+          (string_of_float (st.ullon_bound +. st.wdpp *. st.tx +. st.wdpp *. canvas_w))) in
+        let _ = Dom_html.window##alert(js 
+          (string_of_float (st.ullat_bound -. st.hdpp *. st.ty -. st.hdpp *. canvas_h))) in
+        let _ = callback canvas context (js 
+          ("http://127.0.0.1:8000/"^"?index=5&path="^res)) (st.tx, st.ty) in
+
+        (* img_path := res; *)
+        Lwt.return ()) in
+  ignore(start ())
+(* ========= HTTP requests ========== *)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 let clear_goals div =
   List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
   List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
@@ -122,44 +270,7 @@ let st = {
   markers = [];
 }
 
-let http_get_res (params:params) st callback canvas context =
-  let url = base_url^"?index=4"^
-            "&upleft_lat="^string_of_float st.params.param_upleft_lat^
-            "&upleft_lon="^string_of_float st.params.param_upleft_lon^
-            "&lowright_lat="^string_of_float st.params.param_lowright_lat^
-            "&lowright_lon="^string_of_float st.params.param_lowright_lon^
-            "&width="^string_of_float st.params.width^
-            "&height="^string_of_float st.params.height in
-  let start () =
-    http_get url >>= (fun res ->
 
-        let nopng = String.sub res 0 (String.length res - 4) in
-        let params = String.split_on_char '_' nopng in
-        let zero_cache = List.nth params 0 in
-        let ullon = String.sub zero_cache 6 (String.length zero_cache - 6) in
-        st.ullon_bound <- ullon |> float_of_string;
-        st.ullat_bound <- List.nth params 1 |> float_of_string;
-        st.lrlon_bound <- List.nth params 2 |> float_of_string;
-        st.lrlat_bound <- List.nth params 3 |> float_of_string;
-        st.current_depth <- List.nth params 4 |> int_of_string;
-        st.img_w <- List.nth params 5 |> float_of_string;
-        st.img_h <- List.nth params 6 |> float_of_string;
-        st.wdpp <- (st.lrlon_bound -. st.ullon_bound) /. st.img_w;
-        st.hdpp <- (st.ullat_bound -. st.lrlat_bound) /. st.img_h;
-        st.tx <- (st.params.param_upleft_lon -. st.ullon_bound) /. st.wdpp;
-        st.ty <- ( st.ullat_bound -. st.params.param_upleft_lat) /. st.hdpp;
-        let canvas_w = st.params.width in
-        let canvas_h = st.params.height in
-        let _ = Dom_html.window##alert(js 
-          (string_of_float (st.ullon_bound +. st.wdpp *. st.tx +. st.wdpp *. canvas_w))) in
-        let _ = Dom_html.window##alert(js 
-          (string_of_float (st.ullat_bound -. st.hdpp *. st.ty -. st.hdpp *. canvas_h))) in
-        let _ = callback canvas context (js 
-          ("http://127.0.0.1:8000/"^"?index=5&path="^res)) (st.tx, st.ty) in
-
-        (* img_path := res; *)
-        Lwt.return ()) in
-  ignore(start ())
 (* Set the class of an Html element *)
 let setClass elt s = elt##className <- js s
 (* Set the ID of an Html element *)

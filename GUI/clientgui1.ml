@@ -75,14 +75,6 @@ let http_get url =
   then Lwt.return msg
   else fst (Lwt.wait ())
 
-let http_get url =
-  XmlHttpRequest.get url >|= fun r ->
-  let cod = r.XmlHttpRequest.code in
-  let msg = r.XmlHttpRequest.content in
-  if cod = 0 || cod = 200
-  then msg
-  else msg
-
 let http_get_node_by_coord lat lon =
   let url = base_url^"?index=1"^"&lat="^(string_of_float lat)^
             "&lon="^(string_of_float lon) in
