@@ -124,12 +124,12 @@ let st = {
 
 let http_get_res (params:params) st callback canvas context =
   let url = base_url^"?index=4"^
-            "&upleft_lat="^string_of_float params.param_upleft_lat^
-            "&upleft_lon="^string_of_float params.param_upleft_lon^
-            "&lowright_lat="^string_of_float params.param_lowright_lat^
-            "&lowright_lon="^string_of_float params.param_lowright_lon^
-            "&width="^string_of_float params.width^
-            "&height="^string_of_float params.height in
+            "&upleft_lat="^string_of_float st.params.param_upleft_lat^
+            "&upleft_lon="^string_of_float st.params.param_upleft_lon^
+            "&lowright_lat="^string_of_float st.params.param_lowright_lat^
+            "&lowright_lon="^string_of_float st.params.param_lowright_lon^
+            "&width="^string_of_float st.params.width^
+            "&height="^string_of_float st.params.height in
   let start () =
     http_get url >>= (fun res ->
 
@@ -148,8 +148,14 @@ let http_get_res (params:params) st callback canvas context =
         st.hdpp <- (st.ullat_bound -. st.lrlat_bound) /. st.img_h;
         st.tx <- (st.params.param_upleft_lon -. st.ullon_bound) /. st.wdpp;
         st.ty <- ( st.ullat_bound -. st.params.param_upleft_lat) /. st.hdpp;
-        let _ = Dom_html.window##alert(js (string_of_float (st.ullon_bound +. st.wdpp *. st.tx))) in
-        let _ = callback canvas context (js ("http://127.0.0.1:8000/"^"?index=5&path="^res)) (st.tx, st.ty) in
+        let canvas_w = st.params.width in
+        let canvas_h = st.params.height in
+        let _ = Dom_html.window##alert(js 
+          (string_of_float (st.ullon_bound +. st.wdpp *. st.tx +. st.wdpp *. canvas_w))) in
+        let _ = Dom_html.window##alert(js 
+          (string_of_float (st.ullat_bound -. st.hdpp *. st.ty -. st.hdpp *. canvas_h))) in
+        let _ = callback canvas context (js 
+          ("http://127.0.0.1:8000/"^"?index=5&path="^res)) (st.tx, st.ty) in
 
         (* img_path := res; *)
         Lwt.return ()) in
@@ -189,8 +195,11 @@ let draw_background_with_line canvas context onload src offset lst =
   let img_map = Html.createImg doc in
   img_map##onload <- Html.handler
       (fun ev ->
-         context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
-         context##drawImage_full (img_map, fst(offset), snd(offset), (float_of_int canvas##width), (float_of_int canvas##height),0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+         context##clearRect (0.0,0.0,(float_of_int canvas##width),
+          (float_of_int canvas##height));
+         context##drawImage_full (img_map, fst(offset), snd(offset), 
+          (float_of_int canvas##width), (float_of_int canvas##height),
+          0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
          onload context lst;
          Js._false);
   setId img_map "map";
@@ -202,8 +211,11 @@ let draw_background canvas context src offset =
   let img_map = Html.createImg doc in
   img_map##onload <- Html.handler
       (fun ev ->
-         context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
-         context##drawImage_full (img_map, fst(offset), snd(offset), (float_of_int canvas##width), (float_of_int canvas##height),0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+         context##clearRect (0.0,0.0,(float_of_int canvas##width),
+          (float_of_int canvas##height));
+         context##drawImage_full (img_map, fst(offset), snd(offset),
+          (float_of_int canvas##width), (float_of_int canvas##height),
+          0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
          Js._false);
   setId img_map "map";
   img_map##src <- src;
@@ -243,7 +255,8 @@ let autocomplete textbox =
   textbox##oninput <- Html.handler
       (fun _ ->
          closeAllList None (Dom_html.CoerceTo.element textbox);
-         doc##onclick <- Html.handler (fun ev -> (closeAllList (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element textbox));Js._true);
+         doc##onclick <- Html.handler (fun ev -> (closeAllList 
+          (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element textbox));Js._true);
          (* Create a new div to contain all the relevant autocomplete item *)
          let a = Html.createDiv doc in
          let v = Js.to_string textbox##value in
