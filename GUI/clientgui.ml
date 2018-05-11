@@ -32,8 +32,8 @@ type params = {
 type marker = {
   lat : float;
   lon : float;
-  mk_tx : int;
-  mk_ty : int;
+  mk_tx : float;
+  mk_ty : float;
   element : Html.buttonElement Js.t;
 }
 
@@ -43,9 +43,9 @@ type client_state = {
   mutable wdpp : float;
   mutable hdpp : float;
   mutable tx : float;
-  mutable ty : float;
-  (* mutable rtx : float;
-  mutable rty : float; *)
+  mutable ty: float;
+  mutable rtx : float;
+  mutable rty : float;
   mutable img_w : float;
   mutable img_h : float;
   mutable ullon_bound : float;
@@ -53,8 +53,6 @@ type client_state = {
   mutable lrlon_bound : float;
   mutable lrlat_bound : float;
   mutable markers : marker list;
-
-  
 }
 
 (* Dummy mutable values *)
@@ -211,8 +209,8 @@ let update_markers st =
   st.markers <- new_markers
 
 
-
-let zoom_in st = ()
+let zoom_in st =
+  ()
 
 let zoom_out st = ()
 
