@@ -1,0 +1,9 @@
+B _build
+PKG oUnit
+PKG js_of_ocaml
+PKG js_of_ocaml-lwt
+PKG js_of_ocaml.syntax
+PKG camlimages
+PKG camlimages.png
+PKG cohttp_lwt_unix
+PKG cohttp

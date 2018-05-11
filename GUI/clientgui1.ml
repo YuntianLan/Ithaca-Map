@@ -32,8 +32,8 @@ type params = {
 type marker = {
   lat : float;
   lon : float;
-  mk_tx : int;
-  mk_ty : int;
+  mk_tx : float;
+  mk_ty : float;
   element : Html.buttonElement Js.t;
 }
 
@@ -124,12 +124,12 @@ let http_get_route (drive:bool) slat slon elat elon =
 
 let http_get_res (params:params) st =
   let url = base_url^"?index=4"^
-            "&upleft_lat"^string_of_float params.param_upleft_lat^
-            "&upleft_lon"^string_of_float params.param_upleft_lon^
-            "&lowright_lat"^string_of_float params.param_lowright_lat^
-            "&lowright_lon"^string_of_float params.param_lowright_lon^
-            "&width"^string_of_float params.width^
-            "&height"^string_of_float params.height in
+            "&upleft_lat="^string_of_float params.param_upleft_lat^
+            "&upleft_lon="^string_of_float params.param_upleft_lon^
+            "&lowright_lat="^string_of_float params.param_lowright_lat^
+            "&lowright_lon="^string_of_float params.param_lowright_lon^
+            "&width="^string_of_float params.width^
+            "&height="^string_of_float params.height in
   let start () =
     http_get url >>= (fun res ->
         let nopng = String.sub res 0 (String.length res - 4) in
@@ -212,12 +212,17 @@ let update_markers st =
 
 
 let update_img st =
-  let path = http_get_res st.params in
+  let path = http_get_res st.params st in
   update_markers st;
-  path
+  base_url^"?index=5?path="^path
 
 let update_required st =
-  return st.params.param_upleft_lon
+  st.params.param_upleft_lon < st.ullon_bound ||
+  st.params.param_upleft_lat > st.ullat_bound ||
+  st.params.param_lowright_lon > st.lrlon_bound ||
+  st.params.param_lowright_lat < st.lrlat_bound
+
+
 
 
 

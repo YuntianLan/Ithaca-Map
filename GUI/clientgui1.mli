@@ -14,8 +14,8 @@ type params = {
 type marker = {
   lat : float;
   lon : float;
-  mk_tx : int;
-  mk_ty : int;
+  mk_tx : float;
+  mk_ty : float;
   element : Html.buttonElement Js.t;
 }
 
@@ -50,7 +50,7 @@ val http_get_autocomp : string -> string list
 
 
 (* Client state related functions *)
-
+val update_img : client_state -> string
 val zoom_in : client_state -> unit
 
 val zoom_out : client_state -> unit
