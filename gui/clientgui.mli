@@ -50,7 +50,7 @@ type client_state = {
 
   mutable markers : marker list;
   mutable route_nodes : node list;
-(* 
+
 
 
   mutable tx : float;
@@ -63,10 +63,9 @@ type client_state = {
   mutable ullat_bound : float;
   mutable lrlon_bound : float;
   mutable lrlat_bound : float;
-  mutable markers : marker list; *)
 }
 
-val http_get_node_by_coord : float -> float -> float*float
+(* val http_get_node_by_coord : float -> float -> float*float
 
 val http_get_nodes_by_name : string -> (float*float) list
 
@@ -74,7 +73,7 @@ val http_get_route : bool -> float -> float -> float -> float -> float*((float*f
 
 val http_get_res : params -> client_state -> string
 
-val http_get_autocomp : string -> string list
+val http_get_autocomp : string -> string list *)
 
 
 
