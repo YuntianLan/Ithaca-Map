@@ -3,6 +3,7 @@ open Js_of_ocaml_lwt
 open Js
 open Lwt
 
+
 module Html = Dom_html
 let js = Js.string
 let doc = Html.document
@@ -59,6 +60,7 @@ type client_state = {
 
 }
 
+let img_path = ref ""
 
 let real_lrlat st =
   st.params.param_upleft_lat -. (st.hdpp *. st.params.height)
@@ -109,6 +111,47 @@ let update_markers st =
   st.markers <- new_markers
 
 
+let http_get url =
+  XmlHttpRequest.get url >>= fun r ->
+  let cod = r.XmlHttpRequest.code in
+  let msg = r.XmlHttpRequest.content in
+  if cod = 0 || cod = 200
+  then Lwt.return msg
+  else fst (Lwt.wait ())
+
+let http_get_res (params:params) st =
+  let url = base_url^"?index=4"^
+            "&upleft_lat"^string_of_float params.param_upleft_lat^
+            "&upleft_lon"^string_of_float params.param_upleft_lon^
+            "&lowright_lat"^string_of_float params.param_lowright_lat^
+            "&lowright_lon"^string_of_float params.param_lowright_lon^
+            "&width"^string_of_float params.width^
+            "&height"^string_of_float params.height in
+  let start () =
+    http_get url >>= (fun res ->
+        let nopng = String.sub res 0 (String.length res - 4) in
+        let params = String.split_on_char '_' nopng in
+        st.ullon_bound <- List.nth params 0 |> float_of_string;
+        st.ullat_bound <- List.nth params 1 |> float_of_string;
+        st.lrlon_bound <- List.nth params 2 |> float_of_string;
+        st.lrlat_bound <- List.nth params 3 |> float_of_string;
+        st.current_depth <- List.nth params 4 |> int_of_string;
+        st.img_w <- List.nth params 5 |> float_of_string;
+        st.img_h <- List.nth params 6 |> float_of_string;
+        st.wdpp <- (st.lrlon_bound -. st.ullon_bound) /. st.img_w;
+        st.hdpp <- (st.ullat_bound -. st.lrlat_bound) /. st.img_h;
+        st.tx <- (st.ullon_bound -. st.params.param_upleft_lon) /. st.wdpp;
+        st.ty <- (st.params.param_upleft_lat -. st.ullat_bound) /. st.hdpp;
+        img_path := res;
+        Lwt.return ()) in
+  ignore(start ());
+  !img_path
+
+
+
+
+
+
 let update_img st =
   let path = http_get_res st.params st in
   update_markers st;
@@ -119,6 +162,14 @@ let update_required st =
   st.params.param_upleft_lat > st.ullat_bound ||
   st.params.param_lowright_lon > st.lrlon_bound ||
   st.params.param_lowright_lat < st.lrlat_bound
+
+
+
+
+
+
+
+
 
 
 
