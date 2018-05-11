@@ -29,6 +29,21 @@ let buttontuple2 = ref Js.null
 
 let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
 
+let clear_goals div =
+  List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
+  List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
+  (match Js.Opt.to_option !buttontuple with
+    | None -> ()
+    | Some x -> Dom.removeChild div (x));
+  (match Js.Opt.to_option !buttontuple2 with
+    | None -> ()
+    | Some x -> Dom.removeChild div (x));
+  buttonlist := [];
+  buttonlist2 := [];
+  buttondisplay := [];
+  buttondisplay2 := [];
+  buttontuple := Js.null;
+  buttontuple2 := Js.null
 
 
 
@@ -245,10 +260,10 @@ let get_geo () =
 
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
-  (* let img_dest = Html.createImg doc in
+  let img_dest = Html.createImg doc in
   setId img_dest "dest";
   img_dest##src <- js "marker.gif";
-  Dom.appendChild doc##body img_dest; *)
+  Dom.appendChild doc##body img_dest;
   (* ==================== begin div map-container ==================== *)
 
   let div_map_container = Html.createDiv doc in
@@ -256,17 +271,9 @@ let onload _ =
   Dom.appendChild doc##body div_map_container;
   (* append_text div_map_container "Loading.."; *)
 
-(*
-  div_map_container##ondblclick <- Html.handler
-      (fun ev ->
-         img_dest##style##visibility <- js "visible";
-         (* img_dest##style##transform <- js ("translateX("^(string_of_int ev##clientX)^")translateY("^(string_of_int ev##clientY)^")"); *)
-         img_dest##style##left <- js ((string_of_int (ev##clientX-12))^"px");
-         img_dest##style##top <- js ((string_of_int (ev##clientY-25))^"px");
-         Dom_html.window##alert (js "happ");
-         Js._true); *)
 
-         (* Dom_html.window##alert (js "happ"); *)
+
+       
 
 
   (* let img_map = Html.createImg doc in
@@ -370,6 +377,20 @@ let onload _ =
         addbutton2 div_map_container;
         Js._true);
 
+
+
+
+  div_map_container##ondblclick <- Html.handler
+    (fun ev ->
+      img_dest##style##visibility <- js "visible";
+      (* img_dest##style##transform <- js ("translateX("^(string_of_int ev##clientX)^")translateY("^(string_of_int ev##clientY)^")"); *)
+      img_dest##style##left <- js ((string_of_int (ev##clientX-12))^"px");
+      img_dest##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+      Dom_html.window##alert (js "happ");
+      (* 把点去掉 把输入框换成新的 *)
+      input_1##value <- js "";
+      input_2##value <- js "";
+    Js._true);
   (* let span_search_container = Html.createSpan doc in
      setClass span_search_container "search-container";
      Dom.appendChild div_card_content span_search_container;
