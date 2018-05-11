@@ -32,8 +32,8 @@ type params = {
 type marker = {
   lat : float;
   lon : float;
-  mk_tx : int;
-  mk_ty : int;
+  mk_tx : float;
+  mk_ty : float;
   element : Html.buttonElement Js.t;
 }
 
@@ -220,9 +220,22 @@ let update_required st =
   return st.params.param_upleft_lon
 
 
+let on_drag dx dy st = ()
+  
 
-let zoom_in st = ()
+
+
+let zoom_in st = 
+  
+
 
 let zoom_out st = ()
 
-let on_drag dx dy st = ()
+
+
+
+
+
+
+
+

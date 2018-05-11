@@ -14,8 +14,8 @@ type params = {
 type marker = {
   lat : float;
   lon : float;
-  mk_tx : int;
-  mk_ty : int;
+  mk_tx : float;
+  mk_ty : float;
   element : Html.buttonElement Js.t;
 }
 

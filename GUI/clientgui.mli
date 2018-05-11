@@ -37,11 +37,12 @@ type client_state = {
   mutable markers : marker list;
 }
 
-val http_get_node_by_coord : float -> float -> float*float
+val http_get_node_by_coord : float -> float -> float * float
 
-val http_get_nodes_by_name : string -> (float*float) list
+val http_get_nodes_by_name : string -> (float * float) list
 
-val http_get_route : bool -> float -> float -> float -> float -> float*((float*float) list)
+val http_get_route : bool -> float -> float -> float -> float -> 
+                    float * ((float * float) list)
 
 val http_get_res : params -> client_state -> string
 
