@@ -26,6 +26,8 @@ let buttontuple = ref Js.null
 let buttonlist2 = ref [(400,200); (650,400); (450,500)]
 let buttondisplay2 = ref []
 let buttontuple2 = ref Js.null
+let dbstart = ref None
+let dbend = ref None
 
 let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
 
@@ -44,6 +46,30 @@ let clear_goals div =
   buttondisplay2 := [];
   buttontuple := Js.null;
   buttontuple2 := Js.null
+
+let clear_all div =
+  List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
+  List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
+  (match Js.Opt.to_option !buttontuple with
+    | None -> ()
+    | Some x -> Dom.removeChild div (x));
+  (match Js.Opt.to_option !buttontuple2 with
+    | None -> ()
+    | Some x -> Dom.removeChild div (x));
+  (match !dbstart with
+    | None -> ()
+    | Some x -> Dom.removeChild div (x));
+  (match !dbend with
+    | None -> ()
+    | Some x -> Dom.removeChild div (x));
+  buttonlist := [];
+  buttonlist2 := [];
+  buttondisplay := [];
+  buttondisplay2 := [];
+  buttontuple := Js.null;
+  buttontuple2 := Js.null;
+  dbstart := None;
+  dbend := None
 
 
 
@@ -260,6 +286,15 @@ let get_geo () =
 
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
+  let start_icon = Html.createImg doc in
+  start_icon##src <- js "start.png";
+  setClass start_icon "icon";
+
+  let end_icon = Html.createImg doc in
+  end_icon##src <- js "dest.png";
+  setClass end_icon "icon";
+  (* Dom.appendChild div_map_container img_start; *)
+  (* img_dest##style##visibility <- js "visible"; *)
   (* ==================== begin div map-container ==================== *)
 
   let div_map_container = Html.createDiv doc in
@@ -269,7 +304,7 @@ let onload _ =
 
 
 
-       
+
 
 
   (* let img_map = Html.createImg doc in
@@ -287,7 +322,7 @@ let onload _ =
   let i = draw_background canvas context draw_line (js "../tiles/2.png") offset coordinates in
   (* clear_background i canvas context; *)
   (* clear_background canvas context (js "../tiles/2.png"); *)
-(*   let button = Dom_html.createButton ~_type:(Js.string "button") doc in
+  (* let button = Dom_html.createButton ~_type:(Js.string "button") doc in
   Dom.appendChild div_map_container button;
   button##style##left <- js ((string_of_int 500)^"px");
   button##style##top <- js ((string_of_int 200)^"px");
@@ -299,13 +334,6 @@ let onload _ =
   (* img_map##onload <- Html.handler
       (fun ev -> context##drawImage (img_map, (10.), (10.)); Js._false);
   setId img_map "map"; *)
-  (* img_map##src <- js "../tiles/1.png"; *)
-  (* context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
-  context##drawImage (img_map, (10.), (10.));
-  context##beginPath ();
-  context##moveTo (10.0,1.0);
-  context##lineTo (30.0,40.0);
-  context##stroke (); *)
   (* ==================== end div map-container ==================== *)
 
 
@@ -376,21 +404,46 @@ let onload _ =
 
 
 
-  div_map_container##ondblclick <- Html.handler
+div_map_container##ondblclick <- Html.handler
     (fun ev ->
-      let img_dest = Html.createImg doc in
-      setId img_dest "dest";
-      img_dest##src <- js "marker.gif";
-      Dom.appendChild doc##body img_dest;
-      img_dest##style##visibility <- js "visible";
-      (* img_dest##style##transform <- js ("translateX("^(string_of_int ev##clientX)^")translateY("^(string_of_int ev##clientY)^")"); *)
-      img_dest##style##left <- js ((string_of_int (ev##clientX-12))^"px");
-      img_dest##style##top <- js ((string_of_int (ev##clientY-25))^"px");
-      Dom_html.window##alert (js "happ");
-      (* 把点去掉 把输入框换成新的 *)
-      input_1##value <- js "";
-      input_2##value <- js "";
       clear_goals div_map_container;
+      (if (!dbstart <> None && !dbend <> None)
+      then
+        (clear_all div_map_container;
+        Dom_html.window##alert (js "start");
+        input_1##value <- js "";
+        input_2##value <- js "";
+        Dom.appendChild div_map_container start_icon;
+        start_icon##style##visibility <- js "visible";
+        start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
+        start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+        dbstart := Some start_icon;
+        ())
+      else if (!dbstart = None && !dbend = None)
+      then
+        (clear_all div_map_container;
+        Dom_html.window##alert (js "start");
+        input_1##value <- js "";
+        input_2##value <- js "";
+        Dom.appendChild div_map_container start_icon;
+        start_icon##style##visibility <- js "visible";
+        start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
+        start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+        dbstart := Some start_icon;
+        ())
+      else if (!dbstart <> None && !dbend = None)
+      then
+        (Dom.appendChild div_map_container end_icon;
+        end_icon##style##visibility <- js "visible";
+        end_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
+        end_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+        Dom_html.window##alert (js "end");
+        dbend := Some end_icon;
+        ())
+
+      else ());
+      (* 把点去掉 把输入框换成新的 *)
+
     Js._true);
   (* let span_search_container = Html.createSpan doc in
      setClass span_search_container "search-container";
@@ -493,29 +546,29 @@ let onload _ =
   autocomplete input_1;
   autocomplete input_2;
 
-  let mx = ref 0 in
-  let my = ref 0 in
-  (* let startx = ref 0 in
+  (* let mx = ref 0 in
+  let my = ref 0 in *)
+  let startx = ref 0 in
   let starty = ref 0 in
   let endx = ref 0 in
-  let endy = ref 0 in *)
+  let endy = ref 0 in
   canvas##onmousedown <- Dom_html.handler
    (fun ev ->
-      mx := ev##clientX; my := ev##clientY;
-      (* startx := ev##clientX; starty := ev##clientY; *)
+      (* mx := ev##clientX; my := ev##clientY; *)
+      startx := ev##clientX; starty := ev##clientY;
       let c1 =
         Html.addEventListener Html.document Html.Event.mousemove
-          (Dom_html.handler
-             (fun ev ->
-                let x = ev##clientX and y = ev##clientY in
+          (Html.handler
+             (fun ev -> ();
+                (* let x = ev##clientX and y = ev##clientY in
                 let dx = x - !mx and dy = y - !my in
                 if dy != 0 then
                   debug "y";
-                  (* Dom_html.window##alert (js ("y is "^string_of_int dy)); *)
+                  Dom_html.window##alert (js ("y is "^string_of_int dy));
                 if dx != 0 then
                   debug "x";
-                  (* Dom_html.window##alert (js ("x is "^string_of_int dx)); *)
-                mx := x; my := y;
+                  Dom_html.window##alert (js ("x is "^string_of_int dx));
+                mx := x; my := y; *)
                 Js._true))
           Js._true
       in
@@ -524,16 +577,14 @@ let onload _ =
         (Html.addEventListener Html.document Html.Event.mouseup
            (Dom_html.handler
               (fun ev ->
-                 (* endx := ev##clientX; endy := ev##clientY;
-                 let dx = !startx - !endx and dy = !starty - !endy in
+                 endx := ev##clientX; endy := ev##clientY;
+                 let dx = !endx- !startx and dy = !endy - !starty in
                  if dy != 0 then
-                   debug_msg (Format.sprintf "Mouse up y %d" dy);
-                   debug (string_of_int dy);
-                   Dom_html.window##alert (js ("y is "^string_of_int dy));
+                   (* debug_msg (Format.sprintf "Mouse up y %d" dy); *)
+                   (* Dom_html.window##alert (js ("y is "^string_of_int dy)); *)
                  if dx != 0 then
-                   debug_msg (Format.sprintf "Mouse up x %d" dx);
-                   debug (string_of_int dx);
-                   Dom_html.window##alert (js ("x is "^string_of_int dx)); *)
+                   (* debug_msg (Format.sprintf "Mouse up x %d" dx); *)
+                   (* Dom_html.window##alert (js ("x is "^string_of_int dx)); *)
                  Html.removeEventListener c1;
                  Js.Opt.iter !c2 Html.removeEventListener;
                  Js._true))

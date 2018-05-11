@@ -36,11 +36,11 @@ body {
     font-family: sans-serif;
     background: rgba(225, 170, 225, .5);
 }
-#dest {
-    position: relative;
-    z-index: 1;
-    height: 25px;
-    width: 25px;
+.icon {
+    position: absolute;
+    z-index: 2;
+    /* height: 25px;
+    width: 25px; */
 }
 .rmarker {
     position: relative;
