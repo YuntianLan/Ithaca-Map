@@ -190,7 +190,7 @@ let draw_background_with_line canvas context onload src offset lst =
   img_map##onload <- Html.handler
       (fun ev ->
          context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
-         context##drawImage_full (img_map, fst(offset), snd(offset), (float_of_int canvas##width), 2(float_of_int canvas##height),0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+         context##drawImage_full (img_map, fst(offset), snd(offset), (float_of_int canvas##width), (float_of_int canvas##height),0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
          onload context lst;
          Js._false);
   setId img_map "map";

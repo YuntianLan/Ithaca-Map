@@ -54,9 +54,8 @@ type client_state = {
   mutable lrlat_bound : float;
 
   mutable markers : marker list;
-  mutable route : (int * int) list;
+  (* mutable route : (int * int) list; *)
 
-  mutable img_path : string;
 
 }
 
@@ -261,7 +260,7 @@ let zoom_in st =
   } in
   st.params <- new_params;
   let img_path = http_get_res st.params st in
-  st.img_path <- img_path
+  ()
 
 let zoom_out st =
   if st.current_depth = min_depth then () else
@@ -283,7 +282,7 @@ let zoom_out st =
   } in
   st.params <- new_params;
   let img_path = http_get_res st.params st in
-  st.img_path <- img_path
+  ()
 
 
 

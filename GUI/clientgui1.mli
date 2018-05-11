@@ -36,8 +36,8 @@ type client_state = {
   mutable lrlon_bound : float;
   mutable lrlat_bound : float;
   mutable markers : marker list;
+  (* mutable route : (int * int) list; *)
 
-  mutable img_path : string;
 }
 
 val http_get_node_by_coord : float -> float -> float*float
