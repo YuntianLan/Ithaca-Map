@@ -53,7 +53,7 @@ val http_get_autocomp : string -> string list
 
 
 (* Client state related functions *)
-
+val update_img : client_state -> string
 val zoom_in : client_state -> unit
 
 val zoom_out : client_state -> unit
