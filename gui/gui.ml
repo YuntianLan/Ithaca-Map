@@ -29,6 +29,21 @@ let buttontuple2 = ref Js.null
 
 let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
 
+let clear_goals div =
+  List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
+  List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
+  (match Js.Opt.to_option !buttontuple with
+    | None -> ()
+    | Some x -> Dom.removeChild div (x));
+  (match Js.Opt.to_option !buttontuple2 with
+    | None -> ()
+    | Some x -> Dom.removeChild div (x));
+  buttonlist := [];
+  buttonlist2 := [];
+  buttondisplay := [];
+  buttondisplay2 := [];
+  buttontuple := Js.null;
+  buttontuple2 := Js.null
 
 
 
