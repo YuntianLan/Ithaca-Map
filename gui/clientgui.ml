@@ -29,13 +29,6 @@ type params = {
   height: float;
 }
 
-type node = {
-  lat : float;
-  lon : float;
-  x   : int;
-  y   : int;
-}
-
 type marker = {
   lat : float;
   lon : float;
@@ -47,18 +40,19 @@ type marker = {
 type client_state = {
   mutable params: params;
   mutable current_depth: int;
-
   mutable wdpp : float;
   mutable hdpp : float;
-
-  (* Parameters for the View to display the image *)
-  mutable win_ul_x : int;
-  mutable win_ul_y : int;
-  mutable win_w : int;
-  mutable win_h : int;
-
+  mutable tx : float;
+  mutable ty: float;
+  mutable rtx : float;
+  mutable rty : float;
+  mutable img_w : float;
+  mutable img_h : float;
+  mutable ullon_bound : float;
+  mutable ullat_bound : float;
+  mutable lrlon_bound : float;
+  mutable lrlat_bound : float;
   mutable markers : marker list;
-  mutable route_nodes : node list;
 }
 
 (* Dummy mutable values *)
@@ -213,27 +207,11 @@ let update_markers st =
         }
       ) st.markers in
   st.markers <- new_markers
-  
 
-let zoom_in st = 
+
+let zoom_in st =
   ()
 
 let zoom_out st = ()
 
 let on_drag dx dy st = ()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
