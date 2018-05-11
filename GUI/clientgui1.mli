@@ -28,6 +28,7 @@ type client_state = {
   mutable ty: float;
   (* mutable rtx : float;
   mutable rty : float; *)
+
   mutable img_w : float;
   mutable img_h : float;
   mutable ullon_bound : float;
@@ -35,6 +36,8 @@ type client_state = {
   mutable lrlon_bound : float;
   mutable lrlat_bound : float;
   mutable markers : marker list;
+
+  mutable img_path : string;
 }
 
 val http_get_node_by_coord : float -> float -> float*float
