@@ -54,7 +54,7 @@ type client_state = {
   mutable lrlat_bound : float;
   mutable markers : marker list;
 
-  
+
 }
 
 (* Dummy mutable values *)
@@ -211,24 +211,18 @@ let update_markers st =
   st.markers <- new_markers
 
 
+let update_img st =
+  let path = http_get_res st.params in
+  update_markers st;
+  path
+
+let update_required st =
+  return st.params.param_upleft_lon
+
+
 
 let zoom_in st = ()
 
 let zoom_out st = ()
 
 let on_drag dx dy st = ()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
