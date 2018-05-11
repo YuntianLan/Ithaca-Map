@@ -54,6 +54,7 @@ type client_state = {
   mutable lrlat_bound : float;
   mutable markers : marker list;
 
+  mutable img_path : string;
 
 }
 
@@ -72,6 +73,14 @@ let http_get url =
   if cod = 0 || cod = 200
   then Lwt.return msg
   else fst (Lwt.wait ())
+
+let http_get url =
+  XmlHttpRequest.get url >|= fun r ->
+  let cod = r.XmlHttpRequest.code in
+  let msg = r.XmlHttpRequest.content in
+  if cod = 0 || cod = 200
+  then msg
+  else msg
 
 let http_get_node_by_coord lat lon =
   let url = base_url^"?index=1"^"&lat="^(string_of_float lat)^
@@ -226,10 +235,48 @@ let on_drag dx dy st = ()
 
 
 let zoom_in st = 
-  
+  if st.current_depth = max_depth then () else
+  let ullon = st.params.param_upleft_lon in
+  let ullat = st.params.param_upleft_lat in
+  let lrlon = st.params.param_lowright_lon in
+  let lrlat = st.params.param_lowright_lat in
+  let orig_width = st.params.width in
+  let orig_height = st.params.height in
+  let delta_lon = (lrlon -. ullon) /. 4. in
+  let delta_lat = (ullat -. lrlat) /. 4. in
+  let new_params = {
+    param_upleft_lon    =   ullon +. delta_lon;
+    param_upleft_lat    =   ullat -. delta_lat;
+    param_lowright_lon  =   lrlon -. delta_lon;
+    param_lowright_lat  =   lrlat +. delta_lat;
+    width               =   orig_width;
+    height              =   orig_height;
+  } in
+  st.params <- new_params;
+  let img_path = http_get_res st.params st in
+  st.img_path <- img_path
 
-
-let zoom_out st = ()
+let zoom_out st =
+  if st.current_depth = min_depth then () else
+  let ullon = st.params.param_upleft_lon in
+  let ullat = st.params.param_upleft_lat in
+  let lrlon = st.params.param_lowright_lon in
+  let lrlat = st.params.param_lowright_lat in
+  let orig_width = st.params.width in
+  let orig_height = st.params.height in
+  let delta_lon = (lrlon -. ullon) /. 2. in
+  let delta_lat = (ullat -. lrlat) /. 2. in
+  let new_params = {
+    param_upleft_lon    =   ullon -. delta_lon;
+    param_upleft_lat    =   ullat +. delta_lat;
+    param_lowright_lon  =   lrlon +. delta_lon;
+    param_lowright_lat  =   lrlat -. delta_lat;
+    width               =   orig_width;
+    height              =   orig_height;
+  } in
+  st.params <- new_params;
+  let img_path = http_get_res st.params st in
+  st.img_path <- img_path
 
 
 
