@@ -89,7 +89,6 @@ let create_canvas w h =
   c##width <- w; c##height <- h; c
 
 let draw_line context lst =
-
   List.fold_left
     (fun acc cor  ->
        let prevX = (fst acc) in
@@ -105,14 +104,25 @@ let draw_line context lst =
     )
     (List.nth lst 0) lst
 
+let draw_background_with_line canvas context onload src offset lst =
+  let img_map = Html.createImg doc in
+  img_map##onload <- Html.handler
+      (fun ev ->
+         context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+         context##drawImage_full (img_map, fst(offset), snd(offset), (float_of_int canvas##width), (float_of_int canvas##height),0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+         onload context lst;
+         Js._false);
+  setId img_map "map";
+  img_map##src <- src;
+  img_map
 
-let draw_background canvas context onload src offset lst =
+
+let draw_background canvas context src offset =
   let img_map = Html.createImg doc in
   img_map##onload <- Html.handler
       (fun ev ->
         context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
         context##drawImage_full (img_map, fst(offset), snd(offset), (float_of_int canvas##width), (float_of_int canvas##height),0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
-        onload context lst;
         Js._false);
   setId img_map "map";
   img_map##src <- src;
@@ -319,7 +329,7 @@ let onload _ =
   let context = canvas##getContext (Html._2d_) in
   let offset = (5.0, 3.0) in
   (* draw_background canvas context draw_line (js "../tiles/1.png"); *)
-  let i = draw_background canvas context draw_line (js "../tiles/2.png") offset coordinates in
+  let i = draw_background canvas context (js "../tiles/2.png") offset in
   (* clear_background i canvas context; *)
   (* clear_background canvas context (js "../tiles/2.png"); *)
   (* let button = Dom_html.createButton ~_type:(Js.string "button") doc in
