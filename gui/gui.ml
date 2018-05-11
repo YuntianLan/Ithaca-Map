@@ -260,10 +260,6 @@ let get_geo () =
 
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
-  let img_dest = Html.createImg doc in
-  setId img_dest "dest";
-  img_dest##src <- js "marker.gif";
-  Dom.appendChild doc##body img_dest;
   (* ==================== begin div map-container ==================== *)
 
   let div_map_container = Html.createDiv doc in
@@ -382,6 +378,10 @@ let onload _ =
 
   div_map_container##ondblclick <- Html.handler
     (fun ev ->
+      let img_dest = Html.createImg doc in
+      setId img_dest "dest";
+      img_dest##src <- js "marker.gif";
+      Dom.appendChild doc##body img_dest;
       img_dest##style##visibility <- js "visible";
       (* img_dest##style##transform <- js ("translateX("^(string_of_int ev##clientX)^")translateY("^(string_of_int ev##clientY)^")"); *)
       img_dest##style##left <- js ((string_of_int (ev##clientX-12))^"px");
@@ -390,6 +390,7 @@ let onload _ =
       (* 把点去掉 把输入框换成新的 *)
       input_1##value <- js "";
       input_2##value <- js "";
+      clear_goals div_map_container;
     Js._true);
   (* let span_search_container = Html.createSpan doc in
      setClass span_search_container "search-container";
