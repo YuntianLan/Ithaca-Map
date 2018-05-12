@@ -26,8 +26,10 @@ let delta_zoom = 0.04
 let delta_base_move = 0.03
 let init_upleft_lon = -76.5496
 let init_upleft_lat = 42.4750
-let init_lowright_lon = -76.4670
-let init_lowright_lat = 42.4279
+let init_lowright_lon = -76.4996
+let init_lowright_lat = 42.4496
+(* let init_lowright_lon = -76.4670
+let init_lowright_lat = 42.4279 *)
 
 let buttonlist = ref [(100,200); (350,400); (150,500)]
 let buttondisplay = ref []
@@ -162,6 +164,9 @@ let http_get_autocomp (s:string) =
   !autocomp
 
 let http_get_res st callback canvas context =
+  let _ = Dom_html.window##alert(js 
+    ((st.params.param_lowright_lon |> string_of_float)
+     ^ " " ^ (st.params.param_lowright_lat |> string_of_float))) in
   let url = base_url^"?index=4"^
             "&upleft_lat="^string_of_float st.params.param_upleft_lat^
             "&upleft_lon="^string_of_float st.params.param_upleft_lon^
@@ -197,7 +202,14 @@ let http_get_res st callback canvas context =
           |> string_of_float in
         let swdpp = string_of_float st.wdpp in
         let shdpp = string_of_float st.hdpp in
-        let _ = Dom_html.window##alert(js (swdpp ^ " " ^ shdpp)) in
+        let swidth = string_of_float st.params.width in
+        let sheight = string_of_float st.params.height in
+        (* let _ = Dom_html.window##alert(js 
+          (swdpp ^ " " ^ shdpp ^ " " ^ (string_of_int st.current_depth))) in
+        let _ = Dom_html.window##alert(js 
+          (swidth ^ " " ^ sheight)) in
+        let _ = Dom_html.window##alert(js 
+          (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp)) in *)
         let _ = callback canvas context (js
           ("http://127.0.0.1:8000/"^"?index=5&path="^res)) (st.tx, st.ty) in
 
@@ -630,6 +642,15 @@ let onload _ =
   let on_drag dx dy st = ()  in
 
 
+(*   let zoom direction st = 
+    let w = st.params.width |> float_of_int in
+    let h = st.params.height |> float_of_int in
+    let ratio = w / h in
+    let lvl = 2. ** (float_of_int st.current_depth) in
+    let delta = direction *. delta_zoom / lvl in delta *)
+
+
+
 
   let zoom_in st =
     if st.current_depth = max_depth then () else
@@ -669,6 +690,9 @@ let onload _ =
 
     let delta_lon = (lrlon -. ullon) /. 2. in
     let delta_lat = (ullat -. lrlat) /. 2. in
+    let new_lrlon = lrlon +. delta_lon |> string_of_float in
+    let new_lrlat = lrlat -. delta_lat |> string_of_float in
+    Dom_html.window##alert (js (new_lrlon ^ " " ^ new_lrlat));
     let new_params = {
       param_upleft_lon    =   ullon -. delta_lon;
       param_upleft_lat    =   ullat +. delta_lat;
