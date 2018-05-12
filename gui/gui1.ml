@@ -28,12 +28,20 @@ let init_upleft_lon = -76.5496
 let init_upleft_lat = 42.4750
 let init_lowright_lon = -76.4670
 let init_lowright_lat = 42.4279
-
-let buttonlist = ref []
-let buttondisplay = ref []
+type marker = {
+  lat : float;
+  lon : float;
+  mk_tx : float;
+  mk_ty : float;
+  element : Html.buttonElement Js.t option;
+}
+let markers1 : marker list ref = ref []
+let markers2 : marker list ref = ref []
+(* let buttonlist = ref []
+let buttondisplay = ref [] *)
 let buttontuple = ref None
-let buttonlist2 = ref []
-let buttondisplay2 = ref []
+(* let buttonlist2 = ref []
+let buttondisplay2 = ref [] *)
 let buttontuple2 = ref None
 let dbstart = ref None
 let dbend = ref None
@@ -41,9 +49,6 @@ let dbend = ref None
 let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
 
 let img_map = Html.createImg doc
-
-
-
 
 
 (* Dummy mutable values *)
@@ -260,14 +265,6 @@ let clear_all div =
   buttontuple2 := None;
   dbstart := None;
   dbend := None
-
-type marker = {
-  lat : float;
-  lon : float;
-  mk_tx : float;
-  mk_ty : float;
-  element : Html.buttonElement Js.t option;
-}
 
 
 
