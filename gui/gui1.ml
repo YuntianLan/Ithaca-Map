@@ -38,19 +38,6 @@ type marker = {
 let markers1 : marker list ref = ref []
 let markers2 : marker list ref = ref []
 
-let markers1 = ref [{
-    lat = 0.;
-    lon = 0.;
-    mk_tx = 14.;
-    mk_ty = 80.;
-    element = Html.createButton doc;
-  };{
-      lat = 0.;
-      lon = 0.;
-      mk_tx = 70.;
-      mk_ty = 20.;
-      element = Html.createButton doc;
-    }]
 let start_marker = ref None
 (* let buttonlist2 = ref []
 let buttondisplay2 = ref [] *)
@@ -143,11 +130,15 @@ let split_coord_list (s:string) : (float*float) list =
     ) params in
   tups
 
-let http_get_nodes_by_name name =
+let http_get_nodes_by_name id name coord_to_markers addbutton div_map_container =
   let url = base_url^"?index=2"^"&name="^name in
   let start () =
     http_get url >>= (fun res ->
-        marker1 := split_coord_list res;
+        if id = 1 then
+          markers1 := res |> split_coord_list |> coord_to_markers
+        else
+          markers2 := res |> split_coord_list |> coord_to_markers;
+        addbutton div_map_container;
         Lwt.return ()) in
   ignore(start ())
 
@@ -213,9 +204,10 @@ let http_get_res st callback canvas context =
         let lrlat_temp = st.ullat_bound -. st.hdpp *. st.ty -. st.hdpp *. canvas_h
           |> string_of_float in
         let _ = Dom_html.window##alert(js
-          (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp)) in
+                                         (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp ^" "
+                                          ^ (string_of_float st.wdpp)^ " "^(string_of_float st.hdpp)^" "^(string_of_float st.tx)^" "^(string_of_float st.ty))) in
         let _ = callback canvas context (js
-          ("http://127.0.0.1:8000/"^"?index=5&path="^res)) (st.tx, st.ty) in
+          (base_url^"?index=5&path="^res)) (st.tx, st.ty) in
 
         (* img_path := res; *)
         Lwt.return ()) in
@@ -459,19 +451,8 @@ let addbutton div =
   let display_a_button marker =
     let button = Dom_html.createButton ~_type:(Js.string "button") doc in
     Dom.appendChild div button;
-    Dom_html.window##alert (js "addbutton");
-    let new_marker =
-    {
-      lat = 0.;
-      lon = 0.;
-      mk_tx = 0.;
-      mk_ty = 0.;
-      element = button;
-    }
-    in
-    markers1 := new_marker::(!markers1);
-    button##style##left <- js ((string_of_int (int_of_float new_marker.mk_tx))^"px");
-    button##style##top <- js ((string_of_int (int_of_float new_marker.mk_ty))^"px");
+    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx - 12))^"px");
+    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty - 25))^"px");
     setClass button "grey_button";
     button##onclick <- Html.handler
         (fun _ ->
@@ -479,20 +460,7 @@ let addbutton div =
            (fun x -> if x.element = button then
                 (start_marker := Some x; setClass button "red_button";)
                 else Dom.removeChild div x.element) (!markers1);
-             (* match x.element with
-               | None -> ()
-               | Some elt -> if elt = button then
-                             (start_marker := Some x.element; setClass button "red_button";)
-                             else Dom.removeChild div elt) (!markers1); *)
-          (* let button = Dom_html.createButton ~_type:(Js.string "button") doc in
-          Dom.appendChild div button; *)
             markers1 := [];
-(*
-          button##style##left <- js ((string_of_int a)^"px");
-          button##style##top <- js ((string_of_int b)^"px"); *)
-
-           (* button##style##background <- js "red"; *)
-           (* Dom_html.window##alert (js (string_of_int a)); *)
             Js._true) in
 
   List.iter display_a_button (!markers1)
@@ -501,18 +469,8 @@ let addbutton2 div =
   let display_a_button marker =
     let button = Dom_html.createButton ~_type:(Js.string "button") doc in
     Dom.appendChild div button;
-    let new_marker =
-      {
-        lat = 0.;
-        lon = 0.;
-        mk_tx = 0.;
-        mk_ty = 0.;
-        element = button;
-      }
-    in
-    markers2 := new_marker::(!markers2);
-    button##style##left <- js ((string_of_int (int_of_float new_marker.mk_tx))^"px");
-    button##style##top <- js ((string_of_int (int_of_float new_marker.mk_ty))^"px");
+    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx))^"px");
+    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty))^"px");
     setClass button "grey_button";
     button##onclick <- Html.handler
         (fun _ ->
@@ -524,6 +482,17 @@ let addbutton2 div =
           Js._true) in
 
   List.iter display_a_button (!markers2)
+
+let coord_tup_to_markers tups =
+  List.map (fun i ->
+      {
+        lat = fst i;
+        lon = snd i;
+        mk_tx = (snd i -. st.params.param_upleft_lon) /. st.wdpp;
+        mk_ty = (st.params.param_upleft_lat -. fst i) /. st.hdpp;
+        element = Html.createButton doc;
+      }) tups
+
 
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
@@ -557,7 +526,7 @@ let onload _ =
   st.params <- {st.params with width = float_of_int canvas_w;
                               height = float_of_int canvas_h};
 
-  let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)] in
+  let coordinates = [(42.4417101,-76.4853911);(42.4405917,-76.4969232)] in
   let canvas = create_canvas canvas_w canvas_h in
   Dom.appendChild div_map_container canvas;
   let context = canvas##getContext (Html._2d_) in
@@ -566,7 +535,7 @@ let onload _ =
   let _ = http_get_res st draw_background canvas context in
   (* let _ = http_get_res st.params st in *)
 
-  (* let i = draw_background canvas context (js ("http://127.0.0.1:8000/"^"?index=5&path="^(!img_path))) offset in *)
+  (* let i = draw_background canvas context (js ("base_url"^"?index=5&path="^(!img_path))) offset in *)
   (* clear_background i canvas context; *)
   (* clear_background canvas context (js "../tiles/2.png"); *)
   (* let button = Dom_html.createButton ~_type:(Js.string "button") doc in
@@ -750,8 +719,8 @@ let onload _ =
         | Some x -> Dom.removeChild div_map_container x.element;
           start_marker := None
         );
-      (* buttonlist := http_get_nodes_by_name (input_1##value |> Js.to_string); *)
-      addbutton div_map_container;
+        let n = (input_1##value |> Js.to_string) in
+        http_get_nodes_by_name 1 n coord_tup_to_markers addbutton div_map_container;
       Js._true);
 
   let input_2 = Html.createInput doc in
@@ -772,9 +741,9 @@ let onload _ =
         | Some x -> Dom.removeChild div_map_container x.element;
           end_marker := None
         );
-         (* buttonlist2 := http_get_nodes_by_name (input_2##value |> Js.to_string); *)
-        addbutton2 div_map_container;
-        Js._true);
+        let n = (input_2##value |> Js.to_string) in
+        http_get_nodes_by_name 2 n coord_tup_to_markers addbutton2 div_map_container;
+      Js._true);
 
 
 
