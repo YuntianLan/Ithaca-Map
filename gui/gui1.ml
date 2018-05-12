@@ -69,13 +69,6 @@ let param = {
   width = 0.;
   height = 0.;
 }
-let markers = {
-  lat = 0.;
-  lon = 0.;
-  mk_tx = 0.;
-  mk_ty = 0.;
-  element = Dom_html.createButton doc;
-}
 let st = {
   params = param;
   current_depth = 0;
