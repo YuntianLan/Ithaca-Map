@@ -195,8 +195,9 @@ let http_get_res st callback canvas context =
           |> string_of_float in
         let lrlat_temp = st.ullat_bound -. st.hdpp *. st.ty -. st.hdpp *. canvas_h
           |> string_of_float in
-        let _ = Dom_html.window##alert(js
-          (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp)) in
+        let swdpp = string_of_float st.wdpp in
+        let shdpp = string_of_float st.hdpp in
+        let _ = Dom_html.window##alert(js (swdpp ^ " " ^ shdpp)) in
         let _ = callback canvas context (js
           ("http://127.0.0.1:8000/"^"?index=5&path="^res)) (st.tx, st.ty) in
 
@@ -630,15 +631,17 @@ let onload _ =
 
 
 
-
   let zoom_in st =
     if st.current_depth = max_depth then () else
+
+    let width = st.params.width in
+    let height = st.params.height in
+
     let ullon = st.params.param_upleft_lon in
     let ullat = st.params.param_upleft_lat in
-    let lrlon = st.params.param_lowright_lon in
-    let lrlat = st.params.param_lowright_lat in
-    let orig_width = st.params.width in
-    let orig_height = st.params.height in
+    let lrlon = st.params.param_upleft_lon +. st.wdpp *. width in
+    let lrlat = st.params.param_upleft_lat -. st.hdpp *. height in
+
     let delta_lon = (lrlon -. ullon) /. 4. in
     let delta_lat = (ullat -. lrlat) /. 4. in
     let new_params = {
@@ -646,20 +649,24 @@ let onload _ =
       param_upleft_lat    =   ullat -. delta_lat;
       param_lowright_lon  =   lrlon -. delta_lon;
       param_lowright_lat  =   lrlat +. delta_lat;
-      width               =   orig_width;
-      height              =   orig_height;
+      width               =   width;
+      height              =   height;
     } in
     st.params <- new_params;
     http_get_res st draw_background canvas context in
 
+
   let zoom_out st =
     if st.current_depth = min_depth then () else
+    
+    let width = st.params.width in
+    let height = st.params.height in
+
     let ullon = st.params.param_upleft_lon in
     let ullat = st.params.param_upleft_lat in
-    let lrlon = st.params.param_lowright_lon in
-    let lrlat = st.params.param_lowright_lat in
-    let orig_width = st.params.width in
-    let orig_height = st.params.height in
+    let lrlon = st.params.param_upleft_lon +. st.wdpp *. width in
+    let lrlat = st.params.param_upleft_lat -. st.hdpp *. height in
+
     let delta_lon = (lrlon -. ullon) /. 2. in
     let delta_lat = (ullat -. lrlat) /. 2. in
     let new_params = {
@@ -667,8 +674,8 @@ let onload _ =
       param_upleft_lat    =   ullat +. delta_lat;
       param_lowright_lon  =   lrlon +. delta_lon;
       param_lowright_lat  =   lrlat -. delta_lat;
-      width               =   orig_width;
-      height              =   orig_height;
+      width               =   width;
+      height              =   height;
     } in
     st.params <- new_params;
     http_get_res st draw_background canvas context in
