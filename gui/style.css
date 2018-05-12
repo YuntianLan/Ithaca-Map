@@ -429,3 +429,30 @@ input[type=submit] {
   position: absolute;
   z-index: 2;
 }
+
+.grey_button {
+  position:absolute;
+  z-index: 2;
+  width: 30px;
+  height: 32px;
+  background: url("grey.png");
+  border: transparent
+}
+
+.green_button{
+  position:absolute;
+  z-index: 2;
+  width: 30px;
+  height: 32px;
+  background: url("dest.png");
+  border: transparent
+}
+
+.red_button{
+  position:absolute;
+  z-index: 2;
+  width: 30px;
+  height: 32px;
+  background: url("start.png");
+  border: transparent
+}
