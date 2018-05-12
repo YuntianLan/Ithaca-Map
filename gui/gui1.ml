@@ -453,20 +453,19 @@ let addbutton div =
     buttondisplay := button::(!buttondisplay);
     button##style##left <- js ((string_of_int a)^"px");
     button##style##top <- js ((string_of_int b)^"px");
-    button##style##position <- js "absolute";
-    button##style##zIndex <- js "2";
+    setClass button "grey_button";
     button##onclick <- Html.handler
         (fun _ ->
-           List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
-           let button = Dom_html.createButton ~_type:(Js.string "button") doc in
-           Dom.appendChild div button;
-           buttondisplay := [];
-           buttontuple := Some button;
-           button##style##left <- js ((string_of_int a)^"px");
-           button##style##top <- js ((string_of_int b)^"px");
-           button##style##position <- js "absolute";
-           button##style##zIndex <- js "2";
-           button##style##background <- js "red";
+          List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
+          let button = Dom_html.createButton ~_type:(Js.string "button") doc in
+          Dom.appendChild div button;
+          buttondisplay := [];
+          buttontuple := Some button;
+          button##style##left <- js ((string_of_int a)^"px");
+          button##style##top <- js ((string_of_int b)^"px");
+          setClass button "red_button";
+
+           (* button##style##background <- js "red"; *)
            (* Dom_html.window##alert (js (string_of_int a)); *)
            Js._true) in
 
@@ -479,22 +478,18 @@ let addbutton2 div =
     buttondisplay2 := button::(!buttondisplay2);
     button##style##left <- js ((string_of_int a)^"px");
     button##style##top <- js ((string_of_int b)^"px");
-    button##style##position <- js "absolute";
-    button##style##zIndex <- js "2";
+    setClass button "grey_button";
 
     button##onclick <- Html.handler
         (fun _ ->
           List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
           let button = Dom_html.createButton ~_type:(Js.string "button") doc in
           Dom.appendChild div button;
+          setClass button "green_button";
           buttondisplay2 := [];
           buttontuple2 := Some button;
           button##style##left <- js ((string_of_int a)^"px");
           button##style##top <- js ((string_of_int b)^"px");
-          button##style##position <- js "absolute";
-          button##style##zIndex <- js "2";
-          (* button##style##background <- js "green"; *)
-          button##style##background <- js "url(dest.png)";
            (* Dom_html.window##alert (js (string_of_int a)); *)
           Js._true) in
 
