@@ -55,6 +55,38 @@ let autocomp = ref [""]
 
 
 
+let param = {
+  param_upleft_lon = init_upleft_lon;
+  param_upleft_lat = init_upleft_lat;
+  param_lowright_lon = init_lowright_lon;
+  param_lowright_lat = init_lowright_lat;
+  width = 0.;
+  height = 0.;
+}
+let markers = {
+  lat = 0.;
+  lon = 0.;
+  mk_tx = 0.;
+  mk_ty = 0.;
+  element = None;
+}
+let st = {
+  params = param;
+  current_depth = 0;
+  wdpp = 0.;
+  hdpp = 0.;
+  tx = 0.;
+  ty = 0.;
+  (* mutable rtx : float;
+     mutable rty : float; *)
+  img_w = 0.;
+  img_h  = 0.;
+  ullon_bound = 0.;
+  ullat_bound = 0.;
+  lrlon_bound = 0.;
+  lrlat_bound = 0.;
+  markers = [];
+}
 
 
 
@@ -157,11 +189,11 @@ let http_get_res st callback canvas context =
         st.ty <- ( st.ullat_bound -. st.params.param_upleft_lat) /. st.hdpp;
         let canvas_w = st.params.width in
         let canvas_h = st.params.height in
-        let _ = Dom_html.window##alert(js 
+        (* let _ = Dom_html.window##alert(js
           (string_of_float (st.ullon_bound +. st.wdpp *. st.tx +. st.wdpp *. canvas_w))) in
-        let _ = Dom_html.window##alert(js 
-          (string_of_float (st.ullat_bound -. st.hdpp *. st.ty -. st.hdpp *. canvas_h))) in
-        let _ = callback canvas context (js 
+        let _ = Dom_html.window##alert(js
+          (string_of_float (st.ullat_bound -. st.hdpp *. st.ty -. st.hdpp *. canvas_h))) in *)
+        let _ = callback canvas context (js
           ("http://127.0.0.1:8000/"^"?index=5&path="^res)) (st.tx, st.ty) in
 
         (* img_path := res; *)
@@ -234,38 +266,6 @@ type marker = {
 }
 
 
-let param = {
-  param_upleft_lon = init_upleft_lon;
-  param_upleft_lat = init_upleft_lat;
-  param_lowright_lon = init_lowright_lon;
-  param_lowright_lat = init_lowright_lat;
-  width = 0.;
-  height = 0.;
-}
-let markers = {
-  lat = 0.;
-  lon = 0.;
-  mk_tx = 0.;
-  mk_ty = 0.;
-  element = None;
-}
-let st = {
-  params = param;
-  current_depth = 0;
-  wdpp = 0.;
-  hdpp = 0.;
-  tx = 0.;
-  ty = 0.;
-  (* mutable rtx : float;
-     mutable rty : float; *)
-  img_w = 0.;
-  img_h  = 0.;
-  ullon_bound = 0.;
-  ullat_bound = 0.;
-  lrlon_bound = 0.;
-  lrlat_bound = 0.;
-  markers = [];
-}
 
 
 (* Set the class of an Html element *)
@@ -305,7 +305,7 @@ let draw_background_with_line canvas context onload src offset lst =
       (fun ev ->
          context##clearRect (0.0,0.0,(float_of_int canvas##width),
           (float_of_int canvas##height));
-         context##drawImage_full (img_map, fst(offset), snd(offset), 
+         context##drawImage_full (img_map, fst(offset), snd(offset),
           (float_of_int canvas##width), (float_of_int canvas##height),
           0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
          onload context lst;
@@ -363,7 +363,7 @@ let autocomplete textbox =
   textbox##oninput <- Html.handler
       (fun _ ->
          closeAllList None (Dom_html.CoerceTo.element textbox);
-         doc##onclick <- Html.handler (fun ev -> (closeAllList 
+         doc##onclick <- Html.handler (fun ev -> (closeAllList
           (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element textbox));Js._true);
          (* Create a new div to contain all the relevant autocomplete item *)
          let a = Html.createDiv doc in
@@ -594,6 +594,12 @@ let onload _ =
     } in
     st.params <- new_params in
 
+  let update_required st =
+    st.params.param_upleft_lon < st.ullon_bound ||
+    st.params.param_upleft_lat > st.ullat_bound ||
+    st.params.param_lowright_lon > st.lrlon_bound ||
+    st.params.param_lowright_lat < st.lrlat_bound in
+
 (*   let remove_markers (marker_dom : Html.divElement Js.t) st =
     let _ = List.map (fun mk -> Dom.removeChild marker_dom mk.element) st.markers in
     st.markers <- [] in
@@ -613,15 +619,15 @@ let onload _ =
 
 
 
-
-
+  (* let update_trans _ =
+    draw_background canvas context src offset *)
 
   let on_drag dx dy st = ()  in
-    
 
 
 
-  let zoom_in st = 
+
+  let zoom_in st =
     if st.current_depth = max_depth then () else
     let ullon = st.params.param_upleft_lon in
     let ullat = st.params.param_upleft_lat in
@@ -916,13 +922,26 @@ let onload _ =
                    (fun ev ->
                       endx := ev##clientX; endy := ev##clientY;
                       let dx = !endx- !startx and dy = !endy - !starty in
-                      if dy != 0 then
-                        (* debug_msg (Format.sprintf "Mouse up y %d" dy); *)
-                        Dom_html.window##alert (js ("y is "^string_of_int dy));
-                        if dx != 0 then
-                          (* debug_msg (Format.sprintf "Mouse up x %d" dx); *)
-                          Dom_html.window##alert (js ("x is "^string_of_int dx));
-                          Html.removeEventListener c1;
+                      (* if (dy <> 0 || dx <> 0) then *)
+                        (* st.tx <- st.tx +. float_of_int dx;
+                        st.ty <- st.ty +. float_of_int dy; *)
+                      let new_param = {
+                        st.params with
+                        param_upleft_lon = st.params.param_upleft_lon
+                                           -. (st.wdpp *. float_of_int dx);
+                        param_lowright_lon = st.params.param_lowright_lon
+                                             -. (st.wdpp *. float_of_int dx);
+                        param_upleft_lat = st.params.param_upleft_lat
+                                           +. (st.hdpp *. float_of_int dy);
+                        param_lowright_lat = st.params.param_lowright_lat
+                                           +. (st.hdpp *. float_of_int dy)
+                      } in
+                      st.params <- new_param;
+                      http_get_res st draw_background canvas context;
+                        (* Dom_html.window##alert (js ("y is "^string_of_int dy)); *)
+
+                        (* Dom_html.window##alert (js ("x is "^string_of_int dx)); *)
+                      Html.removeEventListener c1;
                       Js.Opt.iter !c2 Html.removeEventListener;
                       Js._true))
                 Js._true);
