@@ -1,9 +1,13 @@
+
+
 build:
 	ocamlbuild -use-ocamlfind trie.cmo graph.cmo image.cmo
 
 server:
 	ocamlbuild -use-ocamlfind cohttpserv.native
 	./cohttpserv.native
+
+
 test:
 	ocamlbuild -use-ocamlfind test_trie.byte && ./test_trie.byte
 	ocamlbuild -use-ocamlfind test_image.byte && ./test_image.byte

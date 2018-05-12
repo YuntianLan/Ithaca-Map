@@ -157,10 +157,14 @@ let http_get_res st callback canvas context =
         st.ty <- ( st.ullat_bound -. st.params.param_upleft_lat) /. st.hdpp;
         let canvas_w = st.params.width in
         let canvas_h = st.params.height in
+        let ullon_temp = st.ullon_bound +. st.wdpp *. st.tx |> string_of_float in
+        let ullat_temp = st.ullat_bound -. st.hdpp *. st.ty |> string_of_float in
+        let lrlon_temp = st.ullon_bound +. st.wdpp *. st.tx +. st.wdpp *. canvas_w
+          |> string_of_float in
+        let lrlat_temp = st.ullat_bound -. st.hdpp *. st.ty -. st.hdpp *. canvas_h
+          |> string_of_float in
         let _ = Dom_html.window##alert(js 
-          (string_of_float (st.ullon_bound +. st.wdpp *. st.tx +. st.wdpp *. canvas_w))) in
-        let _ = Dom_html.window##alert(js 
-          (string_of_float (st.ullat_bound -. st.hdpp *. st.ty -. st.hdpp *. canvas_h))) in
+          (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp)) in
         let _ = callback canvas context (js 
           ("http://127.0.0.1:8000/"^"?index=5&path="^res)) (st.tx, st.ty) in
 
@@ -673,7 +677,6 @@ let onload _ =
 
 
 
-
   let div_markers = Html.createDiv doc in
   setId div_markers "markers";
   Dom.appendChild doc##body div_markers;
@@ -803,6 +806,12 @@ let onload _ =
   Dom.appendChild div_card_content span_icons_container;
   let a_zoomin = Html.createA doc in
   setClass a_zoomin "zoomin";
+
+  a_zoomin##onclick <- Dom_html.handler
+      (fun _ ->
+        zoom_in st;
+         Js._true);
+
   let i_plus = Html.createI doc in
   setClass i_plus "action-icon fa fa-2x fa-search-plus";
   Dom.appendChild a_zoomin i_plus;
@@ -810,6 +819,12 @@ let onload _ =
 
   let a_zoomout = Html.createA doc in
   setClass a_zoomout "zoomout";
+
+  a_zoomout##onclick <- Dom_html.handler
+      (fun _ ->
+        zoom_out st;
+         Js._true);
+
   let i_minus = Html.createI doc in
   setClass i_minus "action-icon fa fa-2x fa-search-minus";
   Dom.appendChild a_zoomout i_minus;

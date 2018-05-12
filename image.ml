@@ -1,5 +1,7 @@
 open Camlimages
 open Png
+open Thread
+
 (* ========= constants ========== *)
 let image_folder = "tiles"^Filename.dir_sep
 (* let image_folder = "tiles_test"^Filename.dir_sep *)
@@ -369,6 +371,13 @@ module Images : MapImage = struct
                   (string_of_int fullimg_h)^
                   ".png" in
       Png.save fname [] (Rgb24 buffer_rgb);
+      let delayed_remove () = 
+        Thread.delay 5.;
+        Sys.remove ("cache"^Filename.dir_sep^fname_coord^(string_of_int res.tree_depth)^"_"^
+                  (string_of_int fullimg_w)^"_"^
+                  (string_of_int fullimg_h)^
+                  ".png") in
+      Thread.create delayed_remove ();
       fname
 
 
