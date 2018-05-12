@@ -33,16 +33,28 @@ type marker = {
   lon : float;
   mk_tx : float;
   mk_ty : float;
-  element : Html.buttonElement Js.t option;
+  element : Html.buttonElement Js.t;
 }
 let markers1 : marker list ref = ref []
 let markers2 : marker list ref = ref []
-(* let buttonlist = ref []
-let buttondisplay = ref [] *)
-let buttontuple = ref None
+
+let markers1 = ref [{
+    lat = 0.;
+    lon = 0.;
+    mk_tx = 14.;
+    mk_ty = 80.;
+    element = Html.createButton doc;
+  };{
+      lat = 0.;
+      lon = 0.;
+      mk_tx = 70.;
+      mk_ty = 20.;
+      element = Html.createButton doc;
+    }]
+let start_marker = ref None
 (* let buttonlist2 = ref []
 let buttondisplay2 = ref [] *)
-let buttontuple2 = ref None
+let end_marker = ref None
 let dbstart = ref None
 let dbend = ref None
 
@@ -75,7 +87,7 @@ let markers = {
   lon = 0.;
   mk_tx = 0.;
   mk_ty = 0.;
-  element = None;
+  element = Dom_html.createButton doc;
 }
 let st = {
   params = param;
@@ -225,7 +237,7 @@ let http_get_res st callback canvas context =
 
 
 
-
+(*
 let clear_goals div =
   List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
   List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
@@ -265,7 +277,7 @@ let clear_all div =
   buttontuple2 := None;
   dbstart := None;
   dbend := None
-
+ *)
 
 
 
@@ -444,53 +456,74 @@ let get_geo () =
 
 
 let addbutton div =
-  let display_a_button (a,b) =
+  let display_a_button marker =
     let button = Dom_html.createButton ~_type:(Js.string "button") doc in
     Dom.appendChild div button;
-    buttondisplay := button::(!buttondisplay);
-    button##style##left <- js ((string_of_int a)^"px");
-    button##style##top <- js ((string_of_int b)^"px");
+    Dom_html.window##alert (js "addbutton");
+    let new_marker =
+    {
+      lat = 0.;
+      lon = 0.;
+      mk_tx = 0.;
+      mk_ty = 0.;
+      element = button;
+    }
+    in
+    markers1 := new_marker::(!markers1);
+    button##style##left <- js ((string_of_int (int_of_float new_marker.mk_tx))^"px");
+    button##style##top <- js ((string_of_int (int_of_float new_marker.mk_ty))^"px");
     setClass button "grey_button";
     button##onclick <- Html.handler
         (fun _ ->
-          List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
-          let button = Dom_html.createButton ~_type:(Js.string "button") doc in
-          Dom.appendChild div button;
-          buttondisplay := [];
-          buttontuple := Some button;
+           List.iter
+           (fun x -> if x.element = button then
+                (start_marker := Some x; setClass button "red_button";)
+                else Dom.removeChild div x.element) (!markers1);
+             (* match x.element with
+               | None -> ()
+               | Some elt -> if elt = button then
+                             (start_marker := Some x.element; setClass button "red_button";)
+                             else Dom.removeChild div elt) (!markers1); *)
+          (* let button = Dom_html.createButton ~_type:(Js.string "button") doc in
+          Dom.appendChild div button; *)
+            markers1 := [];
+(*
           button##style##left <- js ((string_of_int a)^"px");
-          button##style##top <- js ((string_of_int b)^"px");
-          setClass button "red_button";
+          button##style##top <- js ((string_of_int b)^"px"); *)
 
            (* button##style##background <- js "red"; *)
            (* Dom_html.window##alert (js (string_of_int a)); *)
-           Js._true) in
+            Js._true) in
 
-  List.iter display_a_button (!buttonlist)
+  List.iter display_a_button (!markers1)
 
 let addbutton2 div =
-  let display_a_button (a,b) =
+  let display_a_button marker =
     let button = Dom_html.createButton ~_type:(Js.string "button") doc in
     Dom.appendChild div button;
-    buttondisplay2 := button::(!buttondisplay2);
-    button##style##left <- js ((string_of_int a)^"px");
-    button##style##top <- js ((string_of_int b)^"px");
+    let new_marker =
+      {
+        lat = 0.;
+        lon = 0.;
+        mk_tx = 0.;
+        mk_ty = 0.;
+        element = button;
+      }
+    in
+    markers2 := new_marker::(!markers2);
+    button##style##left <- js ((string_of_int (int_of_float new_marker.mk_tx))^"px");
+    button##style##top <- js ((string_of_int (int_of_float new_marker.mk_ty))^"px");
     setClass button "grey_button";
-
     button##onclick <- Html.handler
         (fun _ ->
-          List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
-          let button = Dom_html.createButton ~_type:(Js.string "button") doc in
-          Dom.appendChild div button;
-          setClass button "green_button";
-          buttondisplay2 := [];
-          buttontuple2 := Some button;
-          button##style##left <- js ((string_of_int a)^"px");
-          button##style##top <- js ((string_of_int b)^"px");
-           (* Dom_html.window##alert (js (string_of_int a)); *)
+          List.iter
+          (fun x -> if x.element = button then
+              (end_marker := Some x; setClass button "red_button";)
+               else Dom.removeChild div x.element) (!markers2);
+          markers2 := [];
           Js._true) in
 
-  List.iter display_a_button (!buttonlist2)
+  List.iter display_a_button (!markers2)
 
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
@@ -712,13 +745,14 @@ let onload _ =
   Dom.appendChild div_bottom input_submit_1;
   input_submit_1##onclick <- Html.handler
       (fun _ ->
-         (match !buttontuple with
-          | None -> ()
-          | Some x -> Dom.removeChild div_map_container (x);
-            buttontuple := None);
-         buttonlist := http_get_nodes_by_name (input_1##value |> Js.to_string);
-         addbutton div_map_container;
-         Js._true);
+        (match !start_marker with
+        | None -> ()
+        | Some x -> Dom.removeChild div_map_container x.element;
+          start_marker := None
+        );
+      (* buttonlist := http_get_nodes_by_name (input_1##value |> Js.to_string); *)
+      addbutton div_map_container;
+      Js._true);
 
   let input_2 = Html.createInput doc in
   setId input_2 "input2";
@@ -733,35 +767,38 @@ let onload _ =
   Dom.appendChild div_autocomplete input_submit_2;
   input_submit_2##onclick <- Html.handler
       (fun _ ->
-         (match !buttontuple2 with
-          | None -> ()
-          | Some x -> Dom.removeChild div_map_container (x);
-            buttontuple2 := None);
-         buttonlist2 := http_get_nodes_by_name (input_2##value |> Js.to_string);
-         addbutton2 div_map_container;
-         Js._true);
+         (match !end_marker with
+        | None -> ()
+        | Some x -> Dom.removeChild div_map_container x.element;
+          end_marker := None
+        );
+         (* buttonlist2 := http_get_nodes_by_name (input_2##value |> Js.to_string); *)
+        addbutton2 div_map_container;
+        Js._true);
 
 
 
 
   div_map_container##ondblclick <- Html.handler
       (fun ev ->
-         clear_goals div_map_container;
+         (* clear_goals div_map_container; *)
          (if (!dbstart <> None && !dbend <> None)
           then
-            (clear_all div_map_container;
-             Dom_html.window##alert (js "start");
-             input_1##value <- js "";
-             input_2##value <- js "";
-             Dom.appendChild div_map_container start_icon;
-             start_icon##style##visibility <- js "visible";
-             start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
-             start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
-             dbstart := Some start_icon;
-             ())
+            (
+            (* clear_all div_map_container; *)
+            Dom_html.window##alert (js "start");
+            input_1##value <- js "";
+            input_2##value <- js "";
+            Dom.appendChild div_map_container start_icon;
+            start_icon##style##visibility <- js "visible";
+            start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
+            start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+            dbstart := Some start_icon;
+            ())
           else if (!dbstart = None && !dbend = None)
           then
-            (clear_all div_map_container;
+            (
+            (* clear_all div_map_container; *)
              Dom_html.window##alert (js "start");
              input_1##value <- js "";
              input_2##value <- js "";
@@ -892,7 +929,7 @@ let onload _ =
       (fun _ ->
         input_1##value <- js "";
         input_2##value <- js "";
-        clear_all div_map_container;
+        (* clear_all div_map_container; *)
         Js._true);
   Dom.appendChild div_nothing a_clear;
 
