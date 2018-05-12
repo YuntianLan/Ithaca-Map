@@ -48,6 +48,8 @@ let dbend = ref None
 
 let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
 
+let route = ref (0.,[(0.,0.)])
+
 let img_map = Html.createImg doc
 
 
@@ -133,10 +135,9 @@ let http_get_nodes_by_name name =
   let url = base_url^"?index=2"^"&name="^name in
   let start () =
     http_get url >>= (fun res ->
-        by_name := split_coord_list res;
+        marker1 := split_coord_list res;
         Lwt.return ()) in
-  ignore(start ());
-  !by_name
+  ignore(start ())
 
 let http_get_route (drive:bool) slat slon elat elon =
   let url = base_url^"?index=3"^"&drive="^(string_of_bool drive)^"&slat="
@@ -150,8 +151,7 @@ let http_get_route (drive:bool) slat slon elat elon =
         let tups = split_coord_list coord_params in
         route := (length, tups);
         Lwt.return ()) in
-  ignore(start ());
-  !route
+  ignore(start ())
 
 
 
@@ -310,8 +310,8 @@ let draw_background_with_line canvas context src offset lst =
           0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
          draw_line context lst;
          Js._false);
-  setId img_map "map";
-  img_map##src <- src;
+  (* setId img_map "map";
+  img_map##src <- src; *)
   img_map
 
 
@@ -872,7 +872,7 @@ let onload _ =
   append_text a_go "go";
   a_go##onclick <- Html.handler
       (fun _ ->
-         input_1##value <- js "";
+         draw_background_with_line canvas context "../tiles/00.png" (4., 4.) coordinates;
          Js._true);
   Dom.appendChild div_nothing a_go;
 
