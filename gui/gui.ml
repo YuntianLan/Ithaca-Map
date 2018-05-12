@@ -541,14 +541,7 @@ div_map_container##ondblclick <- Html.handler
       (fun _ ->
         input_1##value <- js "";
         input_2##value <- js "";
-        (match Js.Opt.to_option !buttontuple with
-          | None -> ()
-          | Some x -> Dom.removeChild div_map_container (x));
-        (match Js.Opt.to_option !buttontuple2 with
-          | None -> ()
-          | Some x -> Dom.removeChild div_map_container (x));
-        buttontuple := Js.null;
-        buttontuple2 := Js.null;
+        clear_all div_map_container;
         Js._true);
   Dom.appendChild div_nothing a_clear;
 

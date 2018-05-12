@@ -882,9 +882,18 @@ let onload _ =
          Js._true);
   Dom.appendChild div_nothing a_go;
 
+  let a_drive = Html.createA doc in
+  setClass a_drive "clear waves-effect btn";
+  append_text a_drive "drive";
+  a_drive##onclick <- Html.handler
+      (fun _ ->
+         input_1##value <- js "";
+         Js._true);
+  Dom.appendChild div_nothing a_drive;
+
   let a_clear = Html.createA doc in
   setClass a_clear "clear waves-effect btn";
-  append_text a_clear "clear route";
+  append_text a_clear "clear";
   a_clear##onclick <- Html.handler
       (fun _ ->
          input_1##value <- js "";
