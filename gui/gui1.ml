@@ -31,10 +31,10 @@ let init_lowright_lat = 42.4279
 
 let buttonlist = ref [(100,200); (350,400); (150,500)]
 let buttondisplay = ref []
-let buttontuple = ref Js.null
+let buttontuple = ref None
 let buttonlist2 = ref [(400,200); (650,400); (450,500)]
 let buttondisplay2 = ref []
-let buttontuple2 = ref Js.null
+let buttontuple2 = ref None
 let dbstart = ref None
 let dbend = ref None
 
@@ -224,26 +224,26 @@ let http_get_res st callback canvas context =
 let clear_goals div =
   List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
   List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
-  (match Js.Opt.to_option !buttontuple with
+  (match !buttontuple with
    | None -> ()
    | Some x -> Dom.removeChild div (x));
-  (match Js.Opt.to_option !buttontuple2 with
+  (match !buttontuple2 with
    | None -> ()
    | Some x -> Dom.removeChild div (x));
   buttonlist := [];
   buttonlist2 := [];
   buttondisplay := [];
   buttondisplay2 := [];
-  buttontuple := Js.null;
-  buttontuple2 := Js.null
+  buttontuple := None;
+  buttontuple2 := None
 
 let clear_all div =
   List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
   List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
-  (match Js.Opt.to_option !buttontuple with
+  (match !buttontuple with
    | None -> ()
    | Some x -> Dom.removeChild div (x));
-  (match Js.Opt.to_option !buttontuple2 with
+  (match !buttontuple2 with
    | None -> ()
    | Some x -> Dom.removeChild div (x));
   (match !dbstart with
@@ -256,8 +256,8 @@ let clear_all div =
   buttonlist2 := [];
   buttondisplay := [];
   buttondisplay2 := [];
-  buttontuple := Js.null;
-  buttontuple2 := Js.null;
+  buttontuple := None;
+  buttontuple2 := None;
   dbstart := None;
   dbend := None
 
@@ -461,7 +461,7 @@ let addbutton div =
            let button = Dom_html.createButton ~_type:(Js.string "button") doc in
            Dom.appendChild div button;
            buttondisplay := [];
-           buttontuple := Js.some (button);
+           buttontuple := Some button;
            button##style##left <- js ((string_of_int a)^"px");
            button##style##top <- js ((string_of_int b)^"px");
            button##style##position <- js "absolute";
@@ -481,20 +481,22 @@ let addbutton2 div =
     button##style##top <- js ((string_of_int b)^"px");
     button##style##position <- js "absolute";
     button##style##zIndex <- js "2";
+
     button##onclick <- Html.handler
         (fun _ ->
-           List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
-           let button = Dom_html.createButton ~_type:(Js.string "button") doc in
-           Dom.appendChild div button;
-           buttondisplay2 := [];
-           buttontuple2 := Js.some (button);
-           button##style##left <- js ((string_of_int a)^"px");
-           button##style##top <- js ((string_of_int b)^"px");
-           button##style##position <- js "absolute";
-           button##style##zIndex <- js "2";
-           button##style##background <- js "green";
+          List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
+          let button = Dom_html.createButton ~_type:(Js.string "button") doc in
+          Dom.appendChild div button;
+          buttondisplay2 := [];
+          buttontuple2 := Some button;
+          button##style##left <- js ((string_of_int a)^"px");
+          button##style##top <- js ((string_of_int b)^"px");
+          button##style##position <- js "absolute";
+          button##style##zIndex <- js "2";
+          (* button##style##background <- js "green"; *)
+          button##style##background <- js "url(dest.png)";
            (* Dom_html.window##alert (js (string_of_int a)); *)
-           Js._true) in
+          Js._true) in
 
   List.iter display_a_button (!buttonlist2)
 
@@ -718,10 +720,10 @@ let onload _ =
   Dom.appendChild div_bottom input_submit_1;
   input_submit_1##onclick <- Html.handler
       (fun _ ->
-         (match Js.Opt.to_option !buttontuple with
+         (match !buttontuple with
           | None -> ()
           | Some x -> Dom.removeChild div_map_container (x);
-            buttontuple := Js.null);
+            buttontuple := None);
          addbutton div_map_container;
          Js._true);
 
@@ -738,10 +740,10 @@ let onload _ =
   Dom.appendChild div_autocomplete input_submit_2;
   input_submit_2##onclick <- Html.handler
       (fun _ ->
-         (match Js.Opt.to_option !buttontuple2 with
+         (match !buttontuple2 with
           | None -> ()
           | Some x -> Dom.removeChild div_map_container (x);
-            buttontuple2 := Js.null);
+            buttontuple2 := None);
          addbutton2 div_map_container;
          Js._true);
 
