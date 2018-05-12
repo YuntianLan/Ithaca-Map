@@ -40,7 +40,7 @@ let dbend = ref None
 
 let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
 
-
+let img_map = Html.createImg doc
 
 
 
@@ -303,8 +303,7 @@ let draw_line context lst =
     )
     (List.nth lst 0) lst
 
-let draw_background_with_line canvas context onload src offset lst =
-  let img_map = Html.createImg doc in
+let draw_background_with_line canvas context src offset lst =
   img_map##onload <- Html.handler
       (fun ev ->
          context##clearRect (0.0,0.0,(float_of_int canvas##width),
@@ -312,7 +311,7 @@ let draw_background_with_line canvas context onload src offset lst =
          context##drawImage_full (img_map, fst(offset), snd(offset),
           (float_of_int canvas##width), (float_of_int canvas##height),
           0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
-         onload context lst;
+         draw_line context lst;
          Js._false);
   setId img_map "map";
   img_map##src <- src;
@@ -320,7 +319,6 @@ let draw_background_with_line canvas context onload src offset lst =
 
 
 let draw_background canvas context src offset =
-  let img_map = Html.createImg doc in
   img_map##onload <- Html.handler
       (fun ev ->
          context##clearRect (0.0,0.0,(float_of_int canvas##width),
