@@ -29,10 +29,10 @@ let init_upleft_lat = 42.4750
 let init_lowright_lon = -76.4670
 let init_lowright_lat = 42.4279
 
-let buttonlist = ref [(100,200); (350,400); (150,500)]
+let buttonlist = ref []
 let buttondisplay = ref []
 let buttontuple = ref None
-let buttonlist2 = ref [(400,200); (650,400); (450,500)]
+let buttonlist2 = ref []
 let buttondisplay2 = ref []
 let buttontuple2 = ref None
 let dbstart = ref None
@@ -724,6 +724,7 @@ let onload _ =
           | None -> ()
           | Some x -> Dom.removeChild div_map_container (x);
             buttontuple := None);
+         buttonlist := http_get_nodes_by_name (input_1##value |> Js.to_string);
          addbutton div_map_container;
          Js._true);
 
@@ -744,6 +745,7 @@ let onload _ =
           | None -> ()
           | Some x -> Dom.removeChild div_map_container (x);
             buttontuple2 := None);
+         buttonlist2 := http_get_nodes_by_name (input_2##value |> Js.to_string);
          addbutton2 div_map_container;
          Js._true);
 
