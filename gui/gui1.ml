@@ -127,8 +127,6 @@ let st = {
   hdpp = 0.;
   tx = 0.;
   ty = 0.;
-  (* mutable rtx : float;
-     mutable rty : float; *)
   img_w = 0.;
   img_h  = 0.;
   ullon_bound = 0.;
@@ -709,7 +707,10 @@ let http_get_nodes_by_type type_name div_map_container =
         Lwt.return ()) in
   ignore(start ())
 
-
+let pix2coord x y =
+  let lon = st.params.param_upleft_lon +. x *. st.wdpp in
+  let lat = st.params.param_upleft_lat -. y *. st.hdpp in
+  (lon, lat)
 
 
 
@@ -1080,11 +1081,14 @@ let onload _ =
             Dom.appendChild div_map_container start_icon;
             start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
             start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+            let x = float_of_int ev##clientX in
+            let y = float_of_int ev##clientY in
+            let (longi, lati) = pix2coord x y in
             start_marker := Some {
-                lat = 0.0;
-                lon = 0.0;
-                mk_tx = 0.0;
-                mk_ty = 0.0;
+                lat = lati;
+                lon = longi;
+                mk_tx = x;
+                mk_ty = y;
                 element = start_icon;
               };
             ())
@@ -1097,11 +1101,14 @@ let onload _ =
              Dom.appendChild div_map_container start_icon;
              start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
              start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+             let x = float_of_int ev##clientX in
+             let y = float_of_int ev##clientY in
+             let (longi, lati) = pix2coord x y in
              start_marker := Some {
-                 lat = 0.0;
-                 lon = 0.0;
-                 mk_tx = 0.0;
-                 mk_ty = 0.0;
+                 lat = lati;
+                 lon = longi;
+                 mk_tx = x;
+                 mk_ty = y;
                  element = start_icon;
                };
              ())
@@ -1112,12 +1119,15 @@ let onload _ =
              end_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
              end_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
              Dom_html.window##alert (js "3");
+             let x = float_of_int ev##clientX in
+             let y = float_of_int ev##clientY in
+             let (longi, lati) = pix2coord x y in
              end_marker := Some {
-                 lat = 0.0;
-                 lon = 0.0;
-                 mk_tx = 0.0;
-                 mk_ty = 0.0;
-                 element = end_icon;
+                 lat = lati;
+                 lon = longi;
+                 mk_tx = x;
+                 mk_ty = y;
+                 element = start_icon;
                };
              ())
           else if (!start_marker = None && !end_marker <> None)
@@ -1126,11 +1136,14 @@ let onload _ =
             Dom_html.window##alert (js "4");
              start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
              start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+             let x = float_of_int ev##clientX in
+             let y = float_of_int ev##clientY in
+             let (longi, lati) = pix2coord x y in
              start_marker := Some {
-                 lat = 0.0;
-                 lon = 0.0;
-                 mk_tx = 0.0;
-                 mk_ty = 0.0;
+                 lat = lati;
+                 lon = longi;
+                 mk_tx = x;
+                 mk_ty = y;
                  element = start_icon;
                };
              ())
