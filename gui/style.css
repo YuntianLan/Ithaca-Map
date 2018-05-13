@@ -481,7 +481,7 @@ input[type=submit] {
     left:60px;
     top:60px;
     border: transparent;
-    background: url("star.png");
+    background: url("pin.png");
     z-index: 2;
     /* position:absolute;
     z-index: 2;

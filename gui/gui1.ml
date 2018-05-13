@@ -82,8 +82,9 @@ let buttondisplay2 = ref [] *)
 let end_marker = ref None
 (* let dbstart = ref None
 let dbend = ref None *)
-
-
+let meter = ref ""
+let route = ref []
+(* let route = ref ("",[(0.,0.)]) *)
 
 
 
@@ -126,8 +127,6 @@ let st = {
   hdpp = 0.;
   tx = 0.;
   ty = 0.;
-  (* mutable rtx : float;
-     mutable rty : float; *)
   img_w = 0.;
   img_h  = 0.;
   ullon_bound = 0.;
@@ -186,14 +185,15 @@ let http_get_route drive draw_line context coord_tup_to_markers =
             (lat,lon)
           ) in
           let flst = List.map s2tp slst in
-          route := (dist, flst);
+          meter := dist;
+          route := flst;
           draw_line context (flst |> coord_tup_to_markers);
           Dom_html.window##alert (js ("Estimated travel distance: "^dist));
           Dom_html.window##alert (js (List.length flst |> string_of_int));
           Lwt.return ()
         ) in
         ignore (start ())
-    | _, _ -> 
+    | _, _ ->
       Dom_html.window##alert (js "Please select a start and end point!")
 
 
@@ -214,38 +214,6 @@ let clear_end div =
   markers2 := [];
   end_marker := None
 
-let update_marker (x:marker) =
-  {
-    x with mk_tx = (x.lon -. st.params.param_upleft_lon) /. st.wdpp;
-           mk_ty = (st.params.param_upleft_lat -. x.lat) /. st.hdpp;
-  }
-
-let clear_update_all_button div =
-  markers1 := List.map (fun x -> Dom.removeChild div x.element;
-                         update_marker x) (!markers1);
-  markers2 := List.map (fun x -> Dom.removeChild div x.element;
-                         update_marker x) (!markers2);
-  sugg := List.map (fun x -> Dom.removeChild div x.element;
-                     update_marker x) (!sugg);
-
-  (match !start_marker with
-   | None -> ()
-   | Some x ->
-     Dom.removeChild div x.element;
-     let new_marker = update_marker x in
-  start_marker := Some new_marker);
-  (match !end_marker with
-   | None -> ()
-   | Some x ->
-   Dom.removeChild div x.element;
-   let new_marker = update_marker x in
-  end_marker := Some new_marker)
-
-let clear_all div =
-  List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
-  List.iter (fun x -> Dom.removeChild div x.element) (!markers2);
-  List.iter (fun x -> Dom.removeChild div x.element) (!sugg);
-
   (match !start_marker with
    | None -> ()
    | Some x -> Dom.removeChild div x.element);
@@ -259,6 +227,7 @@ let clear_all div =
   start_marker := None;
   end_marker := None;
   route := ("",[])
+
 
 (* Set the class of an Html element *)
 let setClass elt s = elt##className <- js s
@@ -297,7 +266,7 @@ let draw_line context lst =
     ((List.hd lst).mk_tx, (List.hd lst).mk_ty) lst
 
 let draw_background_with_line canvas context offset lst =
-  
+
   Dom_html.window##alert (js "drawing 2");
   img_map##onload <- Html.handler
       (fun ev ->
@@ -329,13 +298,11 @@ let draw_background canvas context src offset =
   img_map##src <- src;
   img_map
 
-let clear_background i canvas context =
-  let img_map = i in
-  img_map##onload <- Html.handler
-      (fun ev ->
-         context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
-         context##drawImage (img_map, (10.), (10.));
-         Js._false)
+let clear_line canvas context =
+  context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+  context##drawImage_full (img_map, st.tx, st.ty,
+  (float_of_int canvas##width), (float_of_int canvas##height),
+  0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height))
 (* close all autocomplete lists in the document*)
 let closeAllList elt input =
   Js.Opt.iter input (fun inp ->
@@ -357,6 +324,51 @@ let closeAllList elt input =
         done
     )
 
+let update_marker (x:marker) =
+  {
+    x with mk_tx = (x.lon -. st.params.param_upleft_lon) /. st.wdpp;
+           mk_ty = (st.params.param_upleft_lat -. x.lat) /. st.hdpp;
+  }
+
+let clear_update_all_button div =
+  markers1 := List.map (fun x -> Dom.removeChild div x.element;
+                         update_marker x) (!markers1);
+  markers2 := List.map (fun x -> Dom.removeChild div x.element;
+                         update_marker x) (!markers2);
+  sugg := List.map (fun x -> Dom.removeChild div x.element;
+                     update_marker x) (!sugg);
+
+  (match !start_marker with
+   | None -> ()
+   | Some x ->
+     Dom.removeChild div x.element;
+     let new_marker = update_marker x in
+  start_marker := Some new_marker);
+  (match !end_marker with
+   | None -> ()
+   | Some x ->
+   Dom.removeChild div x.element;
+   let new_marker = update_marker x in
+  end_marker := Some new_marker)
+
+let clear_all div canvas context =
+  List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
+  List.iter (fun x -> Dom.removeChild div x.element) (!markers2);
+  List.iter (fun x -> Dom.removeChild div x.element) (!sugg);
+
+  (match !start_marker with
+   | None -> ()
+   | Some x -> Dom.removeChild div x.element);
+  (match !end_marker with
+   | None -> ()
+   | Some x -> Dom.removeChild div x.element);
+  clear_line canvas context;
+  markers1 := [];
+  markers2 := [];
+  sugg := [];
+  sugg_name := [];
+  start_marker := None;
+  end_marker := None
 
 let autocomplete textbox =
   let currentFocus = ref 0 in
@@ -704,7 +716,10 @@ let http_get_nodes_by_type type_name div_map_container =
         Lwt.return ()) in
   ignore(start ())
 
-
+let pix2coord x y =
+  let lon = st.params.param_upleft_lon +. x *. st.wdpp in
+  let lat = st.params.param_upleft_lat -. y *. st.hdpp in
+  (lon, lat)
 
 
 
@@ -1067,7 +1082,7 @@ let onload _ =
          (if (!start_marker <> None && !end_marker <> None)
           then
             (
-            clear_all div_map_container;
+            clear_all div_map_container canvas context;
             Dom_html.window##alert (js "1");
             input_1##value <- js "";
             input_2##value <- js "";
@@ -1075,11 +1090,14 @@ let onload _ =
             Dom.appendChild div_map_container start_icon;
             start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
             start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+            let x = float_of_int ev##clientX in
+            let y = float_of_int ev##clientY in
+            let (longi, lati) = pix2coord x y in
             start_marker := Some {
-                lat = 0.0;
-                lon = 0.0;
-                mk_tx = 0.0;
-                mk_ty = 0.0;
+                lat = lati;
+                lon = longi;
+                mk_tx = x;
+                mk_ty = y;
                 element = start_icon;
               };
             ())
@@ -1092,26 +1110,31 @@ let onload _ =
              Dom.appendChild div_map_container start_icon;
              start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
              start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+             let x = float_of_int ev##clientX in
+             let y = float_of_int ev##clientY in
+             let (longi, lati) = pix2coord x y in
              start_marker := Some {
-                 lat = 0.0;
-                 lon = 0.0;
-                 mk_tx = 0.0;
-                 mk_ty = 0.0;
+                 lat = lati;
+                 lon = longi;
+                 mk_tx = x;
+                 mk_ty = y;
                  element = start_icon;
                };
              ())
           else if (!start_marker <> None && !end_marker = None)
           then
             (Dom.appendChild div_map_container end_icon;
-             end_icon##style##visibility <- js "visible";
              end_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
              end_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
              Dom_html.window##alert (js "3");
+             let x = float_of_int ev##clientX in
+             let y = float_of_int ev##clientY in
+             let (longi, lati) = pix2coord x y in
              end_marker := Some {
-                 lat = 0.0;
-                 lon = 0.0;
-                 mk_tx = 0.0;
-                 mk_ty = 0.0;
+                 lat = lati;
+                 lon = longi;
+                 mk_tx = x;
+                 mk_ty = y;
                  element = end_icon;
                };
              ())
@@ -1121,11 +1144,14 @@ let onload _ =
             Dom_html.window##alert (js "4");
              start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
              start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+             let x = float_of_int ev##clientX in
+             let y = float_of_int ev##clientY in
+             let (longi, lati) = pix2coord x y in
              start_marker := Some {
-                 lat = 0.0;
-                 lon = 0.0;
-                 mk_tx = 0.0;
-                 mk_ty = 0.0;
+                 lat = lati;
+                 lon = longi;
+                 mk_tx = x;
+                 mk_ty = y;
                  element = start_icon;
                };
              ())
@@ -1240,7 +1266,7 @@ let onload _ =
       (fun _ ->
         input_1##value <- js "";
         input_2##value <- js "";
-        clear_all div_map_container;
+        clear_all div_map_container canvas context;
         Js._true);
   Dom.appendChild div_nothing a_clear;
 
