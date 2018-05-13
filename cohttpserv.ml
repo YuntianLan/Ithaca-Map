@@ -39,6 +39,7 @@ open Pervasives
  * 		4. Result given a query parameter
  * 		5. Image (png) given a result
  * 		6. List of auto-completed names given a string input
+ * 		7. List of coordinates and names given location type
  *
  * Additional parameters:
  *
@@ -69,6 +70,9 @@ open Pervasives
  *
  * Parameters for index = 6:
  * -- input: string
+ * 
+ * Parameters for index = 7:
+ * -- type: string
  *
  *)
 
@@ -77,6 +81,8 @@ let eg_resp2 = "42.813646,-76.7116234;42.813646,-76.7116234"
 (* Service 3, first float represent length of route,
  * seperated by a space, the remaining coords have no space in between *)
 let eg_resp3 = "3.45 42.813646,-76.7116234;42.813646,-76.7116234"
+
+let eg_resp7 = "42.1,-76.3,texas roadhouse;42.1,-76.3,texas roadhouse"
 
 
 module ImageTree = Image.Images
@@ -211,6 +217,10 @@ let response_str tg uri =
 				List.fold_left accum (List.hd lst) (List.tl lst)
 			end
 		end
+
+	else if idx = "7" then
+		let tp = Uri.get_query_param uri "type" in ""
+
 	else "Error: invalid service index"
 
 
