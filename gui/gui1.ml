@@ -67,7 +67,7 @@ type marker = {
 }
 let markers1 : marker list ref = ref []
 let markers2 : marker list ref = ref []
-
+let sugg : marker list ref = ref []
 let start_marker = ref None
 (* let buttonlist2 = ref []
 let buttondisplay2 = ref [] *)
@@ -369,6 +369,20 @@ let autocomplete textbox =
 let debug f = Printf.ksprintf (fun s -> Firebug.console##log (Js.string s)) f
 
 
+(* let show_icons div =
+  let helper =
+    let tooltip_button = Html.createButton doc in
+    setClass tooltip_button "tooltip";
+    Dom.appendChild div tooltip_button;
+
+    let tooltip_text = Html.createSpan doc in
+    setClass tooltip_text "tooltiptext";
+    append_text tooltip_text "Hello";
+    Dom.appendChild tooltip_button tooltip_text
+  in
+
+  List.iter helper (!sugg) *)
+
 let get_geo () =
   if (Geolocation.is_supported()) then
     let geo = Geolocation.geolocation in
@@ -612,17 +626,6 @@ let onload _ =
   Dom.appendChild doc##body div_map_container;
   (* append_text div_map_container "Loading.."; *)
 
-
-  let tooltip_button = Html.createButton doc in
-  setClass tooltip_button "tooltip";
-  Dom.appendChild div_map_container tooltip_button;
-
-  let tooltip_text = Html.createSpan doc in
-  setClass tooltip_text "tooltiptext";
-  append_text tooltip_text "Hello";
-  Dom.appendChild tooltip_button tooltip_text;
-
-
   (* let img_map = Html.createImg doc in
      setId img_map "map";
      img_map##src <- js "../tiles/1.png";
@@ -847,10 +850,14 @@ let onload _ =
   Dom.appendChild div_icons lib_button;
   setClass lib_button "category_icon";
 
-
   let lib_icon = Html.createImg doc in
   lib_icon##src <- js "library.png";
   Dom.appendChild lib_button lib_icon;
+
+  (* lib_icon##onclick <- Html.handler
+      (fun _ ->
+         ()
+      ); *)
 
   let shop_button = Html.createA doc in
   Dom.appendChild div_icons shop_button;
@@ -1093,7 +1100,7 @@ let onload _ =
   append_text a_go "walk";
   a_go##onclick <- Html.handler
       (fun _ ->
-         draw_background_with_line canvas context (st.tx, st.ty) 
+         draw_background_with_line canvas context (st.tx, st.ty)
           (coordinates |> coord_tup_to_markers);
          Js._true);
   Dom.appendChild div_nothing a_go;
