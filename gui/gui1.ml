@@ -1118,7 +1118,6 @@ let onload _ =
           else if (!start_marker <> None && !end_marker = None)
           then
             (Dom.appendChild div_map_container end_icon;
-             end_icon##style##visibility <- js "visible";
              end_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
              end_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
              Dom_html.window##alert (js "3");
@@ -1130,7 +1129,7 @@ let onload _ =
                  lon = longi;
                  mk_tx = x;
                  mk_ty = y;
-                 element = start_icon;
+                 element = end_icon;
                };
              ())
           else if (!start_marker = None && !end_marker <> None)
