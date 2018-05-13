@@ -1,4 +1,5 @@
-type category
+type category = 
+  | FoodDrink | Shop | Study | Fuel | Other
 
 
 module type MapGraph = sig
