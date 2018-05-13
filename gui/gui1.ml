@@ -94,7 +94,7 @@ let img_map = Html.createImg doc
 (* Dummy mutable values *)
 let by_coord = ref (0.,0.)
 let by_name = ref [(0.,0.)]
-let route = ref ("",[(0.,0.)])
+let route = ref ("",[])
 let img_path = ref ""
 let autocomp = ref [""]
 
@@ -189,23 +189,13 @@ let http_get_route drive draw_line context coord_tup_to_markers =
           route := (dist, flst);
           draw_line context (flst |> coord_tup_to_markers);
           Dom_html.window##alert (js ("Estimated travel distance: "^dist));
+          Dom_html.window##alert (js (List.length flst |> string_of_int));
           Lwt.return ()
         ) in
         ignore (start ())
     | _, _ -> 
       Dom_html.window##alert (js "Please select a start and end point!")
-(* 
-(fun _ ->
-        let sopt, eopt = !start_marker, !end_marker in
-        match sopt, eopt with
-        | Some s, Some e ->
-          let func = string_of_float in
-          let _ = http_get_route "false" 
-            (func s.lat) (func s.lon) (func e.lat) (func e.lon) in
-          let rtp = !route in
-          Dom_html.window##alert (js (fst rtp));
-          (* draw_line context (coordinates |> coord_tup_to_markers); *)
-         Js._true); *)
+
 
 let clear_start div =
   List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
@@ -267,7 +257,8 @@ let clear_all div =
   sugg := [];
   sugg_name := [];
   start_marker := None;
-  end_marker := None
+  end_marker := None;
+  route := ("",[])
 
 (* Set the class of an Html element *)
 let setClass elt s = elt##className <- js s
@@ -686,8 +677,14 @@ let http_get_res st callback canvas context div_map_container =
                                          (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp ^" "
                                           ^ (string_of_float st.wdpp)^ " "^(string_of_float st.hdpp)^" "^(string_of_float st.tx)^" "^(string_of_float st.ty))) in *)
 
+        let lst = snd !route in
+        let _ = if (List.length lst) > 0 then
+          let _ = Dom_html.window##alert (js (List.length lst |> string_of_int)) in
+          draw_line context (lst |> coord_tup_to_markers) 
+        else (0.,0.) in
         let _ = callback canvas context (js
-                                           (base_url^"?index=5&path="^res)) (st.tx, st.ty) in
+          (base_url^"?index=5&path="^res)) (st.tx, st.ty) in
+
 
         (* img_path := res; *)
         Lwt.return ()) in
