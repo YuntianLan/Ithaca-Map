@@ -397,7 +397,7 @@ let draw_line context lst =
     )
     (List.nth lst 0) lst
 
-let draw_background_with_line canvas context src offset lst =
+let draw_background_with_line canvas context offset lst =
   img_map##onload <- Html.handler
       (fun ev ->
          context##clearRect (0.0,0.0,(float_of_int canvas##width),
@@ -410,6 +410,8 @@ let draw_background_with_line canvas context src offset lst =
   (* setId img_map "map";
   img_map##src <- src; *)
   img_map
+
+
 
 
 let draw_background canvas context src offset =
@@ -722,8 +724,6 @@ let onload _ =
 
   (* let update_trans _ =
     draw_background canvas context src offset *)
-
-  let on_drag dx dy st = ()  in
 
 
 (*   let zoom direction st = 
@@ -1089,10 +1089,10 @@ let onload _ =
 
   let a_go = Html.createA doc in
   setClass a_go "clear waves-effect btn";
-  append_text a_go "go";
+  append_text a_go "walk";
   a_go##onclick <- Html.handler
       (fun _ ->
-         draw_background_with_line canvas context "../tiles/00.png" (4., 4.) coordinates;
+         draw_background_with_line canvas context (4., 4.) coordinates;
          Js._true);
   Dom.appendChild div_nothing a_go;
 
