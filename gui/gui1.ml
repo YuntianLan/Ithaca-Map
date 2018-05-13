@@ -296,13 +296,10 @@ let draw_background canvas context src offset =
   img_map
 
 let clear_line canvas context =
-  img_map##onload <- Html.handler
-      (fun ev ->
-         context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
-         context##drawImage_full (img_map, st.tx, st.ty,
-          (float_of_int canvas##width), (float_of_int canvas##height),
-          0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
-         Js._false)
+  context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+  context##drawImage_full (img_map, st.tx, st.ty,
+  (float_of_int canvas##width), (float_of_int canvas##height),
+  0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height))
 (* close all autocomplete lists in the document*)
 let closeAllList elt input =
   Js.Opt.iter input (fun inp ->
