@@ -82,8 +82,9 @@ let buttondisplay2 = ref [] *)
 let end_marker = ref None
 (* let dbstart = ref None
 let dbend = ref None *)
-
-
+let meter = ref ""
+let route = ref []
+(* let route = ref ("",[(0.,0.)]) *)
 
 
 
@@ -94,7 +95,7 @@ let img_map = Html.createImg doc
 (* Dummy mutable values *)
 let by_coord = ref (0.,0.)
 let by_name = ref [(0.,0.)]
-let route = ref ("",[(0.,0.)])
+
 let img_path = ref ""
 let autocomp = ref [""]
 
@@ -186,21 +187,22 @@ let http_get_route drive draw_line context coord_tup_to_markers =
             (lat,lon)
           ) in
           let flst = List.map s2tp slst in
-          route := (dist, flst);
+          meter := dist;
+          route := flst;
           draw_line context (flst |> coord_tup_to_markers);
           Dom_html.window##alert (js ("Estimated travel distance: "^dist));
           Lwt.return ()
         ) in
         ignore (start ())
-    | _, _ -> 
+    | _, _ ->
       Dom_html.window##alert (js "Please select a start and end point!")
-(* 
+(*
 (fun _ ->
         let sopt, eopt = !start_marker, !end_marker in
         match sopt, eopt with
         | Some s, Some e ->
           let func = string_of_float in
-          let _ = http_get_route "false" 
+          let _ = http_get_route "false"
             (func s.lat) (func s.lon) (func e.lat) (func e.lon) in
           let rtp = !route in
           Dom_html.window##alert (js (fst rtp));
@@ -306,7 +308,7 @@ let draw_line context lst =
     ((List.hd lst).mk_tx, (List.hd lst).mk_ty) lst
 
 let draw_background_with_line canvas context offset lst =
-  
+
   Dom_html.window##alert (js "drawing 2");
   img_map##onload <- Html.handler
       (fun ev ->
