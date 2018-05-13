@@ -702,6 +702,46 @@ let onload _ =
   setClass div_actions "actions";
   Dom.appendChild doc##body div_actions;
 
+  let div_icons = Html.createDiv doc in
+  setClass div_icons "icons";
+  Dom.appendChild doc##body div_icons;
+
+  let lib_button = Html.createA doc in
+  Dom.appendChild div_icons lib_button;
+  setClass lib_button "category_icon";
+
+
+  let lib_icon = Html.createImg doc in
+  lib_icon##src <- js "library.png";
+  Dom.appendChild lib_button lib_icon;
+
+  let shop_button = Html.createA doc in
+  Dom.appendChild div_icons shop_button;
+  setClass shop_button "category_icon";
+
+
+  let shop_icon = Html.createImg doc in
+  shop_icon##src <- js "shop.png";
+  Dom.appendChild shop_button shop_icon;
+
+  let food_button = Html.createA doc in
+  Dom.appendChild div_icons food_button;
+  setClass food_button "category_icon";
+
+
+  let food_icon = Html.createImg doc in
+  food_icon##src <- js "food.png";
+  Dom.appendChild food_button food_icon;
+
+  let gas_button = Html.createA doc in
+  Dom.appendChild div_icons gas_button;
+  setClass gas_button "category_icon";
+
+
+  let gas_icon = Html.createImg doc in
+  gas_icon##src <- js "gas.png";
+  Dom.appendChild gas_button gas_icon;
+
   (* let div_widget_card = Html.createDiv doc in
      setClass div_widget_card "widget card";
      Dom.appendChild div_actions div_widget_card; *)
