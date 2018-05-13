@@ -1179,7 +1179,7 @@ let onload _ =
   append_text a_go "walk";
   a_go##onclick <- Html.handler
       (fun _ ->
-        http_get_route "true" draw_line context coord_tup_to_markers;
+        http_get_route "false" draw_line context coord_tup_to_markers;
          Js._true);
   Dom.appendChild div_nothing a_go;
 
@@ -1188,7 +1188,7 @@ let onload _ =
   append_text a_drive "drive";
   a_drive##onclick <- Html.handler
       (fun _ ->
-         input_1##value <- js "";
+         http_get_route "true" draw_line context coord_tup_to_markers;
          Js._true);
   Dom.appendChild div_nothing a_drive;
 
