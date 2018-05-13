@@ -942,7 +942,7 @@ let onload _ =
       (fun _ ->
         input_1##value <- js "";
         input_2##value <- js "";
-        (* clear_all div_map_container; *)
+        clear_all div_map_container;
         Js._true);
   Dom.appendChild div_nothing a_clear;
 
