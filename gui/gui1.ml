@@ -26,6 +26,11 @@ let delta_zoom = 0.04
 let delta_base_move = 0.03
 let init_upleft_lon = -76.5496
 let init_upleft_lat = 42.4750
+
+let root_upleft_lon = -76.5527
+let root_upleft_lat = 42.4883
+let root_lowright_lon = -76.4649
+let root_lowright_lat = 42.4235
 (* let init_lowright_lon = -76.4670
 let init_lowright_lat = 42.4279 *)
 (* let init_lowright_lon = -76.4996123047
@@ -612,7 +617,7 @@ let http_get_nodes_by_type id type_name coord_to_markers addbutton div_map_conta
   let url = base_url^"?index=7"^"&type="^type_name in
   let start () =
     http_get url >>= (fun res ->
-        res |> split_coord_name_list
+        (* res |> split_coord_name_list *)
         addbutton div_map_container;
         Lwt.return ()) in
   ignore(start ())
@@ -1194,12 +1199,12 @@ let onload _ =
                            st.ty <- st.ty +. float_of_int dy; *)
                       let new_param = {
                         st.params with
-                        param_upleft_lon = st.params.param_upleft_lon
-                                           -. (st.wdpp *. float_of_int dx);
+                        param_upleft_lon = max root_upleft_lon (st.params.param_upleft_lon
+                                                                -. (st.wdpp *. float_of_int dx));
                         param_lowright_lon = st.params.param_lowright_lon
                                              -. (st.wdpp *. float_of_int dx);
-                        param_upleft_lat = st.params.param_upleft_lat
-                                           +. (st.hdpp *. float_of_int dy);
+                        param_upleft_lat = min root_upleft_lat (st.params.param_upleft_lat
+                                                                +. (st.hdpp *. float_of_int dy));
                         param_lowright_lat = st.params.param_lowright_lat
                                            +. (st.hdpp *. float_of_int dy)
                       } in
