@@ -75,7 +75,7 @@ let end_marker = ref None
 (* let dbstart = ref None
 let dbend = ref None *)
 
-let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
+let coordinates = [(-76.550,42.476);(76.540,42.466)]
 
 let route = ref (0.,[(0.,0.)])
 
@@ -91,11 +91,11 @@ let autocomp = ref [""]
 
 
 (* Round a float to a string to exactly 5 decimal places *)
-let round (x:float) = 
+let round (x:float) =
   let sx = string_of_float x in
   let lst = String.split_on_char '.' sx in
   let second = List.nth lst 1 in
-  let trimmed = 
+  let trimmed =
     let l = String.length second in
     if l < 15 then
       second ^ (String.make (15-l) '0')
@@ -204,7 +204,7 @@ let http_get_autocomp (s:string) =
   !autocomp
 
 let http_get_res st callback canvas context =
-  (* let _ = Dom_html.window##alert(js 
+  (* let _ = Dom_html.window##alert(js
     ((st.params.param_lowright_lon |> string_of_float)
      ^ " " ^ (st.params.param_lowright_lat |> string_of_float))) in *)
   let url = base_url^"?index=4"^
@@ -268,11 +268,11 @@ let http_get_res st callback canvas context =
         let shdpp = string_of_float st.hdpp in
         let swidth = string_of_float st.params.width in
         let sheight = string_of_float st.params.height in
-        (* let _ = Dom_html.window##alert(js 
+        (* let _ = Dom_html.window##alert(js
           (swdpp ^ " " ^ shdpp ^ " " ^ (string_of_int st.current_depth))) in
-        let _ = Dom_html.window##alert(js 
+        let _ = Dom_html.window##alert(js
           (swidth ^ " " ^ sheight)) in
-        let _ = Dom_html.window##alert(js 
+        let _ = Dom_html.window##alert(js
           (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp)) in *)
 
         let _ = Dom_html.window##alert(js
@@ -386,8 +386,8 @@ let draw_line context lst =
     (fun acc cor  ->
        let prevX = (fst acc) in
        let prevY = (snd acc) in
-       let x = fst cor in
-       let y = snd cor in
+       let x = cor.mk_tx in
+       let y = cor.mk_ty in
        context##beginPath ();
        context##moveTo (prevX,prevY);
        context##lineTo (x,y);
@@ -395,11 +395,12 @@ let draw_line context lst =
        context##closePath ();
        (x,y)
     )
-    (List.nth lst 0) lst
+    ((List.hd lst).mk_tx, (List.hd lst).mk_ty) lst
 
 let draw_background_with_line canvas context offset lst =
   img_map##onload <- Html.handler
       (fun ev ->
+          Dom_html.window##alert (js );
          context##clearRect (0.0,0.0,(float_of_int canvas##width),
           (float_of_int canvas##height));
          context##drawImage_full (img_map, fst(offset), snd(offset),
@@ -618,8 +619,14 @@ let onload _ =
   (* append_text div_map_container "Loading.."; *)
 
 
+  let tooltip_button = Html.createButton doc in
+  setClass tooltip_button "tooltip";
+  Dom.appendChild div_map_container tooltip_button;
 
-
+  let tooltip_text = Html.createSpan doc in
+  setClass tooltip_text "tooltiptext";
+  append_text tooltip_text "Hello";
+  Dom.appendChild tooltip_button tooltip_text;
 
 
   (* let img_map = Html.createImg doc in
@@ -726,7 +733,7 @@ let onload _ =
     draw_background canvas context src offset *)
 
 
-(*   let zoom direction st = 
+(*   let zoom direction st =
     let w = st.params.width |> float_of_int in
     let h = st.params.height |> float_of_int in
     let ratio = w / h in
@@ -778,7 +785,7 @@ let onload _ =
 
   let zoom_out st =
     if st.current_depth = min_depth then () else
-    
+
     let width = st.params.width in
     let height = st.params.height in
 
@@ -1092,7 +1099,8 @@ let onload _ =
   append_text a_go "walk";
   a_go##onclick <- Html.handler
       (fun _ ->
-         draw_background_with_line canvas context (4., 4.) coordinates;
+         draw_background_with_line canvas context (st.tx, st.ty) 
+          (coordinates |> coord_tup_to_markers);
          Js._true);
   Dom.appendChild div_nothing a_go;
 
