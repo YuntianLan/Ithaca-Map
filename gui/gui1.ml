@@ -26,6 +26,11 @@ let delta_zoom = 0.04
 let delta_base_move = 0.03
 let init_upleft_lon = -76.5496
 let init_upleft_lat = 42.4750
+
+let root_upleft_lon = -76.5527
+let root_upleft_lat = 42.4883
+let root_lowright_lon = -76.4649
+let root_lowright_lat = 42.4235
 (* let init_lowright_lon = -76.4670
 let init_lowright_lat = 42.4279 *)
 (* let init_lowright_lon = -76.4996123047
@@ -69,7 +74,7 @@ type marker = {
 }
 let markers1 : marker list ref = ref []
 let markers2 : marker list ref = ref []
-
+let sugg : marker list ref = ref []
 let start_marker = ref None
 (* let buttonlist2 = ref []
 let buttondisplay2 = ref [] *)
@@ -182,7 +187,7 @@ let http_get_route drive draw_line context coord_tup_to_markers =
           let flst = List.map s2tp slst in
           route := (dist, flst);
           draw_line context (flst |> coord_tup_to_markers);
-          Dom_html.window##alert (js ("Estimated travel distance: "^dist))
+          Dom_html.window##alert (js ("Estimated travel distance: "^dist));
           Lwt.return ()
         ) in
         ignore (start ())
@@ -284,7 +289,7 @@ let draw_line context lst =
        let x = cor.mk_tx in
        let y = cor.mk_ty in
        context##lineWidth <- (5.);
-       context##strokeStyle <- (js "#99ccff");
+       context##strokeStyle <- (js "#e60000");
        context##beginPath ();
        context##moveTo (prevX,prevY);
        context##lineTo (x,y);
@@ -422,6 +427,20 @@ let autocomplete textbox =
 let debug f = Printf.ksprintf (fun s -> Firebug.console##log (Js.string s)) f
 
 
+(* let show_icons div =
+  let helper =
+    let tooltip_button = Html.createButton doc in
+    setClass tooltip_button "tooltip";
+    Dom.appendChild div tooltip_button;
+
+    let tooltip_text = Html.createSpan doc in
+    setClass tooltip_text "tooltiptext";
+    append_text tooltip_text "Hello";
+    Dom.appendChild tooltip_button tooltip_text
+  in
+
+  List.iter helper (!sugg) *)
+
 let get_geo () =
   if (Geolocation.is_supported()) then
     let geo = Geolocation.geolocation in
@@ -523,6 +542,19 @@ let split_coord_list (s:string) : (float*float) list =
       let res_lat = List.nth coords 0 |> float_of_string in
       let res_lon = List.nth coords 1 |> float_of_string in
       (res_lat, res_lon)
+    ) params in
+  tups
+
+(* [split_coord_name_list s] is the list of coordinate tuples parsed from [s]
+ * requries: [s] must be in the form "coord1,coord2,name1;coord3,coord4,name2;..."*)
+let split_coord_name_list (s:string) : ((float*float)*string) list =
+  let params = String.split_on_char ';' s in
+  let tups = List.map (fun i ->
+      let coords = String.split_on_char ',' i in
+      let res_lat = List.nth coords 0 |> float_of_string in
+      let res_lon = List.nth coords 1 |> float_of_string in
+      let name = List.nth coords 2 in
+      ((res_lat, res_lon), name)
     ) params in
   tups
 
@@ -633,6 +665,27 @@ let http_get_res st callback canvas context div_map_container =
         (* img_path := res; *)
         Lwt.return ()) in
   ignore(start ())
+
+
+let http_get_nodes_by_type id type_name coord_to_markers addbutton div_map_container =
+  let url = base_url^"?index=7"^"&type="^type_name in
+  let start () =
+    http_get url >>= (fun res ->
+        (* res |> split_coord_name_list *)
+        addbutton div_map_container;
+        Lwt.return ()) in
+  ignore(start ())
+
+
+
+
+
+
+
+
+
+
+
 (* ========= HTTP requests ========== *)
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
@@ -651,17 +704,6 @@ let onload _ =
   setClass div_map_container "map-container";
   Dom.appendChild doc##body div_map_container;
   (* append_text div_map_container "Loading.."; *)
-
-
-  let tooltip_button = Html.createButton doc in
-  setClass tooltip_button "tooltip";
-  Dom.appendChild div_map_container tooltip_button;
-
-  let tooltip_text = Html.createSpan doc in
-  setClass tooltip_text "tooltiptext";
-  append_text tooltip_text "Hello";
-  Dom.appendChild tooltip_button tooltip_text;
-
 
   (* let img_map = Html.createImg doc in
      setId img_map "map";
@@ -887,10 +929,14 @@ let onload _ =
   Dom.appendChild div_icons lib_button;
   setClass lib_button "category_icon";
 
-
   let lib_icon = Html.createImg doc in
   lib_icon##src <- js "library.png";
   Dom.appendChild lib_button lib_icon;
+
+  (* lib_icon##onclick <- Html.handler
+      (fun _ ->
+         ()
+      ); *)
 
   let shop_button = Html.createA doc in
   Dom.appendChild div_icons shop_button;
@@ -1134,7 +1180,6 @@ let onload _ =
   a_go##onclick <- Html.handler
       (fun _ ->
         http_get_route "true" draw_line context coord_tup_to_markers;
-          (* draw_line context (coordinates |> coord_tup_to_markers); *)
          Js._true);
   Dom.appendChild div_nothing a_go;
 
@@ -1200,12 +1245,12 @@ let onload _ =
                            st.ty <- st.ty +. float_of_int dy; *)
                       let new_param = {
                         st.params with
-                        param_upleft_lon = st.params.param_upleft_lon
-                                           -. (st.wdpp *. float_of_int dx);
+                        param_upleft_lon = max root_upleft_lon (st.params.param_upleft_lon
+                                                                -. (st.wdpp *. float_of_int dx));
                         param_lowright_lon = st.params.param_lowright_lon
                                              -. (st.wdpp *. float_of_int dx);
-                        param_upleft_lat = st.params.param_upleft_lat
-                                           +. (st.hdpp *. float_of_int dy);
+                        param_upleft_lat = min root_upleft_lat (st.params.param_upleft_lat
+                                                                +. (st.hdpp *. float_of_int dy));
                         param_lowright_lat = st.params.param_lowright_lat
                                            +. (st.hdpp *. float_of_int dy)
                       } in

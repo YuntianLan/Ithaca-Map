@@ -219,10 +219,27 @@ let response_str tg uri =
 		end
 
 	else if idx = "7" then
-		let tp = Uri.get_query_param uri "type" in ""
-
+		begin try
+			let tp = Uri.get_query_param uri "type" in
+			begin match tp with
+			| None -> "Error: idx = 7, parameter 'tp' not found"
+			| Some str ->
+				let category_of_string str =
+					if str = "fooddrink" then 	Some Graph.FoodDrink 
+					else if str = "shop" then 	Some Graph.Shop
+					else if str = "study" then	Some Graph.Study
+					else if str = "fuel" then	Some Graph.Fuel
+					else if str = "other" then	Some Graph.Other
+					else  None 
+				in
+				let lst = MapGraph.nodes_ways_oftype (category_of_string str) tg.mapgraph in
+				let lst = List.map (fun (x,y,z) -> Printf.sprintf "%f,%f,%s" x y z) lst in 
+				let ret = List.fold_left (fun acc s -> if acc = "" then s else acc^";"^s) "" lst in 
+				ret 
+			end
+		with _ -> "Error: idx = 7, exception in parsing type"
+		end
 	else "Error: invalid service index"
-
 
 
 let server =
