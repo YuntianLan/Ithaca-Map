@@ -1,3 +1,4 @@
+type category
 
 
 module type MapGraph = sig
@@ -8,6 +9,8 @@ module type MapGraph = sig
 
 	(* [t] is the type of MapGraph *)
 	type t
+
+
 
 	(* [init_graph s] takes in an json file and returns a MapGraph
 	 * with information parsed. *)
@@ -39,6 +42,8 @@ module type MapGraph = sig
 	 * and returns a list of at most 10 strings that begin
 	 * with s. The function returns empty list when s is empty. *)
 	val autocomplete : t -> string -> string list
+
+	val nodes_ways_oftype : category option -> t -> (float * float * string) list
 
 end
 
