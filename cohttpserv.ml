@@ -238,5 +238,5 @@ let server =
 	in
 	Server.create ~mode:(`TCP (`Port 8000)) (Server.make ~callback ())
 
-
+let _ = Lwt.async_exception_hook := ignore
 let () = ignore (Lwt_main.run server)
