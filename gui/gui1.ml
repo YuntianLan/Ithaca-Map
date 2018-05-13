@@ -28,8 +28,36 @@ let init_upleft_lon = -76.5496
 let init_upleft_lat = 42.4750
 (* let init_lowright_lon = -76.4670
 let init_lowright_lat = 42.4279 *)
-let init_lowright_lon = -76.4670
-let init_lowright_lat = 42.4279
+(* let init_lowright_lon = -76.4996123047
+let init_lowright_lat = 42.4495925781 *)
+let init_lowright_lon = -76.5246061523437504
+let init_lowright_lat = 42.4622962890625
+
+(* Initial wdpp and hdpp for level 3 *)
+let iwdpp = 0.00004287109374999839
+let ihdpp = 0.00003164062500000259
+
+let wdpps = [
+  0.0; (* Dummy, for index simplicity *)
+  iwdpp *. 4.;    (* level = 1 *)
+  iwdpp *. 2.;    (* level = 2 *)
+  iwdpp *. 1.;    (* level = 3 *)
+  iwdpp *. 0.5;  (* level = 4 *)
+  iwdpp *. 0.25; (* level = 5 *)
+  iwdpp *. 0.125;(* level = 6 *)
+]
+
+let hdpps = [
+  0.0; (* Dummy, for index simplicity *)
+  ihdpp *. 4.;    (* level = 1 *)
+  ihdpp *. 2.;    (* level = 2 *)
+  ihdpp *. 1.;    (* level = 3 *)
+  ihdpp *. 0.5;  (* level = 4 *)
+  ihdpp *. 0.25; (* level = 5 *)
+  ihdpp *. 0.125;(* level = 6 *)
+]
+
+
 type marker = {
   lat : float;
   lon : float;
@@ -62,6 +90,17 @@ let img_path = ref ""
 let autocomp = ref [""]
 
 
+(* Round a float to a string to exactly 5 decimal places *)
+let round (x:float) = 
+  let sx = string_of_float x in
+  let lst = String.split_on_char '.' sx in
+  let second = List.nth lst 1 in
+  let trimmed = 
+    let l = String.length second in
+    if l < 15 then
+      second ^ (String.make (15-l) '0')
+    else String.sub second 0 15 in
+  (List.hd lst) ^ "." ^ trimmed
 
 let param = {
   param_upleft_lon = init_upleft_lon;
@@ -169,12 +208,12 @@ let http_get_res st callback canvas context =
     ((st.params.param_lowright_lon |> string_of_float)
      ^ " " ^ (st.params.param_lowright_lat |> string_of_float))) in *)
   let url = base_url^"?index=4"^
-            "&upleft_lat="^string_of_float st.params.param_upleft_lat^
-            "&upleft_lon="^string_of_float st.params.param_upleft_lon^
-            "&lowright_lat="^string_of_float st.params.param_lowright_lat^
-            "&lowright_lon="^string_of_float st.params.param_lowright_lon^
-            "&width="^string_of_float st.params.width^
-            "&height="^string_of_float st.params.height in
+            "&upleft_lat="^round st.params.param_upleft_lat^
+            "&upleft_lon="^round st.params.param_upleft_lon^
+            "&lowright_lat="^round st.params.param_lowright_lat^
+            "&lowright_lon="^round st.params.param_lowright_lon^
+            "&width="^round st.params.width^
+            "&height="^round st.params.height in
   let _ = Dom_html.window##alert(js url) in
   let start () =
     http_get url >>= (fun res ->
@@ -190,8 +229,12 @@ let http_get_res st callback canvas context =
         st.current_depth <- List.nth params 4 |> int_of_string;
         st.img_w <- List.nth params 5 |> float_of_string;
         st.img_h <- List.nth params 6 |> float_of_string;
-        st.wdpp <- (st.lrlon_bound -. st.ullon_bound) /. st.img_w;
-        st.hdpp <- (st.ullat_bound -. st.lrlat_bound) /. st.img_h;
+        (* st.wdpp <- (st.lrlon_bound -. st.ullon_bound) /. st.img_w;
+        st.hdpp <- (st.ullat_bound -. st.lrlat_bound) /. st.img_h; *)
+        (* st.wdpp <- (init_wdpp) /. (2. ** ((float_of_int (st.current_depth)) -. 3.));
+        st.hdpp <- (init_hdpp) /. (2. ** ((float_of_int (st.current_depth)) -. 3.)); *)
+        st.wdpp <- List.nth wdpps st.current_depth;
+        st.hdpp <- List.nth hdpps st.current_depth;
         st.tx <- (st.params.param_upleft_lon -. st.ullon_bound) /. st.wdpp;
         st.ty <- ( st.ullat_bound -. st.params.param_upleft_lat) /. st.hdpp;
         let canvas_w = st.params.width in
@@ -214,14 +257,12 @@ let http_get_res st callback canvas context =
           height = height;
         } in
 
-        st.params <- params_new;
+        (* st.params <- params_new; *)
 
-        let ullon_temp = st.ullon_bound +. st.wdpp *. st.tx |> string_of_float in
-        let ullat_temp = st.ullat_bound -. st.hdpp *. st.ty |> string_of_float in
-        let lrlon_temp = st.ullon_bound +. st.wdpp *. st.tx +. st.wdpp *. canvas_w
-          |> string_of_float in
-        let lrlat_temp = st.ullat_bound -. st.hdpp *. st.ty -. st.hdpp *. canvas_h
-          |> string_of_float in
+        let ullon_temp = ullon |> string_of_float in
+        let ullat_temp = ullat |> string_of_float in
+        let lrlon_temp = lrlon |> string_of_float in
+        let lrlat_temp = lrlat |> string_of_float in
 
         let swdpp = string_of_float st.wdpp in
         let shdpp = string_of_float st.hdpp in
@@ -235,8 +276,10 @@ let http_get_res st callback canvas context =
           (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp)) in *)
 
         let _ = Dom_html.window##alert(js
-                                         (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp ^" "
-                                          ^ (string_of_float st.wdpp)^ " "^(string_of_float st.hdpp)^" "^(string_of_float st.tx)^" "^(string_of_float st.ty))) in
+           (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp ^" "
+            ^ (string_of_float st.wdpp)^ " "^(string_of_float st.hdpp)^" "^
+            (string_of_float st.params.width)^" "^(string_of_float st.params.height)
+            ^ " " ^ (string_of_int st.current_depth))) in
         let _ = callback canvas context (js
           (base_url^"?index=5&path="^res)) (st.tx, st.ty) in
 
@@ -662,10 +705,25 @@ let onload _ =
 
     let ullon = st.params.param_upleft_lon in
     let ullat = st.params.param_upleft_lat in
-    let lrlon = st.params.param_upleft_lon +. st.wdpp *. width in
-    let lrlat = st.params.param_upleft_lat -. st.hdpp *. height in
+    (* let lrlon = st.params.param_upleft_lon +. st.wdpp *. width in
+    let lrlat = st.params.param_upleft_lat -. st.hdpp *. height in *)
+    let lrlon = st.params.param_lowright_lon in
+    let lrlat = st.params.param_lowright_lat in
 
-    let delta_lon = (lrlon -. ullon) /. 4. in
+    let delta_lon = (lrlon -. ullon) /. 2. in
+    let delta_lat = (ullat -. lrlat) /. 2. in
+    let new_params = {
+      param_upleft_lon    =   ullon;
+      param_upleft_lat    =   ullat;
+      param_lowright_lon  =   lrlon -. delta_lon;
+      param_lowright_lat  =   lrlat +. delta_lat;
+      width               =   width;
+      height              =   height;
+    } in
+
+
+
+    (* let delta_lon = (lrlon -. ullon) /. 4. in
     let delta_lat = (ullat -. lrlat) /. 4. in
     let new_params = {
       param_upleft_lon    =   ullon +. delta_lon;
@@ -674,7 +732,7 @@ let onload _ =
       param_lowright_lat  =   lrlat +. delta_lat;
       width               =   width;
       height              =   height;
-    } in
+    } in *)
     st.params <- new_params;
     http_get_res st draw_background canvas context in
 
@@ -687,14 +745,31 @@ let onload _ =
 
     let ullon = st.params.param_upleft_lon in
     let ullat = st.params.param_upleft_lat in
-    let lrlon = st.params.param_upleft_lon +. st.wdpp *. width in
-    let lrlat = st.params.param_upleft_lat -. st.hdpp *. height in
+    (* let lrlon = st.params.param_upleft_lon +. st.wdpp *. width in
+    let lrlat = st.params.param_upleft_lat -. st.hdpp *. height in *)
+    let lrlon = st.params.param_lowright_lon in
+    let lrlat = st.params.param_lowright_lat in
 
-    let delta_lon = (lrlon -. ullon) /. 2. in
+    let delta_lon = (lrlon -. ullon) in
+    let delta_lat = (ullat -. lrlat) in
+    let new_lrlon = lrlon +. delta_lon |> string_of_float in
+    let new_lrlat = lrlat -. delta_lat |> string_of_float in
+    (* Dom_html.window##alert (js (new_lrlon ^ " " ^ new_lrlat)); *)
+    let new_params = {
+      param_upleft_lon    =   ullon;
+      param_upleft_lat    =   ullat;
+      param_lowright_lon  =   lrlon +. delta_lon;
+      param_lowright_lat  =   lrlat -. delta_lat;
+      width               =   width;
+      height              =   height;
+    } in
+
+
+(*     let delta_lon = (lrlon -. ullon) /. 2. in
     let delta_lat = (ullat -. lrlat) /. 2. in
     let new_lrlon = lrlon +. delta_lon |> string_of_float in
     let new_lrlat = lrlat -. delta_lat |> string_of_float in
-    Dom_html.window##alert (js (new_lrlon ^ " " ^ new_lrlat));
+    (* Dom_html.window##alert (js (new_lrlon ^ " " ^ new_lrlat)); *)
     let new_params = {
       param_upleft_lon    =   ullon -. delta_lon;
       param_upleft_lat    =   ullat +. delta_lat;
@@ -702,7 +777,7 @@ let onload _ =
       param_lowright_lat  =   lrlat -. delta_lat;
       width               =   width;
       height              =   height;
-    } in
+    } in *)
     st.params <- new_params;
     http_get_res st draw_background canvas context in
 
