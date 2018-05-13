@@ -302,59 +302,6 @@ body {
   }
 }
 
-/*
-div {
-    display: block;
-}
-.routebox .routebox-content .routebox-inputs {
-    margin-left: 39px;
-}
-
-.routebox .routebox-content .routebox-input {
-    height: 40px;
-    width: 289px;
-    border-bottom: 1px solid #eaebed;
-    position: relative;
-}
-
-.routebox .routebox-content .routebox-input .route-input-icon {
-    width: 11px;
-    height: 10px;
-    background: url(//webmap1.bdimg.com/wolfman/static/common/images/new/start_f51000d.png) no-repeat 0 0;
-    position: absolute;
-    top: 15px;
-    left: 3px;
-}
-
-.routebox .routebox-content .routebox-input input {
-    box-sizing: border-box;
-    border: 0;
-    height: 100%;
-    width: 100%;
-    padding: 10px 0;
-    font-size: 14px;
-    border-left: 20px solid transparent;
-    border-right: 27px solid transparent;
-    line-height: 20px;
-}
-
-.routebox .routebox-content .routebox-input .input-clear {
-    left: auto;
-    right: 0;
-    top: 1px;
-}
-
-.routebox .routebox-content .routebox-input:last-child {
-    border-bottom: 0;
-}
-
-.routebox .routebox-content .routebox-input {
-    height: 40px;
-    width: 289px;
-    border-bottom: 1px solid #eaebed;
-    position: relative;
-} */
-
 * {
   box-sizing: border-box;
 }

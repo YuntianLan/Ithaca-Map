@@ -2,7 +2,9 @@
 true: package(oUnit), package(yojson), package(str), package(camlimages), package(camlimages.png), package(cohttp), package(lwt), package(cohttp-lwt-unix)
 
 
-<cohttpserv.ml> : thread
-<cohttpserv.{native,byte}> : thread
+<httpserver.ml> : thread
+<httpserver.{native,byte}> : thread
 <image.ml> : thread
 <image.{native,byte}> : thread
+<test_image.ml> : thread
+<test_image.{native,byte}> : thread

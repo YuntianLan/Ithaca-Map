@@ -377,7 +377,7 @@ module Images : MapImage = struct
                   (string_of_int fullimg_w)^"_"^
                   (string_of_int fullimg_h)^
                   ".png") in
-      Thread.create delayed_remove ();
+      let _ = Thread.create delayed_remove () in
       fname
 
 
