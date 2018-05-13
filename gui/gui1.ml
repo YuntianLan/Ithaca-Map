@@ -26,6 +26,11 @@ let delta_zoom = 0.04
 let delta_base_move = 0.03
 let init_upleft_lon = -76.5496
 let init_upleft_lat = 42.4750
+
+let root_upleft_lon = -76.5527
+let root_upleft_lat = 42.4883
+let root_lowright_lon = -76.4649
+let root_lowright_lat = 42.4235
 (* let init_lowright_lon = -76.4670
 let init_lowright_lat = 42.4279 *)
 (* let init_lowright_lon = -76.4996123047
@@ -487,6 +492,19 @@ let split_coord_list (s:string) : (float*float) list =
     ) params in
   tups
 
+(* [split_coord_name_list s] is the list of coordinate tuples parsed from [s]
+ * requries: [s] must be in the form "coord1,coord2,name1;coord3,coord4,name2;..."*)
+let split_coord_name_list (s:string) : ((float*float)*string) list =
+  let params = String.split_on_char ';' s in
+  let tups = List.map (fun i ->
+      let coords = String.split_on_char ',' i in
+      let res_lat = List.nth coords 0 |> float_of_string in
+      let res_lon = List.nth coords 1 |> float_of_string in
+      let name = List.nth coords 2 in
+      ((res_lat, res_lon), name)
+    ) params in
+  tups
+
 let http_get_nodes_by_name id name coord_to_markers addbutton div_map_container =
   let url = base_url^"?index=2"^"&name="^name in
   let start () =
@@ -525,7 +543,7 @@ let http_get_res st callback canvas context div_map_container =
             "&lowright_lon="^round st.params.param_lowright_lon^
             "&width="^round st.params.width^
             "&height="^round st.params.height in
-  let _ = Dom_html.window##alert(js url) in
+  (* let _ = Dom_html.window##alert(js url) in *)
   let start () =
     http_get url >>= (fun res ->
 
@@ -607,6 +625,27 @@ let http_get_res st callback canvas context div_map_container =
         (* img_path := res; *)
         Lwt.return ()) in
   ignore(start ())
+
+
+let http_get_nodes_by_type id type_name coord_to_markers addbutton div_map_container =
+  let url = base_url^"?index=7"^"&type="^type_name in
+  let start () =
+    http_get url >>= (fun res ->
+        (* res |> split_coord_name_list *)
+        addbutton div_map_container;
+        Lwt.return ()) in
+  ignore(start ())
+
+
+
+
+
+
+
+
+
+
+
 (* ========= HTTP requests ========== *)
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
@@ -1167,12 +1206,12 @@ let onload _ =
                            st.ty <- st.ty +. float_of_int dy; *)
                       let new_param = {
                         st.params with
-                        param_upleft_lon = st.params.param_upleft_lon
-                                           -. (st.wdpp *. float_of_int dx);
+                        param_upleft_lon = max root_upleft_lon (st.params.param_upleft_lon
+                                                                -. (st.wdpp *. float_of_int dx));
                         param_lowright_lon = st.params.param_lowright_lon
                                              -. (st.wdpp *. float_of_int dx);
-                        param_upleft_lat = st.params.param_upleft_lat
-                                           +. (st.hdpp *. float_of_int dy);
+                        param_upleft_lat = min root_upleft_lat (st.params.param_upleft_lat
+                                                                +. (st.hdpp *. float_of_int dy));
                         param_lowright_lat = st.params.param_lowright_lat
                                            +. (st.hdpp *. float_of_int dy)
                       } in
