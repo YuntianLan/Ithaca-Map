@@ -26,26 +26,32 @@ let delta_zoom = 0.04
 let delta_base_move = 0.03
 let init_upleft_lon = -76.5496
 let init_upleft_lat = 42.4750
-let init_lowright_lon = -76.4996
-let init_lowright_lat = 42.4496
 (* let init_lowright_lon = -76.4670
 let init_lowright_lat = 42.4279 *)
+let init_lowright_lon = -76.4670
+let init_lowright_lat = 42.4279
+type marker = {
+  lat : float;
+  lon : float;
+  mk_tx : float;
+  mk_ty : float;
+  element : Html.buttonElement Js.t;
+}
+let markers1 : marker list ref = ref []
+let markers2 : marker list ref = ref []
 
-let buttonlist = ref [(100,200); (350,400); (150,500)]
-let buttondisplay = ref []
-let buttontuple = ref None
-let buttonlist2 = ref [(400,200); (650,400); (450,500)]
-let buttondisplay2 = ref []
-let buttontuple2 = ref None
+let start_marker = ref None
+(* let buttonlist2 = ref []
+let buttondisplay2 = ref [] *)
+let end_marker = ref None
 let dbstart = ref None
 let dbend = ref None
 
 let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
 
+let route = ref (0.,[(0.,0.)])
+
 let img_map = Html.createImg doc
-
-
-
 
 
 (* Dummy mutable values *)
@@ -64,13 +70,6 @@ let param = {
   param_lowright_lat = init_lowright_lat;
   width = 0.;
   height = 0.;
-}
-let markers = {
-  lat = 0.;
-  lon = 0.;
-  mk_tx = 0.;
-  mk_ty = 0.;
-  element = None;
 }
 let st = {
   params = param;
@@ -126,14 +125,17 @@ let split_coord_list (s:string) : (float*float) list =
     ) params in
   tups
 
-let http_get_nodes_by_name name =
+let http_get_nodes_by_name id name coord_to_markers addbutton div_map_container =
   let url = base_url^"?index=2"^"&name="^name in
   let start () =
     http_get url >>= (fun res ->
-        by_name := split_coord_list res;
+        if id = 1 then
+          markers1 := res |> split_coord_list |> coord_to_markers
+        else
+          markers2 := res |> split_coord_list |> coord_to_markers;
+        addbutton div_map_container;
         Lwt.return ()) in
-  ignore(start ());
-  !by_name
+  ignore(start ())
 
 let http_get_route (drive:bool) slat slon elat elon =
   let url = base_url^"?index=3"^"&drive="^(string_of_bool drive)^"&slat="
@@ -147,8 +149,7 @@ let http_get_route (drive:bool) slat slon elat elon =
         let tups = split_coord_list coord_params in
         route := (length, tups);
         Lwt.return ()) in
-  ignore(start ());
-  !route
+  ignore(start ())
 
 
 
@@ -164,9 +165,9 @@ let http_get_autocomp (s:string) =
   !autocomp
 
 let http_get_res st callback canvas context =
-  let _ = Dom_html.window##alert(js 
+  (* let _ = Dom_html.window##alert(js 
     ((st.params.param_lowright_lon |> string_of_float)
-     ^ " " ^ (st.params.param_lowright_lat |> string_of_float))) in
+     ^ " " ^ (st.params.param_lowright_lat |> string_of_float))) in *)
   let url = base_url^"?index=4"^
             "&upleft_lat="^string_of_float st.params.param_upleft_lat^
             "&upleft_lon="^string_of_float st.params.param_upleft_lon^
@@ -174,6 +175,7 @@ let http_get_res st callback canvas context =
             "&lowright_lon="^string_of_float st.params.param_lowright_lon^
             "&width="^string_of_float st.params.width^
             "&height="^string_of_float st.params.height in
+  let _ = Dom_html.window##alert(js url) in
   let start () =
     http_get url >>= (fun res ->
 
@@ -194,12 +196,33 @@ let http_get_res st callback canvas context =
         st.ty <- ( st.ullat_bound -. st.params.param_upleft_lat) /. st.hdpp;
         let canvas_w = st.params.width in
         let canvas_h = st.params.height in
+
+        let width = st.params.width in
+        let height = st.params.height in
+
+        let ullon = st.params.param_upleft_lon in
+        let ullat = st.params.param_upleft_lat in
+        let lrlon = st.params.param_upleft_lon +. st.wdpp *. width in
+        let lrlat = st.params.param_upleft_lat -. st.hdpp *. height in
+
+        let params_new = {
+          param_upleft_lon = ullon;
+          param_upleft_lat = ullat;
+          param_lowright_lon = lrlon;
+          param_lowright_lat = lrlat;
+          width = width;
+          height = height;
+        } in
+
+        st.params <- params_new;
+
         let ullon_temp = st.ullon_bound +. st.wdpp *. st.tx |> string_of_float in
         let ullat_temp = st.ullat_bound -. st.hdpp *. st.ty |> string_of_float in
         let lrlon_temp = st.ullon_bound +. st.wdpp *. st.tx +. st.wdpp *. canvas_w
           |> string_of_float in
         let lrlat_temp = st.ullat_bound -. st.hdpp *. st.ty -. st.hdpp *. canvas_h
           |> string_of_float in
+
         let swdpp = string_of_float st.wdpp in
         let shdpp = string_of_float st.hdpp in
         let swidth = string_of_float st.params.width in
@@ -210,8 +233,12 @@ let http_get_res st callback canvas context =
           (swidth ^ " " ^ sheight)) in
         let _ = Dom_html.window##alert(js 
           (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp)) in *)
+
+        let _ = Dom_html.window##alert(js
+                                         (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp ^" "
+                                          ^ (string_of_float st.wdpp)^ " "^(string_of_float st.hdpp)^" "^(string_of_float st.tx)^" "^(string_of_float st.ty))) in
         let _ = callback canvas context (js
-          ("http://127.0.0.1:8000/"^"?index=5&path="^res)) (st.tx, st.ty) in
+          (base_url^"?index=5&path="^res)) (st.tx, st.ty) in
 
         (* img_path := res; *)
         Lwt.return ()) in
@@ -233,7 +260,7 @@ let http_get_res st callback canvas context =
 
 
 
-
+(*
 let clear_goals div =
   List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
   List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
@@ -273,15 +300,7 @@ let clear_all div =
   buttontuple2 := None;
   dbstart := None;
   dbend := None
-
-type marker = {
-  lat : float;
-  lon : float;
-  mk_tx : float;
-  mk_ty : float;
-  element : Html.buttonElement Js.t option;
-}
-
+ *)
 
 
 
@@ -326,8 +345,8 @@ let draw_background_with_line canvas context src offset lst =
           0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
          draw_line context lst;
          Js._false);
-  setId img_map "map";
-  img_map##src <- src;
+  (* setId img_map "map";
+  img_map##src <- src; *)
   img_map
 
 
@@ -460,58 +479,51 @@ let get_geo () =
 
 
 let addbutton div =
-  let display_a_button (a,b) =
+  let display_a_button marker =
     let button = Dom_html.createButton ~_type:(Js.string "button") doc in
     Dom.appendChild div button;
-    buttondisplay := button::(!buttondisplay);
-    button##style##left <- js ((string_of_int a)^"px");
-    button##style##top <- js ((string_of_int b)^"px");
-    button##style##position <- js "absolute";
-    button##style##zIndex <- js "2";
+    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx - 12))^"px");
+    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty - 25))^"px");
+    setClass button "grey_button";
     button##onclick <- Html.handler
         (fun _ ->
-           List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
-           let button = Dom_html.createButton ~_type:(Js.string "button") doc in
-           Dom.appendChild div button;
-           buttondisplay := [];
-           buttontuple := Some button;
-           button##style##left <- js ((string_of_int a)^"px");
-           button##style##top <- js ((string_of_int b)^"px");
-           button##style##position <- js "absolute";
-           button##style##zIndex <- js "2";
-           button##style##background <- js "red";
-           (* Dom_html.window##alert (js (string_of_int a)); *)
-           Js._true) in
+           List.iter
+           (fun x -> if x.element = button then
+                (start_marker := Some x; setClass button "red_button";)
+                else Dom.removeChild div x.element) (!markers1);
+            markers1 := [];
+            Js._true) in
 
-  List.iter display_a_button (!buttonlist)
+  List.iter display_a_button (!markers1)
 
 let addbutton2 div =
-  let display_a_button (a,b) =
+  let display_a_button marker =
     let button = Dom_html.createButton ~_type:(Js.string "button") doc in
     Dom.appendChild div button;
-    buttondisplay2 := button::(!buttondisplay2);
-    button##style##left <- js ((string_of_int a)^"px");
-    button##style##top <- js ((string_of_int b)^"px");
-    button##style##position <- js "absolute";
-    button##style##zIndex <- js "2";
-
+    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx))^"px");
+    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty))^"px");
+    setClass button "grey_button";
     button##onclick <- Html.handler
         (fun _ ->
-          List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
-          let button = Dom_html.createButton ~_type:(Js.string "button") doc in
-          Dom.appendChild div button;
-          buttondisplay2 := [];
-          buttontuple2 := Some button;
-          button##style##left <- js ((string_of_int a)^"px");
-          button##style##top <- js ((string_of_int b)^"px");
-          button##style##position <- js "absolute";
-          button##style##zIndex <- js "2";
-          (* button##style##background <- js "green"; *)
-          button##style##background <- js "url(dest.png)";
-           (* Dom_html.window##alert (js (string_of_int a)); *)
+          List.iter
+          (fun x -> if x.element = button then
+              (end_marker := Some x; setClass button "red_button";)
+               else Dom.removeChild div x.element) (!markers2);
+          markers2 := [];
           Js._true) in
 
-  List.iter display_a_button (!buttonlist2)
+  List.iter display_a_button (!markers2)
+
+let coord_tup_to_markers tups =
+  List.map (fun i ->
+      {
+        lat = fst i;
+        lon = snd i;
+        mk_tx = (snd i -. st.params.param_upleft_lon) /. st.wdpp;
+        mk_ty = (st.params.param_upleft_lat -. fst i) /. st.hdpp;
+        element = Html.createButton doc;
+      }) tups
+
 
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
@@ -545,7 +557,7 @@ let onload _ =
   st.params <- {st.params with width = float_of_int canvas_w;
                               height = float_of_int canvas_h};
 
-  let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)] in
+  let coordinates = [(42.4417101,-76.4853911);(42.4405917,-76.4969232)] in
   let canvas = create_canvas canvas_w canvas_h in
   Dom.appendChild div_map_container canvas;
   let context = canvas##getContext (Html._2d_) in
@@ -554,7 +566,7 @@ let onload _ =
   let _ = http_get_res st draw_background canvas context in
   (* let _ = http_get_res st.params st in *)
 
-  (* let i = draw_background canvas context (js ("http://127.0.0.1:8000/"^"?index=5&path="^(!img_path))) offset in *)
+  (* let i = draw_background canvas context (js ("base_url"^"?index=5&path="^(!img_path))) offset in *)
   (* clear_background i canvas context; *)
   (* clear_background canvas context (js "../tiles/2.png"); *)
   (* let button = Dom_html.createButton ~_type:(Js.string "button") doc in
@@ -751,12 +763,14 @@ let onload _ =
   Dom.appendChild div_bottom input_submit_1;
   input_submit_1##onclick <- Html.handler
       (fun _ ->
-         (match !buttontuple with
-          | None -> ()
-          | Some x -> Dom.removeChild div_map_container (x);
-            buttontuple := None);
-         addbutton div_map_container;
-         Js._true);
+        (match !start_marker with
+        | None -> ()
+        | Some x -> Dom.removeChild div_map_container x.element;
+          start_marker := None
+        );
+        let n = (input_1##value |> Js.to_string) in
+        http_get_nodes_by_name 1 n coord_tup_to_markers addbutton div_map_container;
+      Js._true);
 
   let input_2 = Html.createInput doc in
   setId input_2 "input2";
@@ -771,34 +785,38 @@ let onload _ =
   Dom.appendChild div_autocomplete input_submit_2;
   input_submit_2##onclick <- Html.handler
       (fun _ ->
-         (match !buttontuple2 with
-          | None -> ()
-          | Some x -> Dom.removeChild div_map_container (x);
-            buttontuple2 := None);
-         addbutton2 div_map_container;
-         Js._true);
+         (match !end_marker with
+        | None -> ()
+        | Some x -> Dom.removeChild div_map_container x.element;
+          end_marker := None
+        );
+        let n = (input_2##value |> Js.to_string) in
+        http_get_nodes_by_name 2 n coord_tup_to_markers addbutton2 div_map_container;
+      Js._true);
 
 
 
 
   div_map_container##ondblclick <- Html.handler
       (fun ev ->
-         clear_goals div_map_container;
+         (* clear_goals div_map_container; *)
          (if (!dbstart <> None && !dbend <> None)
           then
-            (clear_all div_map_container;
-             Dom_html.window##alert (js "start");
-             input_1##value <- js "";
-             input_2##value <- js "";
-             Dom.appendChild div_map_container start_icon;
-             start_icon##style##visibility <- js "visible";
-             start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
-             start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
-             dbstart := Some start_icon;
-             ())
+            (
+            (* clear_all div_map_container; *)
+            Dom_html.window##alert (js "start");
+            input_1##value <- js "";
+            input_2##value <- js "";
+            Dom.appendChild div_map_container start_icon;
+            start_icon##style##visibility <- js "visible";
+            start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
+            start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+            dbstart := Some start_icon;
+            ())
           else if (!dbstart = None && !dbend = None)
           then
-            (clear_all div_map_container;
+            (
+            (* clear_all div_map_container; *)
              Dom_html.window##alert (js "start");
              input_1##value <- js "";
              input_2##value <- js "";
@@ -909,7 +927,7 @@ let onload _ =
   append_text a_go "go";
   a_go##onclick <- Html.handler
       (fun _ ->
-         input_1##value <- js "";
+         draw_background_with_line canvas context "../tiles/00.png" (4., 4.) coordinates;
          Js._true);
   Dom.appendChild div_nothing a_go;
 
@@ -929,7 +947,7 @@ let onload _ =
       (fun _ ->
         input_1##value <- js "";
         input_2##value <- js "";
-        clear_all div_map_container;
+        (* clear_all div_map_container; *)
         Js._true);
   Dom.appendChild div_nothing a_clear;
 
