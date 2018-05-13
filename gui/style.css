@@ -474,10 +474,12 @@ input[type=submit] {
 }
 
 .tooltip {
-    position: relative;
+    position: absolute;
     /* display: inline-block; */
-    left:40px;
-    top:40px;
+    width:32px;
+    height:32px;
+    left:60px;
+    top:60px;
     border: transparent;
     background: url("star.png");
     z-index: 2;
@@ -489,9 +491,9 @@ input[type=submit] {
     border: transparent */
 }
 
-.tooltip .tooltiptext {
-    /* visibility: hidden; */
-    width: 120px;
+.tooltiptext {
+    visibility: hidden;
+    width: 100px;
     background-color: black;
     color: #fff;
     text-align: center;
