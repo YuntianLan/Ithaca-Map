@@ -42,8 +42,8 @@ let start_marker = ref None
 (* let buttonlist2 = ref []
 let buttondisplay2 = ref [] *)
 let end_marker = ref None
-let dbstart = ref None
-let dbend = ref None
+(* let dbstart = ref None
+let dbend = ref None *)
 
 let coordinates = [(12.0,14.0);(30.0,40.0);(60.0,8.0);(388.0,200.0)]
 
@@ -222,49 +222,39 @@ let http_get_res st callback canvas context =
 
 
 
-(*
-let clear_goals div =
-  List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
-  List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
-  (match !buttontuple with
+
+let clear_start div =
+  List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
+  (match !start_marker with
    | None -> ()
-   | Some x -> Dom.removeChild div (x));
-  (match !buttontuple2 with
+   | Some x -> Dom.removeChild div x.element);
+  markers1 := [];
+  start_marker := None
+
+
+let clear_end div =
+  List.iter (fun x -> Dom.removeChild div x.element) (!markers2);
+  (match !end_marker with
    | None -> ()
-   | Some x -> Dom.removeChild div (x));
-  buttonlist := [];
-  buttonlist2 := [];
-  buttondisplay := [];
-  buttondisplay2 := [];
-  buttontuple := None;
-  buttontuple2 := None
+   | Some x -> Dom.removeChild div x.element);
+  markers2 := [];
+  end_marker := None
+
 
 let clear_all div =
-  List.iter (fun x -> Dom.removeChild div x) (!buttondisplay);
-  List.iter (fun x -> Dom.removeChild div x) (!buttondisplay2);
-  (match !buttontuple with
-   | None -> ()
-   | Some x -> Dom.removeChild div (x));
-  (match !buttontuple2 with
-   | None -> ()
-   | Some x -> Dom.removeChild div (x));
-  (match !dbstart with
-   | None -> ()
-   | Some x -> Dom.removeChild div (x));
-  (match !dbend with
-   | None -> ()
-   | Some x -> Dom.removeChild div (x));
-  buttonlist := [];
-  buttonlist2 := [];
-  buttondisplay := [];
-  buttondisplay2 := [];
-  buttontuple := None;
-  buttontuple2 := None;
-  dbstart := None;
-  dbend := None
- *)
+  List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
+  List.iter (fun x -> Dom.removeChild div x.element) (!markers2);
 
-
+  (match !start_marker with
+   | None -> ()
+   | Some x -> Dom.removeChild div x.element);
+  (match !end_marker with
+   | None -> ()
+   | Some x -> Dom.removeChild div x.element);
+  markers1 := [];
+  markers2 := [];
+  start_marker := None;
+  end_marker := None
 
 (* Set the class of an Html element *)
 let setClass elt s = elt##className <- js s
@@ -442,25 +432,25 @@ let get_geo () =
 
 let addbutton div =
   let display_a_button marker =
-    let button = Dom_html.createButton ~_type:(Js.string "button") doc in
+    let button = marker.element in
     Dom.appendChild div button;
     button##style##left <- js ((string_of_int (int_of_float marker.mk_tx - 12))^"px");
     button##style##top <- js ((string_of_int (int_of_float marker.mk_ty - 25))^"px");
     setClass button "grey_button";
     button##onclick <- Html.handler
-        (fun _ ->
-           List.iter
-           (fun x -> if x.element = button then
-                (start_marker := Some x; setClass button "red_button";)
-                else Dom.removeChild div x.element) (!markers1);
-            markers1 := [];
-            Js._true) in
+    (fun _ ->
+      List.iter
+      (fun x -> if x.element = button then
+          (start_marker := Some x; setClass button "red_button";)
+           else Dom.removeChild div x.element) (!markers1);
+      markers1 := [];
+      Js._true) in
 
   List.iter display_a_button (!markers1)
 
 let addbutton2 div =
   let display_a_button marker =
-    let button = Dom_html.createButton ~_type:(Js.string "button") doc in
+    let button = marker.element in
     Dom.appendChild div button;
     button##style##left <- js ((string_of_int (int_of_float marker.mk_tx))^"px");
     button##style##top <- js ((string_of_int (int_of_float marker.mk_ty))^"px");
@@ -469,7 +459,7 @@ let addbutton2 div =
         (fun _ ->
           List.iter
           (fun x -> if x.element = button then
-              (end_marker := Some x; setClass button "red_button";)
+              (end_marker := Some x; setClass button "green_button";)
                else Dom.removeChild div x.element) (!markers2);
           markers2 := [];
           Js._true) in
@@ -489,13 +479,13 @@ let coord_tup_to_markers tups =
 
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
-  let start_icon = Html.createImg doc in
-  start_icon##src <- js "start.png";
-  setClass start_icon "icon";
+  let start_icon = Html.createButton doc in
+  (* start_icon##src <- js "start.png"; *)
+  setClass start_icon "red_button";
 
-  let end_icon = Html.createImg doc in
-  end_icon##src <- js "dest.png";
-  setClass end_icon "icon";
+  let end_icon = Html.createButton doc in
+  (* end_icon##src <- js "dest.png"; *)
+  setClass end_icon "green_button";
   (* Dom.appendChild div_map_container img_start; *)
   (* img_dest##style##visibility <- js "visible"; *)
   (* ==================== begin div map-container ==================== *)
@@ -707,11 +697,7 @@ let onload _ =
   Dom.appendChild div_bottom input_submit_1;
   input_submit_1##onclick <- Html.handler
       (fun _ ->
-        (match !start_marker with
-        | None -> ()
-        | Some x -> Dom.removeChild div_map_container x.element;
-          start_marker := None
-        );
+        clear_start div_map_container;
         let n = (input_1##value |> Js.to_string) in
         http_get_nodes_by_name 1 n coord_tup_to_markers addbutton div_map_container;
       Js._true);
@@ -729,11 +715,7 @@ let onload _ =
   Dom.appendChild div_autocomplete input_submit_2;
   input_submit_2##onclick <- Html.handler
       (fun _ ->
-         (match !end_marker with
-        | None -> ()
-        | Some x -> Dom.removeChild div_map_container x.element;
-          end_marker := None
-        );
+        clear_end div_map_container;
         let n = (input_2##value |> Js.to_string) in
         http_get_nodes_by_name 2 n coord_tup_to_markers addbutton2 div_map_container;
       Js._true);
@@ -744,42 +726,71 @@ let onload _ =
   div_map_container##ondblclick <- Html.handler
       (fun ev ->
          (* clear_goals div_map_container; *)
-         (if (!dbstart <> None && !dbend <> None)
+         (if (!start_marker <> None && !end_marker <> None)
           then
             (
-            (* clear_all div_map_container; *)
-            Dom_html.window##alert (js "start");
+            clear_all div_map_container;
+            Dom_html.window##alert (js "1");
             input_1##value <- js "";
             input_2##value <- js "";
+            (* the server needs to find the location name as well as the lat,lon,mk_tx, mk_ty *)
             Dom.appendChild div_map_container start_icon;
-            start_icon##style##visibility <- js "visible";
             start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
             start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
-            dbstart := Some start_icon;
+            start_marker := Some {
+                lat = 0.0;
+                lon = 0.0;
+                mk_tx = 0.0;
+                mk_ty = 0.0;
+                element = start_icon;
+              };
             ())
-          else if (!dbstart = None && !dbend = None)
+          else if (!start_marker = None && !end_marker = None)
           then
             (
             (* clear_all div_map_container; *)
-             Dom_html.window##alert (js "start");
-             input_1##value <- js "";
-             input_2##value <- js "";
+            Dom_html.window##alert (js "2");
+
              Dom.appendChild div_map_container start_icon;
-             start_icon##style##visibility <- js "visible";
              start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
              start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
-             dbstart := Some start_icon;
+             start_marker := Some {
+                 lat = 0.0;
+                 lon = 0.0;
+                 mk_tx = 0.0;
+                 mk_ty = 0.0;
+                 element = start_icon;
+               };
              ())
-          else if (!dbstart <> None && !dbend = None)
+          else if (!start_marker <> None && !end_marker = None)
           then
             (Dom.appendChild div_map_container end_icon;
              end_icon##style##visibility <- js "visible";
              end_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
              end_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
-             Dom_html.window##alert (js "end");
-             dbend := Some end_icon;
+             Dom_html.window##alert (js "3");
+             end_marker := Some {
+                 lat = 0.0;
+                 lon = 0.0;
+                 mk_tx = 0.0;
+                 mk_ty = 0.0;
+                 element = end_icon;
+               };
              ())
-
+          else if (!start_marker = None && !end_marker <> None)
+          then
+            (Dom.appendChild div_map_container start_icon;
+            Dom_html.window##alert (js "4");
+             start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
+             start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+             start_marker := Some {
+                 lat = 0.0;
+                 lon = 0.0;
+                 mk_tx = 0.0;
+                 mk_ty = 0.0;
+                 element = start_icon;
+               };
+             ())
           else ());
          (* 把点去掉 把输入框换成新的 *)
 
