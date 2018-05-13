@@ -77,14 +77,9 @@ let markers2 : marker list ref = ref []
 let sugg : marker list ref = ref []
 let sugg_name : string list ref = ref []
 let start_marker = ref None
-(* let buttonlist2 = ref []
-let buttondisplay2 = ref [] *)
 let end_marker = ref None
-(* let dbstart = ref None
-let dbend = ref None *)
 let meter = ref ""
 let route = ref []
-(* let route = ref ("",[(0.,0.)]) *)
 
 
 
@@ -186,7 +181,7 @@ let http_get_route drive draw_line context coord_tup_to_markers =
           ) in
           let flst = List.map s2tp slst in
           meter := dist;
-          route := flst;
+          route := (flst |> coord_tup_to_markers);
           draw_line context (flst |> coord_tup_to_markers);
           Dom_html.window##alert (js ("Estimated travel distance: "^dist));
           Lwt.return ()
@@ -300,6 +295,7 @@ let clear_line canvas context =
   context##drawImage_full (img_map, st.tx, st.ty,
   (float_of_int canvas##width), (float_of_int canvas##height),
   0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height))
+
 (* close all autocomplete lists in the document*)
 let closeAllList elt input =
   Js.Opt.iter input (fun inp ->
@@ -327,14 +323,14 @@ let update_marker (x:marker) =
            mk_ty = (st.params.param_upleft_lat -. x.lat) /. st.hdpp;
   }
 
-let clear_update_all_button div =
+let clear_update_all_button div canvas context =
   markers1 := List.map (fun x -> Dom.removeChild div x.element;
                          update_marker x) (!markers1);
   markers2 := List.map (fun x -> Dom.removeChild div x.element;
                          update_marker x) (!markers2);
   sugg := List.map (fun x -> Dom.removeChild div x.element;
                      update_marker x) (!sugg);
-
+  route := List.map (fun x -> update_marker x) (!route);
   (match !start_marker with
    | None -> ()
    | Some x ->
@@ -632,63 +628,14 @@ let http_get_res st callback canvas context div_map_container =
         st.hdpp <- List.nth hdpps st.current_depth;
         st.tx <- (st.params.param_upleft_lon -. st.ullon_bound) /. st.wdpp;
         st.ty <- ( st.ullat_bound -. st.params.param_upleft_lat) /. st.hdpp;
-        clear_update_all_button div_map_container;
+        clear_update_all_button div_map_container canvas context;
         addbutton div_map_container;
         addbutton2 div_map_container;
         show_icons div_map_container;
         display_start_end div_map_container start_marker "red_button";
         display_start_end div_map_container end_marker "green_button";
-        (* let canvas_w = st.params.width in
-           let canvas_h = st.params.height in
-
-           let width = st.params.width in
-           let height = st.params.height in
-
-           let ullon = st.params.param_upleft_lon in
-           let ullat = st.params.param_upleft_lat in
-           let lrlon = st.params.param_upleft_lon +. st.wdpp *. width in
-           let lrlat = st.params.param_upleft_lat -. st.hdpp *. height in
-
-           let params_new = {
-           param_upleft_lon = ullon;
-           param_upleft_lat = ullat;
-           param_lowright_lon = lrlon;
-           param_lowright_lat = lrlat;
-           width = width;
-           height = height;
-           } in
-
-           (* st.params <- params_new; *)
-
-           let ullon_temp = ullon |> string_of_float in
-           let ullat_temp = ullat |> string_of_float in
-           let lrlon_temp = lrlon |> string_of_float in
-           let lrlat_temp = lrlat |> string_of_float in
-
-           let swdpp = string_of_float st.wdpp in
-           let shdpp = string_of_float st.hdpp in
-           let swidth = string_of_float st.params.width in
-           let sheight = string_of_float st.params.height in
-           (* let _ = Dom_html.window##alert(js
-           (swdpp ^ " " ^ shdpp ^ " " ^ (string_of_int st.current_depth))) in
-           let _ = Dom_html.window##alert(js
-           (swidth ^ " " ^ sheight)) in
-           let _ = Dom_html.window##alert(js
-           (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp)) in *)
-
-           let _ = Dom_html.window##alert(js
-
-           (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp ^" "
-            ^ (string_of_float st.wdpp)^ " "^(string_of_float st.hdpp)^" "^
-            (string_of_float st.params.width)^" "^(string_of_float st.params.height)
-            ^ " " ^ (string_of_int st.current_depth))) in
-
-                                         (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp ^" "
-                                          ^ (string_of_float st.wdpp)^ " "^(string_of_float st.hdpp)^" "^(string_of_float st.tx)^" "^(string_of_float st.ty))) in *)
-
-        let _ = callback canvas context (js
-                                           (base_url^"?index=5&path="^res)) (st.tx, st.ty) in
-
+        callback canvas context (js (base_url^"?index=5&path="^res)) (st.tx, st.ty);
+        draw_line context (!route);
         (* img_path := res; *)
         Lwt.return ()) in
   ignore(start ())
