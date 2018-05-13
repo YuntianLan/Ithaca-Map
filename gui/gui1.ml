@@ -184,7 +184,7 @@ let http_get_route drive draw_line context coord_tup_to_markers =
           route := (flst |> coord_tup_to_markers);
           draw_line context (flst |> coord_tup_to_markers);
           Dom_html.window##alert (js ("Estimated travel distance: "^dist));
-          Dom_html.window##alert (js (List.length flst |> string_of_int));
+          (* Dom_html.window##alert (js (List.length flst |> string_of_int)); *)
           Lwt.return ()
         ) in
         ignore (start ())
@@ -241,7 +241,7 @@ let create_canvas w h =
 let draw_line context lst =
   let tx1 = (lst |> List.tl |> List.hd).mk_tx |> string_of_float in
   let ty1 = (lst |> List.tl |> List.hd).mk_ty |> string_of_float in
-  Dom_html.window##alert (js (tx1 ^ " " ^ ty1));
+  (* Dom_html.window##alert (js (tx1 ^ " " ^ ty1)); *)
   List.fold_left
     (fun acc cor  ->
        let prevX = (fst acc) in
@@ -259,12 +259,9 @@ let draw_line context lst =
     )
     ((List.hd lst).mk_tx, (List.hd lst).mk_ty) lst
 
-let draw_background_with_line canvas context offset lst =
-
-  Dom_html.window##alert (js "drawing 2");
+let draw_background_with_line canvas context src offset lst =
   img_map##onload <- Html.handler
       (fun ev ->
-          Dom_html.window##alert (js "drawing 3");
          context##clearRect (0.0,0.0,(float_of_int canvas##width),
           (float_of_int canvas##height));
          context##drawImage_full (img_map, fst(offset), snd(offset),
@@ -272,8 +269,8 @@ let draw_background_with_line canvas context offset lst =
           0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
          draw_line context lst;
          Js._false);
-  (* setId img_map "map";
-  img_map##src <- src; *)
+  setId img_map "map";
+  img_map##src <- src;
   img_map
 
 
@@ -636,8 +633,12 @@ let http_get_res st callback canvas context div_map_container =
         show_icons div_map_container;
         display_start_end div_map_container start_marker "red_button";
         display_start_end div_map_container end_marker "green_button";
-        callback canvas context (js (base_url^"?index=5&path="^res)) (st.tx, st.ty);
-        draw_line context (!route);
+        if ((!route) |> List.length <= 0) then
+          callback canvas context (js (base_url^"?index=5&path="^res)) (st.tx, st.ty)
+        else
+          draw_background_with_line canvas context (js (base_url^"?index=5&path="^res)) (st.tx, st.ty) (!route);
+        (* Dom_html.window##alert(((!route) |> List.length |> string_of_int)^ "hmmm" |> js);
+        draw_line context (!route); *)
         (* img_path := res; *)
         Lwt.return ()) in
   ignore(start ())
@@ -1023,7 +1024,6 @@ let onload _ =
           then
             (
             clear_all div_map_container canvas context;
-            Dom_html.window##alert (js "1");
             input_1##value <- js "";
             input_2##value <- js "";
             (* the server needs to find the location name as well as the lat,lon,mk_tx, mk_ty *)
@@ -1044,8 +1044,6 @@ let onload _ =
           else if (!start_marker = None && !end_marker = None)
           then
             (
-            (* clear_all div_map_container; *)
-            Dom_html.window##alert (js "2");
 
              Dom.appendChild div_map_container start_icon;
              start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
@@ -1066,7 +1064,6 @@ let onload _ =
             (Dom.appendChild div_map_container end_icon;
              end_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
              end_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
-             Dom_html.window##alert (js "3");
              let x = float_of_int ev##clientX in
              let y = float_of_int ev##clientY in
              let (longi, lati) = pix2coord x y in
@@ -1081,7 +1078,6 @@ let onload _ =
           else if (!start_marker = None && !end_marker <> None)
           then
             (Dom.appendChild div_map_container start_icon;
-            Dom_html.window##alert (js "4");
              start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
              start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
              let x = float_of_int ev##clientX in
