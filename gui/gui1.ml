@@ -246,7 +246,7 @@ let draw_line context lst =
 let draw_background_with_line canvas context offset lst =
   img_map##onload <- Html.handler
       (fun ev ->
-          Dom_html.window##alert (js );
+          Dom_html.window##alert (js "drawing");
          context##clearRect (0.0,0.0,(float_of_int canvas##width),
           (float_of_int canvas##height));
          context##drawImage_full (img_map, fst(offset), snd(offset),
