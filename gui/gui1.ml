@@ -75,6 +75,7 @@ type marker = {
 let markers1 : marker list ref = ref []
 let markers2 : marker list ref = ref []
 let sugg : marker list ref = ref []
+let sugg_name : string list ref = ref []
 let start_marker = ref None
 (* let buttonlist2 = ref []
 let buttondisplay2 = ref [] *)
@@ -234,6 +235,8 @@ let clear_update_all_button div =
                          update_marker x) (!markers1);
   markers2 := List.map (fun x -> Dom.removeChild div x.element;
                          update_marker x) (!markers2);
+  sugg := List.map (fun x -> Dom.removeChild div x.element;
+                     update_marker x) (!sugg);
 
   (match !start_marker with
    | None -> ()
@@ -251,6 +254,7 @@ let clear_update_all_button div =
 let clear_all div =
   List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
   List.iter (fun x -> Dom.removeChild div x.element) (!markers2);
+  List.iter (fun x -> Dom.removeChild div x.element) (!sugg);
 
   (match !start_marker with
    | None -> ()
@@ -260,6 +264,8 @@ let clear_all div =
    | Some x -> Dom.removeChild div x.element);
   markers1 := [];
   markers2 := [];
+  sugg := [];
+  sugg_name := [];
   start_marker := None;
   end_marker := None
 
@@ -427,19 +433,39 @@ let autocomplete textbox =
 let debug f = Printf.ksprintf (fun s -> Firebug.console##log (Js.string s)) f
 
 
-(* let show_icons div =
-  let helper =
-    let tooltip_button = Html.createButton doc in
-    setClass tooltip_button "tooltip";
-    Dom.appendChild div tooltip_button;
+let show_icons div =
+  let helper id marker =
+
+    let button = marker.element in
+    Dom.appendChild div button;
+    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx))^"px");
+    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty))^"px");
+    setClass button "tooltip";
 
     let tooltip_text = Html.createSpan doc in
     setClass tooltip_text "tooltiptext";
-    append_text tooltip_text "Hello";
-    Dom.appendChild tooltip_button tooltip_text
+    let name = List.nth (!sugg_name) id in
+    append_text tooltip_text name;
+    Dom.appendChild button tooltip_text;
+    button##onclick <- Html.handler
+      (fun _ ->
+         List.iter
+           (fun x -> if x.element = button then
+               (end_marker := Some x; setClass button "green_button";)
+             else Dom.removeChild div x.element) (!sugg);
+         sugg := [];
+         Js._true)
+    (* button##onclick <- Html.handler
+        (fun _ ->
+          List.iter
+          (fun x -> if x.element = button then
+              (end_marker := Some x; setClass button "green_button";)
+               else Dom.removeChild div x.element) (!markers2);
+          markers2 := [];
+          Js._true) in *)
   in
 
-  List.iter helper (!sugg) *)
+  List.iteri helper (!sugg)
 
 let get_geo () =
   if (Geolocation.is_supported()) then
@@ -609,6 +635,7 @@ let http_get_res st callback canvas context div_map_container =
         clear_update_all_button div_map_container;
         addbutton div_map_container;
         addbutton2 div_map_container;
+        show_icons div_map_container;
         display_start_end div_map_container start_marker "red_button";
         display_start_end div_map_container end_marker "green_button";
         (* let canvas_w = st.params.width in
@@ -667,12 +694,16 @@ let http_get_res st callback canvas context div_map_container =
   ignore(start ())
 
 
-let http_get_nodes_by_type id type_name coord_to_markers addbutton div_map_container =
+let http_get_nodes_by_type type_name div_map_container =
   let url = base_url^"?index=7"^"&type="^type_name in
   let start () =
     http_get url >>= (fun res ->
-        (* res |> split_coord_name_list *)
-        addbutton div_map_container;
+        let coord_name = res |> split_coord_name_list in
+        let coords = List.map (fun i -> fst i) coord_name in
+        let names = List.map (fun i -> snd i) coord_name in
+        sugg := coords |> coord_tup_to_markers;
+        sugg_name := names;
+        show_icons div_map_container;
         Lwt.return ()) in
   ignore(start ())
 
@@ -933,19 +964,23 @@ let onload _ =
   lib_icon##src <- js "library.png";
   Dom.appendChild lib_button lib_icon;
 
-  (* lib_icon##onclick <- Html.handler
+  lib_button##onclick <- Html.handler
       (fun _ ->
-         ()
-      ); *)
+         http_get_nodes_by_type "study" div_map_container;
+      Js._true);
 
   let shop_button = Html.createA doc in
   Dom.appendChild div_icons shop_button;
   setClass shop_button "category_icon";
 
-
   let shop_icon = Html.createImg doc in
   shop_icon##src <- js "shop.png";
   Dom.appendChild shop_button shop_icon;
+
+  shop_button##onclick <- Html.handler
+      (fun _ ->
+         http_get_nodes_by_type "shop" div_map_container;
+         Js._true);
 
   let food_button = Html.createA doc in
   Dom.appendChild div_icons food_button;
@@ -956,6 +991,11 @@ let onload _ =
   food_icon##src <- js "food.png";
   Dom.appendChild food_button food_icon;
 
+  food_button##onclick <- Html.handler
+      (fun _ ->
+         http_get_nodes_by_type "fooddrink" div_map_container;
+         Js._true);
+
   let gas_button = Html.createA doc in
   Dom.appendChild div_icons gas_button;
   setClass gas_button "category_icon";
@@ -965,6 +1005,10 @@ let onload _ =
   gas_icon##src <- js "gas.png";
   Dom.appendChild gas_button gas_icon;
 
+  gas_button##onclick <- Html.handler
+      (fun _ ->
+         http_get_nodes_by_type "fuel" div_map_container;
+         Js._true);
   (* let div_widget_card = Html.createDiv doc in
      setClass div_widget_card "widget card";
      Dom.appendChild div_actions div_widget_card; *)
@@ -1240,22 +1284,24 @@ let onload _ =
                    (fun ev ->
                       endx := ev##clientX; endy := ev##clientY;
                       let dx = !endx- !startx and dy = !endy - !starty in
-                      (* if (dy <> 0 || dx <> 0) then *)
+                      if (dy <> 0 || dx <> 0) then
                         (* st.tx <- st.tx +. float_of_int dx;
                            st.ty <- st.ty +. float_of_int dy; *)
-                      let new_param = {
-                        st.params with
-                        param_upleft_lon = max root_upleft_lon (st.params.param_upleft_lon
-                                                                -. (st.wdpp *. float_of_int dx));
-                        param_lowright_lon = st.params.param_lowright_lon
-                                             -. (st.wdpp *. float_of_int dx);
-                        param_upleft_lat = min root_upleft_lat (st.params.param_upleft_lat
-                                                                +. (st.hdpp *. float_of_int dy));
-                        param_lowright_lat = st.params.param_lowright_lat
-                                           +. (st.hdpp *. float_of_int dy)
-                      } in
-                      st.params <- new_param;
-                      http_get_res st draw_background canvas context div_map_container;
+                        let new_param = {
+                          st.params with
+                          param_upleft_lon = max root_upleft_lon (st.params.param_upleft_lon
+                                                                  -. (st.wdpp *. float_of_int dx));
+                          param_lowright_lon = st.params.param_lowright_lon
+                                               -. (st.wdpp *. float_of_int dx);
+                          param_upleft_lat = min root_upleft_lat (st.params.param_upleft_lat
+                                                                  +. (st.hdpp *. float_of_int dy));
+                          param_lowright_lat = st.params.param_lowright_lat
+                                             +. (st.hdpp *. float_of_int dy)
+                        } in
+                        st.params <- new_param;
+                        http_get_res st draw_background canvas context div_map_container;
+                      else
+                        ();
 
                       Html.removeEventListener c1;
                       Js.Opt.iter !c2 Html.removeEventListener;
