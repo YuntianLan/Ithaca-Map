@@ -1,6 +1,12 @@
 open Yojson.Basic;;
 open Yojson.Basic.Util;;
 
+type category = 
+| FoodDrink | Shop | Study | Fuel | Other
+
+
+type allowed = Walk | Drive | Both | Neither
+
 
 module type MapGraph = sig
 
@@ -13,15 +19,13 @@ module type MapGraph = sig
 	val find_path : bool -> node -> node -> t -> float * node list
 	val node_to_coord : node -> (float * float)
 	val autocomplete : t -> string -> string list
+	(* To delete *)
+	val nodes_ways_oftype : category option -> t -> (float * float * string) list
 
 end
 
 
-type category = 
-| FoodDrink | Shop | Medical | Study | Fuel | Other
 
-
-type allowed = Walk | Drive | Both | Neither
 
 (* Node type, represents a point location on the map
  * with id, latitude and longitude stored *)
@@ -304,9 +308,9 @@ module Map : MapGraph = struct
 				else if name = "college" then Some Study
 				else if name = "library" then Some Study
 				else if name = "fuel" then Some Fuel
-				else if name = "doctors" then Some Medical
+(* 				else if name = "doctors" then Some Medical
 				else if name = "hospital" then Some Medical
-				else if name = "pharmacy" then Some Medical
+				else if name = "pharmacy" then Some Medical *)
 				else Some Other
 			| None, Some name2 -> Some Shop
 			| Some name1, Some name2 -> Some Shop in
@@ -365,38 +369,32 @@ module Map : MapGraph = struct
 				else if name = "college" then Some Study
 				else if name = "library" then Some Study
 				else if name = "fuel" then Some Fuel
-				else if name = "doctors" then Some Medical
+(* 				else if name = "doctors" then Some Medical
 				else if name = "hospital" then Some Medical
-				else if name = "pharmacy" then Some Medical
+				else if name = "pharmacy" then Some Medical *)
 				else Some Other
 			| None, Some name2 -> Some Shop
 			| Some name1, Some name2 -> Some Shop in
 		{wid = id; nodes = nodes; categ = categ;
 			name = name; allow = allow; tags = tags}
 
-	(* let nodes_oftype lulat lulon rdlat rdlon type graph =
-		let lst = List.filter (fun s -> 
-			(H.find graph.node_table s).lat > lulat && 
-			(H.find graph.node_table s).lat < rdlat &&
-			(H.find graph.node_table s).lon > lulon &&
-			(H.find graph.node_table s).lon > rdlon &&
-			(H.find graph.node_table s).catego = type) graph.all_nodes in
-		let ret = List.map (fun n -> ((H.find graph.node_table n).lat, (H.find graph.node_table n).lon)) lst in
+	let nodes_oftype ty graph =
+		let lst = List.filter (fun s -> (H.find graph.node_table s).catego = ty) graph.all_nodes in
+		let ret = List.map (fun n -> ((H.find graph.node_table n).lat, (H.find graph.node_table n).lon, (H.find graph.node_table n).name)) lst in
+		let ret = List.filter (fun (_,_,name) -> not (name = "")) ret in 
 		ret
 
-	let ways_oftype lulat lulon rdlat rdlon type graph =
-		let lst = List.filter (fun s -> 
-			(H.find graph.node_table (List.hd (H.find graph.way_table s).nodes)).lat > lulat && 
-			(H.find graph.node_table (List.hd (H.find graph.way_table s).nodes)).lat < rdlat &&
-			(H.find graph.node_table (List.hd (H.find graph.way_table s).nodes)).lon > lulon &&
-			(H.find graph.node_table (List.hd (H.find graph.way_table s).nodes)).lon > rdlon &&
-			(H.find graph.way_table s).categ = type) graph.way_lst in
-		let ret = List.map (fun n -> (((H.find graph.node_table (List.hd (H.find graph.way_table n).nodes)).lat,
-									(H.find graph.node_table (List.hd (H.find graph.way_table n).nodes)).lon)) lst in
+	let ways_oftype ty graph =
+		let lst = List.filter (fun s -> s.categ = ty) graph.way_lst in
+		let ret = List.map (fun n -> ((H.find graph.node_table (List.hd n.nodes)).lat,
+									(H.find graph.node_table (List.hd n.nodes)).lon,
+									(H.find graph.node_table (List.hd n.nodes)).name)) lst in
+		let ret = List.filter (fun (_,_,name) -> not (name = "")) ret in 
 		ret
 
-	let nodes_ways_oftype lulat lulon rdlat rdlon t graph =
-		(nodes_oftype lulat lulon rdlat rdlon t graph) @ (ways_oftype lulat lulon rdlat rdlon t graph)  *)
+
+	let nodes_ways_oftype ty graph =
+		(nodes_oftype ty graph) @ (ways_oftype ty graph)
 
 	(* Given a node list, build a hashtable mapping from
 	 * node ids to nodes *)

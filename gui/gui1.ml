@@ -237,7 +237,7 @@ let http_get_res st callback canvas context =
         st.hdpp <- List.nth hdpps st.current_depth;
         st.tx <- (st.params.param_upleft_lon -. st.ullon_bound) /. st.wdpp;
         st.ty <- ( st.ullat_bound -. st.params.param_upleft_lat) /. st.hdpp;
-        let canvas_w = st.params.width in
+        (* let canvas_w = st.params.width in
         let canvas_h = st.params.height in
 
         let width = st.params.width in
@@ -276,10 +276,15 @@ let http_get_res st callback canvas context =
           (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp)) in *)
 
         let _ = Dom_html.window##alert(js
+
            (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp ^" "
             ^ (string_of_float st.wdpp)^ " "^(string_of_float st.hdpp)^" "^
             (string_of_float st.params.width)^" "^(string_of_float st.params.height)
             ^ " " ^ (string_of_int st.current_depth))) in
+
+                                         (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp ^" "
+                                          ^ (string_of_float st.wdpp)^ " "^(string_of_float st.hdpp)^" "^(string_of_float st.tx)^" "^(string_of_float st.ty))) in *)
+
         let _ = callback canvas context (js
           (base_url^"?index=5&path="^res)) (st.tx, st.ty) in
 
@@ -321,6 +326,30 @@ let clear_end div =
   markers2 := [];
   end_marker := None
 
+let update_marker (x:marker) =
+  {
+    x with mk_tx = (x.lon -. st.params.param_upleft_lon) /. st.wdpp;
+           mk_ty = (st.params.param_upleft_lat -. x.lat) /. st.hdpp;
+  }
+
+let clear_update_all_button div =
+  markers1 := List.map (fun x -> Dom.removeChild div x.element;
+                         update_marker x) (!markers1);
+  markers2 := List.map (fun x -> Dom.removeChild div x.element;
+                         update_marker x) (!markers2);
+
+  (match !start_marker with
+   | None -> ()
+   | Some x ->
+     Dom.removeChild div x.element;
+     let new_marker = update_marker x in
+  start_marker := Some new_marker);
+  (match !end_marker with
+   | None -> ()
+   | Some x ->
+   Dom.removeChild div x.element;
+   let new_marker = update_marker x in
+  end_marker := Some new_marker)
 
 let clear_all div =
   List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
@@ -510,6 +539,15 @@ let get_geo () =
     geo##getCurrentPosition(Js.wrap_callback f_success, Js.wrap_callback f_error, options)
 
 
+let display_start_end div marker color =
+  match !marker with
+  | None -> ()
+  | Some x ->
+  let button = x.element in
+  Dom.appendChild div button;
+  button##style##left <- js ((string_of_int (int_of_float x.mk_tx - 12))^"px");
+  button##style##top <- js ((string_of_int (int_of_float x.mk_ty - 25))^"px");
+  setClass button color
 
 let addbutton div =
   let display_a_button marker =
@@ -546,6 +584,7 @@ let addbutton2 div =
           Js._true) in
 
   List.iter display_a_button (!markers2)
+
 
 let coord_tup_to_markers tups =
   List.map (fun i ->
@@ -799,6 +838,46 @@ let onload _ =
   setClass div_actions "actions";
   Dom.appendChild doc##body div_actions;
 
+  let div_icons = Html.createDiv doc in
+  setClass div_icons "icons";
+  Dom.appendChild doc##body div_icons;
+
+  let lib_button = Html.createA doc in
+  Dom.appendChild div_icons lib_button;
+  setClass lib_button "category_icon";
+
+
+  let lib_icon = Html.createImg doc in
+  lib_icon##src <- js "library.png";
+  Dom.appendChild lib_button lib_icon;
+
+  let shop_button = Html.createA doc in
+  Dom.appendChild div_icons shop_button;
+  setClass shop_button "category_icon";
+
+
+  let shop_icon = Html.createImg doc in
+  shop_icon##src <- js "shop.png";
+  Dom.appendChild shop_button shop_icon;
+
+  let food_button = Html.createA doc in
+  Dom.appendChild div_icons food_button;
+  setClass food_button "category_icon";
+
+
+  let food_icon = Html.createImg doc in
+  food_icon##src <- js "food.png";
+  Dom.appendChild food_button food_icon;
+
+  let gas_button = Html.createA doc in
+  Dom.appendChild div_icons gas_button;
+  setClass gas_button "category_icon";
+
+
+  let gas_icon = Html.createImg doc in
+  gas_icon##src <- js "gas.png";
+  Dom.appendChild gas_button gas_icon;
+
   (* let div_widget_card = Html.createDiv doc in
      setClass div_widget_card "widget card";
      Dom.appendChild div_actions div_widget_card; *)
@@ -1033,7 +1112,7 @@ let onload _ =
       (fun _ ->
         input_1##value <- js "";
         input_2##value <- js "";
-        (* clear_all div_map_container; *)
+        clear_all div_map_container;
         Js._true);
   Dom.appendChild div_nothing a_clear;
 
@@ -1076,7 +1155,7 @@ let onload _ =
                       let dx = !endx- !startx and dy = !endy - !starty in
                       (* if (dy <> 0 || dx <> 0) then *)
                         (* st.tx <- st.tx +. float_of_int dx;
-                        st.ty <- st.ty +. float_of_int dy; *)
+                           st.ty <- st.ty +. float_of_int dy; *)
                       let new_param = {
                         st.params with
                         param_upleft_lon = st.params.param_upleft_lon
@@ -1090,9 +1169,11 @@ let onload _ =
                       } in
                       st.params <- new_param;
                       http_get_res st draw_background canvas context;
-                        (* Dom_html.window##alert (js ("y is "^string_of_int dy)); *)
-
-                        (* Dom_html.window##alert (js ("x is "^string_of_int dx)); *)
+                      clear_update_all_button div_map_container;
+                      addbutton div_map_container;
+                      addbutton2 div_map_container;
+                      display_start_end div_map_container start_marker "red_button";
+                      display_start_end div_map_container end_marker "green_button";
                       Html.removeEventListener c1;
                       Js.Opt.iter !c2 Html.removeEventListener;
                       Js._true))
