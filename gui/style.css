@@ -472,3 +472,40 @@ input[type=submit] {
   background: url("start.png");
   border: transparent
 }
+
+.tooltip {
+    position: relative;
+    /* display: inline-block; */
+    left:40px;
+    top:40px;
+    border: transparent;
+    background: url("star.png");
+    z-index: 2;
+    /* position:absolute;
+    z-index: 2;
+    width: 30px;
+    height: 32px;
+    background: url("grey.png");
+    border: transparent */
+}
+
+.tooltip .tooltiptext {
+    /* visibility: hidden; */
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -60px;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+}
