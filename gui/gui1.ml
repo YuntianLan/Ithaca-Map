@@ -42,6 +42,8 @@ let init_lowright_lat = 42.4622962890625
 let iwdpp = 0.00004287109374999839
 let ihdpp = 0.00003164062500000259
 
+let coordinates = [(42.464,-76.530);(42.470,-76.540);(42.472,-76.544)]
+
 let wdpps = [
   0.0; (* Dummy, for index simplicity *)
   iwdpp *. 4.;    (* level = 1 *)
@@ -81,9 +83,10 @@ let end_marker = ref None
 (* let dbstart = ref None
 let dbend = ref None *)
 
-let coordinates = [(-76.550,42.476);(76.540,42.466)]
 
-let route = ref (0.,[(0.,0.)])
+
+
+
 
 let img_map = Html.createImg doc
 
@@ -91,7 +94,7 @@ let img_map = Html.createImg doc
 (* Dummy mutable values *)
 let by_coord = ref (0.,0.)
 let by_name = ref [(0.,0.)]
-let route = ref (0.,[(0.,0.)])
+let route = ref ("",[(0.,0.)])
 let img_path = ref ""
 let autocomp = ref [""]
 
@@ -159,7 +162,50 @@ let http_get_autocomp (s:string) =
   ignore(start ());
   !autocomp
 
-
+let http_get_route drive draw_line context coord_tup_to_markers =
+  let sopt, eopt = !start_marker, !end_marker in
+    match sopt, eopt with
+    | Some s, Some e ->
+      let slat = s.lat |> string_of_float in
+      let slon = s.lon |> string_of_float in
+      let elat = e.lat |> string_of_float in
+      let elon = e.lon |> string_of_float in
+      let url = base_url^"?index=3&drive="^drive^
+        "&slat=" ^ slat ^ "&slon=" ^ slon ^
+        "&elat=" ^ elat ^ "&elon=" ^ elon in
+      let start () =
+        http_get url >>= (fun res ->
+          let tplst = String.split_on_char ' ' res in
+          let dist = List.hd tplst in
+          let slstlst = tplst |> List.tl |> List.hd in
+          let slst = String.split_on_char ';' slstlst in
+          let s2tp = (fun s ->
+            let l2 = String.split_on_char ',' s in
+            let lat = l2 |> List.hd |> float_of_string in
+            let lon = l2 |> List.tl |> List.hd |> float_of_string in
+            (lat,lon)
+          ) in
+          let flst = List.map s2tp slst in
+          route := (dist, flst);
+          draw_line context (flst |> coord_tup_to_markers);
+          Dom_html.window##alert (js ("Estimated travel distance: "^dist));
+          Lwt.return ()
+        ) in
+        ignore (start ())
+    | _, _ -> 
+      Dom_html.window##alert (js "Please select a start and end point!")
+(* 
+(fun _ ->
+        let sopt, eopt = !start_marker, !end_marker in
+        match sopt, eopt with
+        | Some s, Some e ->
+          let func = string_of_float in
+          let _ = http_get_route "false" 
+            (func s.lat) (func s.lon) (func e.lat) (func e.lon) in
+          let rtp = !route in
+          Dom_html.window##alert (js (fst rtp));
+          (* draw_line context (coordinates |> coord_tup_to_markers); *)
+         Js._true); *)
 
 let clear_start div =
   List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
@@ -239,12 +285,17 @@ let create_canvas w h =
   c##width <- w; c##height <- h; c
 
 let draw_line context lst =
+  let tx1 = (lst |> List.tl |> List.hd).mk_tx |> string_of_float in
+  let ty1 = (lst |> List.tl |> List.hd).mk_ty |> string_of_float in
+  Dom_html.window##alert (js (tx1 ^ " " ^ ty1));
   List.fold_left
     (fun acc cor  ->
        let prevX = (fst acc) in
        let prevY = (snd acc) in
        let x = cor.mk_tx in
        let y = cor.mk_ty in
+       context##lineWidth <- (5.);
+       context##strokeStyle <- (js "#e60000");
        context##beginPath ();
        context##moveTo (prevX,prevY);
        context##lineTo (x,y);
@@ -255,9 +306,11 @@ let draw_line context lst =
     ((List.hd lst).mk_tx, (List.hd lst).mk_ty) lst
 
 let draw_background_with_line canvas context offset lst =
+  
+  Dom_html.window##alert (js "drawing 2");
   img_map##onload <- Html.handler
       (fun ev ->
-          Dom_html.window##alert (js "drawing");
+          Dom_html.window##alert (js "drawing 3");
          context##clearRect (0.0,0.0,(float_of_int canvas##width),
           (float_of_int canvas##height));
          context##drawImage_full (img_map, fst(offset), snd(offset),
@@ -543,19 +596,6 @@ let http_get_nodes_by_name id name coord_to_markers addbutton div_map_container 
         Lwt.return ()) in
   ignore(start ())
 
-let http_get_route (drive:bool) slat slon elat elon =
-  let url = base_url^"?index=3"^"&drive="^(string_of_bool drive)^"&slat="
-            ^(string_of_float slat)^"&slon="^(string_of_float slon)^"&elat="
-            ^(string_of_float elat)^"&elon="^(string_of_float elon) in
-  let start () =
-    http_get url >>= (fun res ->
-        let params = String.split_on_char ' ' res in
-        let length = List.nth params 0 |> float_of_string in
-        let coord_params = List.nth params 1 in
-        let tups = split_coord_list coord_params in
-        route := (length, tups);
-        Lwt.return ()) in
-  ignore(start ())
 
 
 
@@ -705,7 +745,7 @@ let onload _ =
   st.params <- {st.params with width = float_of_int canvas_w;
                               height = float_of_int canvas_h};
 
-  let coordinates = [(42.4417101,-76.4853911);(42.4405917,-76.4969232)] in
+  (* let coordinates = [(42.4417101,-76.4853911);(42.4405917,-76.4969232)] in *)
   let canvas = create_canvas canvas_w canvas_h in
   Dom.appendChild div_map_container canvas;
   let context = canvas##getContext (Html._2d_) in
@@ -1183,8 +1223,7 @@ let onload _ =
   append_text a_go "walk";
   a_go##onclick <- Html.handler
       (fun _ ->
-         draw_background_with_line canvas context (st.tx, st.ty)
-          (coordinates |> coord_tup_to_markers);
+        http_get_route "true" draw_line context coord_tup_to_markers;
          Js._true);
   Dom.appendChild div_nothing a_go;
 
