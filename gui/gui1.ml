@@ -95,7 +95,7 @@ let img_map = Html.createImg doc
 (* Dummy mutable values *)
 let by_coord = ref (0.,0.)
 let by_name = ref [(0.,0.)]
-let route = ref ("",[])
+(* let route = ref ("",[]) *)
 let img_path = ref ""
 let autocomp = ref [""]
 
@@ -212,8 +212,7 @@ let clear_end div =
    | None -> ()
    | Some x -> Dom.removeChild div x.element);
   markers2 := [];
-  end_marker := None
-
+  end_marker := None;
   (match !start_marker with
    | None -> ()
    | Some x -> Dom.removeChild div x.element);
@@ -225,8 +224,8 @@ let clear_end div =
   sugg := [];
   sugg_name := [];
   start_marker := None;
-  end_marker := None;
-  route := ("",[])
+  end_marker := None
+  (* route := ("",[]) *)
 
 
 (* Set the class of an Html element *)
@@ -688,12 +687,6 @@ let http_get_res st callback canvas context div_map_container =
 
                                          (ullon_temp ^ " " ^ ullat_temp ^ " " ^ lrlon_temp ^ " " ^ lrlat_temp ^" "
                                           ^ (string_of_float st.wdpp)^ " "^(string_of_float st.hdpp)^" "^(string_of_float st.tx)^" "^(string_of_float st.ty))) in *)
-
-        let lst = snd !route in
-        let _ = if (List.length lst) > 0 then
-          let _ = Dom_html.window##alert (js (List.length lst |> string_of_int)) in
-          draw_line context (lst |> coord_tup_to_markers) 
-        else (0.,0.) in
         let _ = callback canvas context (js
           (base_url^"?index=5&path="^res)) (st.tx, st.ty) in
 
