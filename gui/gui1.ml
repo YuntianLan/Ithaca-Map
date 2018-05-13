@@ -90,7 +90,7 @@ let img_map = Html.createImg doc
 (* Dummy mutable values *)
 let by_coord = ref (0.,0.)
 let by_name = ref [(0.,0.)]
-
+(* let route = ref ("",[]) *)
 let img_path = ref ""
 let autocomp = ref [""]
 
@@ -184,23 +184,13 @@ let http_get_route drive draw_line context coord_tup_to_markers =
           route := (flst |> coord_tup_to_markers);
           draw_line context (flst |> coord_tup_to_markers);
           Dom_html.window##alert (js ("Estimated travel distance: "^dist));
+          Dom_html.window##alert (js (List.length flst |> string_of_int));
           Lwt.return ()
         ) in
         ignore (start ())
     | _, _ ->
       Dom_html.window##alert (js "Please select a start and end point!")
-(*
-(fun _ ->
-        let sopt, eopt = !start_marker, !end_marker in
-        match sopt, eopt with
-        | Some s, Some e ->
-          let func = string_of_float in
-          let _ = http_get_route "false"
-            (func s.lat) (func s.lon) (func e.lat) (func e.lon) in
-          let rtp = !route in
-          Dom_html.window##alert (js (fst rtp));
-          (* draw_line context (coordinates |> coord_tup_to_markers); *)
-         Js._true); *)
+
 
 let clear_start div =
   List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
@@ -217,8 +207,20 @@ let clear_end div =
    | None -> ()
    | Some x -> Dom.removeChild div x.element);
   markers2 := [];
+  end_marker := None;
+  (match !start_marker with
+   | None -> ()
+   | Some x -> Dom.removeChild div x.element);
+  (match !end_marker with
+   | None -> ()
+   | Some x -> Dom.removeChild div x.element);
+  markers1 := [];
+  markers2 := [];
+  sugg := [];
+  sugg_name := [];
+  start_marker := None;
   end_marker := None
-
+  (* route := ("",[]) *)
 
 
 (* Set the class of an Html element *)
