@@ -224,50 +224,7 @@ let clear_end div =
   markers2 := [];
   end_marker := None
 
-let update_marker (x:marker) =
-  {
-    x with mk_tx = (x.lon -. st.params.param_upleft_lon) /. st.wdpp;
-           mk_ty = (st.params.param_upleft_lat -. x.lat) /. st.hdpp;
-  }
 
-let clear_update_all_button div =
-  markers1 := List.map (fun x -> Dom.removeChild div x.element;
-                         update_marker x) (!markers1);
-  markers2 := List.map (fun x -> Dom.removeChild div x.element;
-                         update_marker x) (!markers2);
-  sugg := List.map (fun x -> Dom.removeChild div x.element;
-                     update_marker x) (!sugg);
-
-  (match !start_marker with
-   | None -> ()
-   | Some x ->
-     Dom.removeChild div x.element;
-     let new_marker = update_marker x in
-  start_marker := Some new_marker);
-  (match !end_marker with
-   | None -> ()
-   | Some x ->
-   Dom.removeChild div x.element;
-   let new_marker = update_marker x in
-  end_marker := Some new_marker)
-
-let clear_all div =
-  List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
-  List.iter (fun x -> Dom.removeChild div x.element) (!markers2);
-  List.iter (fun x -> Dom.removeChild div x.element) (!sugg);
-
-  (match !start_marker with
-   | None -> ()
-   | Some x -> Dom.removeChild div x.element);
-  (match !end_marker with
-   | None -> ()
-   | Some x -> Dom.removeChild div x.element);
-  markers1 := [];
-  markers2 := [];
-  sugg := [];
-  sugg_name := [];
-  start_marker := None;
-  end_marker := None
 
 (* Set the class of an Html element *)
 let setClass elt s = elt##className <- js s
@@ -367,6 +324,51 @@ let closeAllList elt input =
         done
     )
 
+let update_marker (x:marker) =
+  {
+    x with mk_tx = (x.lon -. st.params.param_upleft_lon) /. st.wdpp;
+           mk_ty = (st.params.param_upleft_lat -. x.lat) /. st.hdpp;
+  }
+
+let clear_update_all_button div =
+  markers1 := List.map (fun x -> Dom.removeChild div x.element;
+                         update_marker x) (!markers1);
+  markers2 := List.map (fun x -> Dom.removeChild div x.element;
+                         update_marker x) (!markers2);
+  sugg := List.map (fun x -> Dom.removeChild div x.element;
+                     update_marker x) (!sugg);
+
+  (match !start_marker with
+   | None -> ()
+   | Some x ->
+     Dom.removeChild div x.element;
+     let new_marker = update_marker x in
+  start_marker := Some new_marker);
+  (match !end_marker with
+   | None -> ()
+   | Some x ->
+   Dom.removeChild div x.element;
+   let new_marker = update_marker x in
+  end_marker := Some new_marker)
+
+let clear_all div canvas context =
+  List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
+  List.iter (fun x -> Dom.removeChild div x.element) (!markers2);
+  List.iter (fun x -> Dom.removeChild div x.element) (!sugg);
+
+  (match !start_marker with
+   | None -> ()
+   | Some x -> Dom.removeChild div x.element);
+  (match !end_marker with
+   | None -> ()
+   | Some x -> Dom.removeChild div x.element);
+  clear_line canvas context;
+  markers1 := [];
+  markers2 := [];
+  sugg := [];
+  sugg_name := [];
+  start_marker := None;
+  end_marker := None
 
 let autocomplete textbox =
   let currentFocus = ref 0 in
@@ -1074,7 +1076,7 @@ let onload _ =
          (if (!start_marker <> None && !end_marker <> None)
           then
             (
-            clear_all div_map_container;
+            clear_all div_map_container canvas context;
             Dom_html.window##alert (js "1");
             input_1##value <- js "";
             input_2##value <- js "";
@@ -1259,7 +1261,7 @@ let onload _ =
       (fun _ ->
         input_1##value <- js "";
         input_2##value <- js "";
-        clear_all div_map_container;
+        clear_all div_map_container canvas context;
         Js._true);
   Dom.appendChild div_nothing a_clear;
 
