@@ -422,7 +422,23 @@ input[type=submit] {
 }
 
 .icons {
-  float:right;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  margin: 1.0rem;
+  /* opacity: 0.75; */
+}
+
+.category_icon {
+  opacity: 0.5;
+  display: block;
+  transition: .2s ease-out;
+}
+.category_icon:hover {
+  opacity: 1;
+}
+.category_icon.active {
+  opacity: 1;
 }
 
 .buttons {
