@@ -213,34 +213,6 @@ let http_get_route drive draw_line context coord_tup_to_markers =
       Dom_html.window##alert (js "Please select a start and end point!")
 
 
-let clear_start div =
-  List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
-  (match !start_marker with
-   | None -> ()
-   | Some x -> Dom.removeChild div x.element);
-  markers1 := [];
-  start_marker := None
-
-
-let clear_end div =
-  List.iter (fun x -> Dom.removeChild div x.element) (!markers2);
-  (match !end_marker with
-   | None -> ()
-   | Some x -> Dom.removeChild div x.element);
-  markers2 := [];
-  end_marker := None;
-  (match !start_marker with
-   | None -> ()
-   | Some x -> Dom.removeChild div x.element);
-  (match !end_marker with
-   | None -> ()
-   | Some x -> Dom.removeChild div x.element);
-  markers1 := [];
-  markers2 := [];
-  sugg := [];
-  sugg_name := [];
-  start_marker := None;
-  end_marker := None
   (* route := ("",[]) *)
 
 
@@ -379,6 +351,26 @@ let clear_all div canvas context =
   sugg_name := [];
   start_marker := None;
   end_marker := None
+
+
+
+let clear_start div =
+  List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
+  (match !start_marker with
+   | None -> ()
+   | Some x -> Dom.removeChild div x.element);
+  markers1 := [];
+  start_marker := None
+
+
+let clear_end div =
+  List.iter (fun x -> Dom.removeChild div x.element) (!markers2);
+  (match !end_marker with
+   | None -> ()
+   | Some x -> Dom.removeChild div x.element);
+  markers2 := [];
+  end_marker := None
+
 
 let autocomplete textbox =
   let currentFocus = ref 0 in
