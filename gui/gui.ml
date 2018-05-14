@@ -349,6 +349,8 @@ let clear_all div canvas context =
   markers2 := [];
   sugg := [];
   sugg_name := [];
+  route := [];
+  meter := "";
   start_marker := None;
   end_marker := None
 
