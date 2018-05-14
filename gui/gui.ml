@@ -116,16 +116,16 @@ let img_path = ref ""
 let autocomp = ref [""]
 
 
-(* Round a float to a string to exactly 5 decimal places *)
-let round (x:float) =
+(* Round a float to a string to exactly 2 decimal places *)
+let round precision (x:float) =
   let sx = string_of_float x in
   let lst = String.split_on_char '.' sx in
   let second = List.nth lst 1 in
   let trimmed =
     let l = String.length second in
-    if l < 15 then
-      second ^ (String.make (15-l) '0')
-    else String.sub second 0 15 in
+    if l < precision then
+      second ^ (String.make (precision - l) '0')
+    else String.sub second 0 precision in
   (List.hd lst) ^ "." ^ trimmed
 
 let param = {
@@ -204,7 +204,8 @@ let http_get_route drive draw_line context coord_tup_to_markers =
           meter := dist;
           route := (flst |> coord_tup_to_markers);
           draw_line context (flst |> coord_tup_to_markers);
-          Dom_html.window##alert (js ("Estimated travel distance: "^dist));
+          Dom_html.window##alert (js ("Estimated travel distance: "
+            ^(dist|>float_of_string|>round 2)^" kilometers"));
           (* Dom_html.window##alert (js (List.length flst |> string_of_int)); *)
           Lwt.return ()
         ) in
@@ -610,13 +611,13 @@ let http_get_nodes_by_name id name coord_to_markers addbutton div_map_container 
 
 let http_get_res st callback canvas context div_map_container =
   let url = base_url^"?index=4"^
-            "&upleft_lat="^round st.params.param_upleft_lat^
-            "&upleft_lon="^round st.params.param_upleft_lon^
-            "&lowright_lat="^round st.params.param_lowright_lat^
-            "&lowright_lon="^round st.params.param_lowright_lon^
-            "&width="^round st.params.width^
-            "&height="^round st.params.height in
-  (* let _ = Dom_html.window##alert(js url) in *)
+            "&upleft_lat="^round 10 st.params.param_upleft_lat^
+            "&upleft_lon="^round 10 st.params.param_upleft_lon^
+            "&lowright_lat="^round 10 st.params.param_lowright_lat^
+            "&lowright_lon="^round 10 st.params.param_lowright_lon^
+            "&width="^round 10 st.params.width^
+            "&height="^round 10 st.params.height in
+  let _ = Dom_html.window##alert(js url) in
   let start () =
     http_get url >>= (fun res ->
 
