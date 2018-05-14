@@ -904,19 +904,7 @@ let onload _ =
          http_get_nodes_by_type "fooddrink" div_map_container;
          Js._true);
 
-  let gas_button = Html.createA doc in
-  Dom.appendChild div_icons gas_button;
-  setClass gas_button "category_icon";
 
-
-  let gas_icon = Html.createImg doc in
-  gas_icon##src <- js "static/gas.png";
-  Dom.appendChild gas_button gas_icon;
-
-  gas_button##onclick <- Html.handler
-      (fun _ ->
-         http_get_nodes_by_type "fuel" div_map_container;
-         Js._true);
   (* let div_widget_card = Html.createDiv doc in
      setClass div_widget_card "widget card";
      Dom.appendChild div_actions div_widget_card; *)
