@@ -3,48 +3,29 @@
 ![screenshot](https://github.com/mindylou/legend-of-tomnjam/blob/master/styles/screenshot.png)
 
 ## Description
-You, the user, will take on the role of the protagonist, Lonk, and will need to travel through the 
-map, fend off countless terrifying enemies, and defeat the final boss to save Zolda and the world of Tomnjam. You will not have an easy time navigating your way through this journey; however, you will learn to explore beautiful landscapes, encounter exotic beasts (that you’ll most likely have to kill), and attain glory and riches all within the comfort of your bed. This is an easily accessible Web-based game that you can quickly enjoy between slides in lecture or when your Youtube video is buffering.
 
 ## How to Run
-OCaml and Opam must be installed. 
+OCaml 4.06 and Opam must be installed. 
 
-Prerequisites:
-`opam install js_of_ocaml js_of_ocaml-ocamlbuild js_of_ocaml-camlp4 js_of_ocaml-lwt`
+1. Install dependencies, run:<br>
+`make install-dep`
 
-Run:
-`make` and open `index.html`
+2. Build the modules required by server and start server, run:<br>
+`make server`
+
+3. Build gui, open another terminal window, run:<br>
+`cd gui`<br>
+`make`
+
+4. Open `index.hmtl` in your web browser.
 
 ## Key Features
-- Interactive Web-based GUI
-- Portals to move between rooms
-- Enemies with different speeds, attacks, AI, and health
-- Kill count and health
-- Final boss
+
 
 ## System Design
 ### Modules 
 
-#### State
-This module records the status of the game at any given time. This will allow the game to be run continuously, and updates for each move or change to the state, such as movement. This acts as the model of the model-view-controller design.
 
-#### Command
-This module contains the functions needed to let a user play the game, as well as calling the AI for move inputs. The AI will input commands exactly like the player for code reusability, in this way adding additional enemy types or players would be very easy.
-
-#### GUI
-This module contains the code necessary for the visual implementation of the backend and will update to reflect visual changes in the state. This acts as the view of the MVC design.
-
-#### Game
-This module executes the game loop and calls updates to state and drawing based on the player inputs. This acts as the controller of the MVC design. 
-
-#### Main
-This module runs the game by calling the necessary Javascript animation functions. It calls the game loop and adds the canvas and basic HTML elements to the page.
-
-#### AI
-This module contains functions that allow enemies to act autonomously and attack the user’s character. It will provide commands in a fashion to emulate key inputs.
-
-#### Room/Sprites
-These modules contain the parameters to instantiate the initial player, map, and enemies.
 
 ## Division of Labor
 In general, Julian and Alex worked on the backend while Mindy and Tom worked on the frontend. More detail is provided below.
