@@ -35,21 +35,17 @@ let test_get_node_by_coord = [
 ]
 
 
-(* Test get_node_by_name *)
+(* Test autocomplete *)
 
-let test_get_node_by_name = [
-  "test1" >:: (fun _ -> assert_equal (42.4451475, -76.481154)
-              (match (Map.get_node_by_name "Gates Hall" t) with 
-              | Some x -> Map.node_to_coord x | None -> (0.0,0.0)));
-
-  "test2" >:: (fun _ -> assert_equal (42.4281548, -76.4691226)
-              (match (Map.get_node_by_name "Hillside Alliance Church" t) with 
-              | Some x -> Map.node_to_coord x | None -> (0.0,0.0))); 
-
+let autocomplete = [
+  "test1" >:: (fun _ -> assert_equal ["Barton Hall"; "Barton Place"]
+              (Map.autocomplete t "Barton"));
+  "test2" >:: (fun _ -> assert_equal ["Barton Hall"]
+              (Map.autocomplete t "Barton Hall"));
 ]
 
 
-(* Test find_path *)
+(* Test find_path，nodes_ways_oftype *)
 
 let test_find_path = [
   "interactive_testing" >:: (fun _ -> assert_equal "interactive" "interactive");
@@ -59,7 +55,7 @@ let test_find_path = [
 let tests =
   "test suite for Trie" >::: List.flatten [
     test_get_node_by_coord;
-    test_get_node_by_name;
+    autocomplete;
     test_find_path;
   ]
 let _ = run_test_tt_main tests
