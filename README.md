@@ -1,6 +1,7 @@
 # Ithaca Map
 
 ## Description
+Ithaca Map is a location based map services that resembles Google Map, including zooming in and out the map, moving the map, auto-completion enabled search, finding shortest path, and category search.
 
 ## How to Run
 OCaml 4.06 and Opam must be installed. 
