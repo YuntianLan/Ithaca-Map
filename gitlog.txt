@@ -1,0 +1,515 @@
+* 0418a7f : images for README
+* 75818d0 : rm xml
+* 80740c8 : 80 character line
+* 97d58ec : add comments
+* 7078448 : Update README.md
+* b9221d4 : Update README.md
+*   def7d97 : add autocomplete test
+|\  
+| * 66f3014 : hmm
+* | 5e7e4e4 : add autocomplete test
+|/  
+*   d3f7ad6 : add graph comments
+|\  
+| * 0d789fb : 蒋涵清你特么把comment加上
+| *   8f87fec : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | * 68cea32 : Delete .ocamlinit
+| | * 71a2af9 : Update gui.ml
+| * | 0251503 : cleaned the code a bit
+| |/  
+| * eb60c2e : before delete comment
+| * c36654e : fixex small bug in drag
+* | 0c4f04e : 我是傻逼
+|/  
+* 88081d5 : alert url
+* f5afa88 : Update README.md
+* 23511ab : Update README.md
+* a8d0a26 : removed gas
+* da54598 : fix
+* 8fd6c1f : fix a bug
+* 9185d13 : fix
+* 7d93e0f : clean up and got rid of warnings
+* 6f68bd6 : drag working
+*   6201364 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| * 2425ab8 : fixed route
+| *   6a54584 : draw route
+| |\  
+| * | 6e5cab2 : merging
+* | | 53c3643 : update
+| |/  
+|/|   
+* | 1cff5ac : debug again
+* |   8e017be : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\ \  
+| * | 88a10a2 : debug
+* | | 02ec7e0 : hmm
+|/ /  
+* |   6d0271f : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\ \  
+| * | 2fce175 : upload pin image
+| * | 31fb124 : clear_line
+* | | 77f5c46 : hmmmmm
+|/ /  
+* | c9f5078 : vhgjtuxfc
+* | db49a6c : readme template
+|/  
+* d9f423d : 这个别删
+*   de869c9 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| *   36fb7d9 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| * | 9911d3e : 吕欣琪搞一下新icon和onclick逻辑
+* | | ea642ed : deleted cache, sorry about that
+| |/  
+|/|   
+* | 2f14c0f : merging
+* |   73ddcda : merging
+|\ \  
+| |/  
+| *   fc6e548 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | * f77c78c : fix
+| | * 96ef118 : 对接
+| * | 85573e4 : add helper for show icons
+| |/  
+| *   051a2dc : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | *   5d6aa1e : add server 7
+| | |\  
+| | * | 6bf1e70 : add server 7
+| * | | 8d078d1 : add icon
+| | |/  
+| |/|   
+* | | 13a13ff : merging
+|/ /  
+* | 75c20ac : uncommented cache cleaning
+* |   5fadb9c : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\ \  
+| * | eaeef53 : delete
+| * | da6f98b : relocated http
+| * | 3888e28 : mergin
+| * |   167a89a : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\ \  
+| * | | ada7fd9 : relocated http
+* | | |   3097cdd : merging
+|\ \ \ \  
+| | |/ /  
+| |/| |   
+| * | | c5eca6e : hello
+| | |/  
+| |/|   
+* | | 7bdbbfe : merging
+|/ /  
+* | b23569a : init server index=7
+|/  
+*   eca9141 : fixed comflict
+|\  
+| *   b3003d6 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | *   b72f6e8 : add key types
+| | |\  
+| | | *   3214d07 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| | | |\  
+| | | * | fb46be7 : drag
+| | * | |   2420ccf : add key types
+| | |\ \ \  
+| | | | |/  
+| | | |/|   
+| | * | | 519353a : add key types
+| * | | | 5171599 : add clear button functionality
+| | |/ /  
+| |/| |   
+| * | | 29c5041 : add icons
+| | |/  
+| |/|   
+| * | 8dd2625 : lol
+| |/  
+* | 9e66198 : zoom in and out temp
+* |   467cd1a : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\ \  
+| |/  
+| *   faed37e : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | * 8269421 : fixed server fatal error crashing
+| * | fca2384 : update location selection
+| |/  
+* |   3e316cd : merging
+|\ \  
+| |/  
+| * 5a8e4f1 : cleanup
+| * e300fde : Update Makefile
+| * cdc40a2 : Update Makefile
+| * 2708a6e : fuk this shit
+| *   54851ed : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | * 7379f20 : change the nodes datastructure
+| * | f56e212 : hmm
+| |/  
+| * 407a015 : hmmm here you go
+| *   1b54849 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | * fd4793d : hello
+| * | 23057b5 : hmm
+| |/  
+* | cd113e5 : merging
+* |   da43128 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\ \  
+| |/  
+| * 06dbd36 : changed from js.null to none
+| * 880d068 : hi
+| *   bd19786 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| * | 21ee88e : change go and drive
+* | |   8535fb6 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\ \ \  
+| | |/  
+| |/|   
+| * | c6a717d : hmm
+| |/  
+* | 1bcb5b5 : merging
+|/  
+*   13fd5a1 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| * f2fc779 : zoom and cache cleaning
+* | 89c80da : drag working
+|/  
+* 40b888d : refactor again
+* 2b97a64 : finished refactoring
+* 56141d9 : deleted from clientgui1
+* 2133d16 : refactoring
+* 1be8e0f : refactoring
+* 8abbb48 : confirmed initialized image display
+* af22362 : finally
+*   858943a : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| *   57728a3 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| * | de8c24b : gui
+* | | 5d9ad57 : merging
+| |/  
+|/|   
+* | 81bb198 : temp zoom
+* | 522d2e3 : not ignore cache
+|/  
+* fac4ff7 : add draw_line
+* 6271f57 : add drag and double click
+*   2cd9213 : gui
+|\  
+| * 136dbcf : update img
+* | 95f1e5e : gui update
+|/  
+* 0bb6b39 : new markers
+* 3f0afdd : Update .gitignore
+* e47442e : markers
+* 7e90f40 : add icons
+*   6d4eb0b : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| *   56cd7c2 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | * 2aeedcd : add dbclick
+| * | 70bfdf3 : add helper
+| |/  
+* | aaec929 : initialized clientgui1
+* |   cea3765 : merging
+|\ \  
+| |/  
+| * 10d77f7 : revert
+* | ab3c0c8 : merging
+|/  
+*   94cfdd6 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| * 6204e32 : update draw helper
+* | 4243de4 : changed client_state
+|/  
+* f6980f2 : added mli to ml
+*   00bad62 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| *   616066c : more gui
+| |\  
+| * | b8401a1 : add more gui functioion
+* | | 24df0e5 : merging
+| |/  
+|/|   
+* |   811c21a : added mli for clientgui
+|\ \  
+| * | 915c36d : update
+* | | d2f273e : merging
+|/ /  
+* | 41d8acf : fix image
+* | 23b5a48 : delete parts
+|/  
+* 1650a7b : solved conflicts
+* 72c6c90 : resize the canvas and add more autocompletion
+* 9d5b3dc : Revert "geolocation"
+* eb9044e : Revert "fix"
+* 6bf4e2c : fix
+* ab52446 : geolocation
+*   e41ea76 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| * 252288e : Update image.ml
+| * 742dccc : Update trie.ml
+| * 2274ff4 : remove
+| * da40ac7 : clean up
+| * f2beb4a : autocomplete integrated, server still returning all the names instead of 10
+| * ee84d7d : removed files. REF to be fixed, idk wtf is going on
+* | 3e45c8e : hi
+|/  
+*   d13b633 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| * cda1ffe : update client
+| *   aaeb4a4 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | * d81eefe : client update
+| * | 6cb8b57 : server index 1-6 finished
+| |/  
+| * 82e389e : server index 1-5 finished
+| *   130f3eb : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | *   a88d00d : drag in gui
+| | |\  
+| | * | 30c19c8 : drag in gui
+| * | | 35099a7 : index 1-4 should be good
+| | |/  
+| |/|   
+| * | 58fc533 : update image
+| * | de78cfe : now can support http images
+| * | b20c211 : moved cohttpserver
+| * |   78d19b0 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\ \  
+| | |/  
+| * | f278583 : merging
+* | | d14da13 : add draw array of coordinates
+| |/  
+|/|   
+* | 67f62b3 : add clickable icon and canvas
+|/  
+* 3849dd5 : type
+* 555423f : client decode
+* c2b51e0 : remove
+* cf588a8 : update dep make
+* c506a32 : added make for cohttp and removed Client module
+* 97d1e8e : cohttp setup
+* 875e553 : add some comments
+* e635393 : finished autocomplete without server
+* efd5231 : hmm fixed now
+* 9af6ec1 : hmm you can pull
+* f752147 : update gui
+*   e73f1f2 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| * 245d8e7 : add closeAllList function
+| *   bfb75e3 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | * 759b9ab : finish graph test
+| * | 86367cb : update gui
+* | | 4d767fb : updated full.json, fixed bug in A*, fully functional server that supports a single connection and 4 different kinds of requests
+| |/  
+|/|   
+* |   c037fa7 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\ \  
+| |/  
+| * 04653b9 : update gui
+| *   612b4ec : add graph function test
+| |\  
+| | * e7de468 : let blessing be extended to entire repo
+| | * db84c6a : more tests, removed osm
+| * | 80eb089 : add graph function test
+| |/  
+| *   55d857b : merging
+| |\  
+| * | 949729b : merging
+* | | a58509a : fixed a bug in graph
+| |/  
+|/|   
+* |   8918f07 : updated full.json
+|\ \  
+| |/  
+| * e54d18a : preliminary graph test
+* | fc29d43 : merging
+|/  
+* 954b516 : added image tests, fixed trie
+* ddc5b7f : added some tests for Trie
+* 1eb432c : image encoder decoder now perfectly working
+* 501cc31 : commented out old code
+* 538ae27 : image is getting FASTer!!
+* a9defb7 : remove graphics
+* ae825de : fixed _tags
+* cc253fb : client updated example
+*   70fb5c2 : merging
+|\  
+| * 2274706 : update gui and image
+| * 8b128a2 : filename
+* |   a3e364a : merging
+|\ \  
+| |/  
+| *   2ea35e5 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | * bde193b : add comments
+| * | 3f0223a : combine image
+* | |   502e096 : working of server
+|\ \ \  
+| | |/  
+| |/|   
+| * | 9ec0c69 : implement KD tree
+| * |   07d356c : wo shi sha bi
+| |\ \  
+| | |/  
+| * | bad418a : return types of nodes/ways
+* | | 346e0e2 : merging
+| |/  
+|/|   
+* |   ae77a9d : added waylst to type t
+|\ \  
+| |/  
+| * 7a1403a : uPdate
+| * 8891027 : restore client example
+| * 359894d : add
+| * c87a6a9 : clean up
+| * ccb8751 : add gui
+* |   65e2fc9 : merging
+|\ \  
+| |/  
+| * 29c542d : Update .ocamlinit
+| * 15d750f : update gui
+| * cc87188 : resolved conflict
+* | 7fd23e0 : merging
+|/  
+*   174b490 : preliminary server
+|\  
+| * 9c10c57 : add some js
+| *   d6c7cd6 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | * 8541cbb : added error handling
+| * | 6b1e50f : update gui file
+* | | 6f24727 : merging
+| |/  
+|/|   
+* | 53e5996 : added specs, fixed bugs for image.ml, added test tile folder
+* | 36dc4ef : updated utop initial environment
+* |   eb889bb : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\ \  
+| * | 010f3c3 : Update Makefile
+| |/  
+* | 47c9257 : add make check
+|/  
+* 0262884 : image preliminarily working. TODO: corner cases and error handling
+* 1905a22 : removed binary files
+* 93e08c9 : clean up repo
+*   eb7ad58 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| * 111c765 : prelimilarily finished graph.graph.ml
+| *   78aa24f : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| | * b2e21d9 : added specs AF RI
+| * |   3c55e98 : merging
+| |\ \  
+| | |/  
+| | * e7b31c6 : done
+| | * a46afdb : should be good
+| | * 24904b0 : fix
+| | * e14ec2d : Trie done (not tested yet)
+| * |   0a069db : merging
+| |\ \  
+| | |/  
+| * | df7edd6 : merging
+| * |   cefca7a : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\ \  
+| * | | c0fc341 : merging
+* | | | 5afd2c8 : update
+* | | | 7198628 : update GUI
+| |_|/  
+|/| |   
+* | | bc98a57 : now recognized oneway roads in A*
+| |/  
+|/|   
+* | 5b210a5 : Update Makefile
+* | c476026 : Update Makefile
+* |   94e65d2 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\ \  
+| |/  
+| * 4620fe3 : finished A*
+| *   41be70b : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| * | f423d3a : merging
+* | | 7fda73b : basic gui
+| |/  
+|/|   
+* | 8a704d5 : new map osm
+* | 853a581 : update image
+* | d248017 : delete old graph
+* | 3a991e9 : tiles
+* | 8e72ea2 : process
+|/  
+* 49638a3 : fixed init
+*   ae0c57c : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| * 955b413 : image update
+* | e4be98c : initialized trie
+|/  
+* 133082a : graph complete types
+*   aa67db0 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| * 9d1a840 : constants
+| *   8b6bc95 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| * | 96d1bcc : building quadtree
+* | |   bf14c4c : merging
+|\ \ \  
+| | |/  
+| |/|   
+| * | 8b35eb2 : init graph & init nodes
+| |/  
+* | 80881db : merging
+|/  
+* 36a9571 : moved file around
+*   ff07f54 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| * 886c813 : add parser and xml file
+* | 47be907 : merging
+|/  
+* 14a3439 : added json
+*   5c6d930 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| *   a67a679 : merging
+| |\  
+| | * 9696659 : upload tiles
+| | * f61711a : MapImage
+| | * 4828c2d : make dependencies
+| * | ca20d4f : add parsing nodes
+| |/  
+* | c5b6ea0 : merging
+|/  
+* dbf59c9 : building node
+*   23d8d33 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| * 93ba456 : Revert "Revert "Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map""
+| * 3f146c5 : Revert "Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map"
+| *   2d62cb7 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| * | ee0cdc2 : make file
+* | | 6c77d67 : merging
+| |/  
+|/|   
+* | 276e1d5 : moved files around
+* | accee28 : initialized work
+|/  
+* 79f55f2 : update gui
+*   aa7e619 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+|\  
+| * 87d8427 : trie update
+| * 6cb684b : Trie
+| * e644565 : added mli for server.mli
+| *   6daa368 : Merge branch 'master' of https://github.com/YuntianLan/Ithaca-Map
+| |\  
+| * | 6e8e5fe : updated mli names
+* | | c11178c : Revert "gui"
+* | | 9f3b77f : gui
+| |/  
+|/|   
+* | d805069 : ds store
+|/  
+* 4c5198a : init mli
+* d5bb300 : updated readme
+* ee231ea : Create .gitignore
+* b3389f4 : Initial commit
