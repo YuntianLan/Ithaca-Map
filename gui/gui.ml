@@ -246,10 +246,12 @@ let append_text e s = Dom.appendChild e (doc##createTextNode (js s))
 let get_element_by_id id =
   Js.Opt.get (Html.document##getElementById (js id)) fail
 
+(* [create_canvas w h] creates a canvas with width [w] and height [h]. *)
 let create_canvas w h =
   let c = Html.createCanvas Html.document in
   c##width <- w; c##height <- h; c
 
+(* [draw_line context lst] draws on the canvas the lines given the tuple [lst]. *)
 let draw_line context lst =
   List.fold_left
     (fun acc cor  ->
@@ -348,6 +350,8 @@ let clear_update_all_button div canvas context =
    let new_marker = update_marker x in
   end_marker := Some new_marker)
 
+(* [clear_all div canvas context] clears all the pins, routes, markers on
+ * the map. *)
 let clear_all div canvas context =
   List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
   List.iter (fun x -> Dom.removeChild div x.element) (!markers2);
@@ -370,7 +374,7 @@ let clear_all div canvas context =
   end_marker := None
 
 
-
+(* [clear_start div] clears the start marker on the map. *)
 let clear_start div =
   List.iter (fun x -> Dom.removeChild div x.element) (!markers1);
   (match !start_marker with
@@ -379,7 +383,7 @@ let clear_start div =
   markers1 := [];
   start_marker := None
 
-
+(* [clear_end div] clears the end marker on the map. *)
 let clear_end div =
   List.iter (fun x -> Dom.removeChild div x.element) (!markers2);
   (match !end_marker with
@@ -388,7 +392,8 @@ let clear_end div =
   markers2 := [];
   end_marker := None
 
-
+(* [autocomplete textbox] shows suggested inputs when the user types into the
+   [textbox]. *)
 let autocomplete textbox =
   let currentFocus = ref 0 in
   textbox##oninput <- Html.handler
@@ -449,12 +454,13 @@ let autocomplete textbox =
 
 let debug f = Printf.ksprintf (fun s -> Firebug.console##log (Js.string s)) f
 
+(* Show all the pins of the selected category on the map. *)
 let show_icons div =
   let helper id marker =
     let button = marker.element in
     Dom.appendChild div button;
-    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx))^"px");
-    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty))^"px");
+    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx - 9))^"px");
+    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty - 24))^"px");
     setClass button "tooltip";
 
     let tooltip_text = Html.createSpan doc in
@@ -500,17 +506,18 @@ let display_start_end div marker color =
   | Some x ->
   let button = x.element in
   Dom.appendChild div button;
-  button##style##left <- js ((string_of_int (int_of_float x.mk_tx - 12))^"px");
-  button##style##top <- js ((string_of_int (int_of_float x.mk_ty - 25))^"px");
+  button##style##left <- js ((string_of_int (int_of_float x.mk_tx - 16))^"px");
+  button##style##top <- js ((string_of_int (int_of_float x.mk_ty - 32))^"px");
   setClass button color
 
-
+(* [addbutton div] adds to the webpage all the possible grey markers of a start location,
+ * the one clicked would turn red and other markers will disappear. *)
 let addbutton div =
   let display_a_button marker =
     let button = marker.element in
     Dom.appendChild div button;
-    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx - 12))^"px");
-    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty - 25))^"px");
+    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx - 16))^"px");
+    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty - 32))^"px");
     setClass button "grey_button";
     button##onclick <- Html.handler
     (fun _ ->
@@ -523,12 +530,14 @@ let addbutton div =
 
   List.iter display_a_button (!markers1)
 
+(* [addbutton2 div] adds to the webpage all the possible grey markers of a end location,
+ * the one clicked would turn red and other markers will disappear. *)
 let addbutton2 div =
   let display_a_button marker =
     let button = marker.element in
     Dom.appendChild div button;
-    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx))^"px");
-    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty))^"px");
+    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx - 16))^"px");
+    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty - 32))^"px");
     setClass button "grey_button";
     button##onclick <- Html.handler
         (fun _ ->
@@ -675,6 +684,7 @@ let pix2coord x y =
 (* ========= HTTP requests ========== *)
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
+
   let start_icon = Html.createButton doc in
   setClass start_icon "red_button";
 
@@ -685,7 +695,10 @@ let onload _ =
   let div_map_container = Html.createDiv doc in
   setClass div_map_container "map-container";
   Dom.appendChild doc##body div_map_container;
+  (* ==================== end div map-container ==================== *)
 
+
+  (* ==================== create canvas  ==================== *)
   let canvas_w = div_map_container##clientWidth in
   let canvas_h = div_map_container##clientHeight in
   st.params <- {st.params with width = float_of_int canvas_w;
@@ -695,8 +708,7 @@ let onload _ =
   Dom.appendChild div_map_container canvas;
   let context = canvas##getContext (Html._2d_) in
   let _ = http_get_res st draw_background canvas context div_map_container in
-
-  (* ==================== end div map-container ==================== *)
+  (* ==================== finish creating canvas  ==================== *)
 
   let zoom_in st =
     if st.current_depth = max_depth then () else
@@ -760,6 +772,7 @@ let onload _ =
   setClass div_actions "actions";
   Dom.appendChild doc##body div_actions;
 
+  (* ========================= create the category icons ======================= *)
   let div_icons = Html.createDiv doc in
   setClass div_icons "icons";
   Dom.appendChild doc##body div_icons;
@@ -803,6 +816,7 @@ let onload _ =
       (fun _ ->
          http_get_nodes_by_type "fooddrink" div_map_container;
          Js._true);
+  (* ======================= finish creating the category icons ================= *)
 
   let div_card_content = Html.createDiv doc in
   setClass div_card_content "card-content";
@@ -816,6 +830,7 @@ let onload _ =
   setClass div_bottom "bottom";
   Dom.appendChild div_autocomplete div_bottom;
 
+  (* =================== create textboxes and Find buttons ================ *)
   let input_1 = Html.createInput doc in
   setId input_1 "input1";
   input_1##placeholder <- js "Start Location";
@@ -850,8 +865,9 @@ let onload _ =
         let n = (input_2##value |> Js.to_string) in
         http_get_nodes_by_name 2 n coord_tup_to_markers addbutton2 div_map_container;
       Js._true);
+  (* =============== end creating textbox and Find buttons ================== *)
 
-
+  (* When the user double clicks the map, show either start or end marker. *)
   div_map_container##ondblclick <- Html.handler
       (fun ev ->
          (* clear_goals div_map_container; *)
@@ -863,8 +879,8 @@ let onload _ =
             input_2##value <- js "";
             (* the server needs to find the location name as well as the lat,lon,mk_tx, mk_ty *)
             Dom.appendChild div_map_container start_icon;
-            start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
-            start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+            start_icon##style##left <- js ((string_of_int (ev##clientX-16))^"px");
+            start_icon##style##top <- js ((string_of_int (ev##clientY-32))^"px");
             let x = float_of_int ev##clientX in
             let y = float_of_int ev##clientY in
             let (longi, lati) = pix2coord x y in
@@ -880,8 +896,8 @@ let onload _ =
           then
             (
              Dom.appendChild div_map_container start_icon;
-             start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
-             start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+             start_icon##style##left <- js ((string_of_int (ev##clientX-16))^"px");
+             start_icon##style##top <- js ((string_of_int (ev##clientY-32))^"px");
              let x = float_of_int ev##clientX in
              let y = float_of_int ev##clientY in
              let (longi, lati) = pix2coord x y in
@@ -896,8 +912,8 @@ let onload _ =
           else if (!start_marker <> None && !end_marker = None)
           then
             (Dom.appendChild div_map_container end_icon;
-             end_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
-             end_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+             end_icon##style##left <- js ((string_of_int (ev##clientX-16))^"px");
+             end_icon##style##top <- js ((string_of_int (ev##clientY-32))^"px");
              let x = float_of_int ev##clientX in
              let y = float_of_int ev##clientY in
              let (longi, lati) = pix2coord x y in
@@ -912,8 +928,8 @@ let onload _ =
           else if (!start_marker = None && !end_marker <> None)
           then
             (Dom.appendChild div_map_container start_icon;
-             start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
-             start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
+             start_icon##style##left <- js ((string_of_int (ev##clientX-16))^"px");
+             start_icon##style##top <- js ((string_of_int (ev##clientY-32))^"px");
              let x = float_of_int ev##clientX in
              let y = float_of_int ev##clientY in
              let (longi, lati) = pix2coord x y in
@@ -929,8 +945,8 @@ let onload _ =
          (* Remove the point and replace the input box with a new one *)
          Js._true);
 
-  (* ==================== begin icons ==================== *)
 
+  (* ==================== begin icons ==================== *)
   let span_icons_container = Html.createSpan doc in
   setClass span_icons_container "icons-container";
   Dom.appendChild div_card_content span_icons_container;
@@ -969,9 +985,9 @@ let onload _ =
 
   let div_info_text = Html.createDiv doc in
   setClass div_info_text "info-text";
-  append_text div_info_text "You can also use arrow keys and -/= to zoom,
+  append_text div_info_text "You can also use -/= to zoom,
   or use the mouse drag and scroll wheel.
-  Double click to begin routing & double click again to end and show route.";
+  You can either type the start and end locations or double click on the map.";
   Dom.appendChild a_info div_info_text;
 
   let div_info_subtext = Html.createDiv doc in
@@ -993,10 +1009,10 @@ let onload _ =
 
   (* ==================== end icons ==================== *)
 
+
+  (* =================== create the Go, Drive, Clear buttons =============== *)
   let div_nothing = Html.createDiv doc in
   Dom.appendChild div_actions div_nothing;
-
-  (* Clear the text in the textbox when "Clear Route" is clicked *)
 
   let a_go = Html.createA doc in
   setClass a_go "clear waves-effect btn";
@@ -1028,10 +1044,14 @@ let onload _ =
         clear_all div_map_container canvas context;
         Js._true);
   Dom.appendChild div_nothing a_clear;
+  (* =============== finish creating the Go, Drive, Clear buttons =========== *)
 
+
+  (* Enables the autocomplete functionality of the textboxes. *)
   autocomplete input_1;
   autocomplete input_2;
 
+  (* Detect the drag event and display updated image markers after dragging. *)
   let startx = ref 0 in
   let starty = ref 0 in
   let endx = ref 0 in
