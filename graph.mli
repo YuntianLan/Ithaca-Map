@@ -4,8 +4,6 @@ type category =
 
 module type MapGraph = sig
 
-	(* module Tr = StrTrie *)
-
 	type node
 
 	(* [t] is the type of MapGraph *)
@@ -44,6 +42,10 @@ module type MapGraph = sig
 	 * with s. The function returns empty list when s is empty. *)
 	val autocomplete : t -> string -> string list
 
+	(* [nodes_ways_oftype c g lst] takes the requested category, the graph
+	 * and returns the list containing triples representing each
+	 * the latitude, longitude and name of each location that satisfies the
+	 * category requested. *)
 	val nodes_ways_oftype : category option -> t -> (float * float * string) list
 
 end
