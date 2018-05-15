@@ -171,7 +171,7 @@ let http_get url =
   else fst (Lwt.wait ())
 
 (* [http_get_autocomp s] is the helper function that,
- * given the input string s, asynchronously gets the 
+ * given the input string s, asynchronously gets the
  * list of possible search results *)
 let http_get_autocomp (s:string) =
   let url = base_url^"?index=6"^"&input="^s in
@@ -185,7 +185,7 @@ let http_get_autocomp (s:string) =
 
 (* [http_get_route d draw_line context coord_tup_to_markers]
  * is the helper function that,
- * given the input string s, asynchronously gets the 
+ * given the input string s, asynchronously gets the
  * distance/route and draws the route on the map *)
 let http_get_route drive draw_line context coord_tup_to_markers =
   let _ = route_color := if drive = "true" then "#e60000" else "#0000ff" in
@@ -202,7 +202,7 @@ let http_get_route drive draw_line context coord_tup_to_markers =
       let start () =
         http_get url >>= (fun res ->
           if (String.get res 0) = 'E' then
-            let _ = Dom_html.window##alert 
+            let _ = Dom_html.window##alert
               (js "Could not find route between locations") in
             Lwt.return ()
           else
@@ -474,6 +474,7 @@ let show_icons div =
 
   List.iteri helper (!sugg)
 
+(* gets geolocation of the user through the web browser *)
 let get_geo () =
   if (Geolocation.is_supported()) then
     let geo = Geolocation.geolocation in
@@ -643,7 +644,7 @@ let http_get_res st callback canvas context div_map_container =
         if ((!route) |> List.length <= 0) then
           callback canvas context (js (base_url^"?index=5&path="^res)) (st.tx, st.ty)
         else
-          draw_background_with_line canvas context (js 
+          draw_background_with_line canvas context (js
             (base_url^"?index=5&path="^res)) (st.tx, st.ty) (!route);
         Lwt.return ()) in
   ignore(start ())
@@ -663,6 +664,8 @@ let http_get_nodes_by_type type_name div_map_container =
         Lwt.return ()) in
   ignore(start ())
 
+
+(* [pix2coord x y] is the longitude, latitude of the location specified at pixel [x], [y]*)
 let pix2coord x y =
   let lon = st.params.param_upleft_lon +. x *. st.wdpp in
   let lat = st.params.param_upleft_lat -. y *. st.hdpp in
@@ -966,7 +969,7 @@ let onload _ =
 
   let div_info_text = Html.createDiv doc in
   setClass div_info_text "info-text";
-  append_text div_info_text "You can also use arrow keys and -/= to zoom, 
+  append_text div_info_text "You can also use arrow keys and -/= to zoom,
   or use the mouse drag and scroll wheel.
   Double click to begin routing & double click again to end and show route.";
   Dom.appendChild a_info div_info_text;
@@ -1071,7 +1074,7 @@ let onload _ =
                           param_lowright_lat = st.params.param_lowright_lat
                                              +. (st.hdpp *. float_of_int dy)
                         } in
-                        
+
                         st.params <- new_param;
                         http_get_res st draw_background canvas context div_map_container;
                       else
