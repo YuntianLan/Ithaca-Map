@@ -19,26 +19,11 @@ OCaml 4.06 and Opam must be installed.
 
 ## Key Features
 
-
-## System Design
-### Modules 
-
-
-
-## Division of Labor
-
-
-## Module Design
-
 ## Data
-
-
-## External Dependencies
+All data is downloaded from OpenStreetMap.org
 
 
 ## Acknowledgements
-
-
-## Authors
+The CSS styles for GUI are borrowed from the skeleton code of a class project but our GUI is entirely coded in OCaml. The tile images are made possible by OpenStreetMap under Creative Commons Attribution-ShareAlike 2.0 licence.
 
 
