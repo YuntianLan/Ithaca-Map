@@ -30,12 +30,13 @@ let root_upleft_lon = -76.5527
 let root_upleft_lat = 42.4883
 let root_lowright_lon = -76.4649
 let root_lowright_lat = 42.4235
-(* let init_lowright_lon = -76.4670
-let init_lowright_lat = 42.4279 *)
-(* let init_lowright_lon = -76.4996123047
-let init_lowright_lat = 42.4495925781 *)
 let init_lowright_lon = -76.5246061523437504
 let init_lowright_lat = 42.4622962890625
+
+(* let root_upleft_lon = -76.5309082031
+let root_upleft_lat = 42.4494501953
+let init_lowright_lon = -76.4309328125
+let init_lowright_lat = 42.3986353516 *)
 
 (* Initial wdpp and hdpp for level 3 *)
 let iwdpp = 0.00004287109374999839
@@ -101,7 +102,7 @@ let start_marker = ref None
 let end_marker = ref None
 let meter = ref ""
 let route = ref []
-
+let route_color = ref "#e60000"
 
 
 
@@ -178,6 +179,7 @@ let http_get_autocomp (s:string) =
   !autocomp
 
 let http_get_route drive draw_line context coord_tup_to_markers =
+  let _ = route_color := if drive = "true" then "#e60000" else "#0000ff" in
   let sopt, eopt = !start_marker, !end_marker in
     match sopt, eopt with
     | Some s, Some e ->
@@ -190,24 +192,35 @@ let http_get_route drive draw_line context coord_tup_to_markers =
         "&elat=" ^ elat ^ "&elon=" ^ elon in
       let start () =
         http_get url >>= (fun res ->
-          let tplst = String.split_on_char ' ' res in
-          let dist = List.hd tplst in
-          let slstlst = tplst |> List.tl |> List.hd in
-          let slst = String.split_on_char ';' slstlst in
-          let s2tp = (fun s ->
-            let l2 = String.split_on_char ',' s in
-            let lat = l2 |> List.hd |> float_of_string in
-            let lon = l2 |> List.tl |> List.hd |> float_of_string in
-            (lat,lon)
-          ) in
-          let flst = List.map s2tp slst in
-          meter := dist;
-          route := (flst |> coord_tup_to_markers);
-          draw_line context (flst |> coord_tup_to_markers);
-          Dom_html.window##alert (js ("Estimated travel distance: "
-            ^(dist|>float_of_string|>round 2)^" kilometers"));
-          (* Dom_html.window##alert (js (List.length flst |> string_of_int)); *)
-          Lwt.return ()
+          if (String.get res 0) = 'E' then
+            let _ = Dom_html.window##alert 
+              (js "Could not find route between locations") in
+            Lwt.return ()
+          else
+            let tplst = String.split_on_char ' ' res in
+            let dist = List.hd tplst in
+            let slstlst = tplst |> List.tl |> List.hd in
+            let slst = String.split_on_char ';' slstlst in
+            let s2tp = (fun s ->
+              let l2 = String.split_on_char ',' s in
+              let lat = l2 |> List.hd |> float_of_string in
+              let lon = l2 |> List.tl |> List.hd |> float_of_string in
+              (lat,lon)
+            ) in
+            let flst = List.map s2tp slst in
+            let fdist = (try float_of_string dist with _ -> 0.0) in
+            if (fdist = 0.) then
+              let _ = Dom_html.window##alert
+                (js "Could not find route between locations") in
+              Lwt.return ()
+            else
+              let _ = (meter := dist) in
+              route := (flst |> coord_tup_to_markers);
+              draw_line context (flst |> coord_tup_to_markers);
+              Dom_html.window##alert (js ("Estimated travel distance: "
+                ^(dist|>float_of_string|>round 2)^" kilometers"));
+              (* Dom_html.window##alert (js (List.length flst |> string_of_int)); *)
+              Lwt.return ()
         ) in
         ignore (start ())
     | _, _ ->
@@ -242,7 +255,7 @@ let draw_line context lst =
        let x = cor.mk_tx in
        let y = cor.mk_ty in
        context##lineWidth <- (5.);
-       context##strokeStyle <- (js "#e60000");
+       context##strokeStyle <- (js (!route_color));
        context##beginPath ();
        context##moveTo (prevX,prevY);
        context##lineTo (x,y);
@@ -617,10 +630,10 @@ let http_get_res st callback canvas context div_map_container =
             "&lowright_lon="^round 10 st.params.param_lowright_lon^
             "&width="^round 10 st.params.width^
             "&height="^round 10 st.params.height in
-  let _ = Dom_html.window##alert(js url) in
+  (* let _ = Dom_html.window##alert(js url) in *)
   let start () =
     http_get url >>= (fun res ->
-
+        (* let _ = Dom_html.window##alert(js res) in *)
         let nopng = String.sub res 0 (String.length res - 4) in
         let params = String.split_on_char '_' nopng in
         let zero_cache = List.nth params 0 in
@@ -632,12 +645,18 @@ let http_get_res st callback canvas context div_map_container =
         st.current_depth <- List.nth params 4 |> int_of_string;
         st.img_w <- List.nth params 5 |> float_of_string;
         st.img_h <- List.nth params 6 |> float_of_string;
-        (* st.wdpp <- (st.lrlon_bound -. st.ullon_bound) /. st.img_w;
-           st.hdpp <- (st.ullat_bound -. st.lrlat_bound) /. st.img_h; *)
-        (* st.wdpp <- (init_wdpp) /. (2. ** ((float_of_int (st.current_depth)) -. 3.));
-           st.hdpp <- (init_hdpp) /. (2. ** ((float_of_int (st.current_depth)) -. 3.)); *)
         st.wdpp <- List.nth wdpps st.current_depth;
         st.hdpp <- List.nth hdpps st.current_depth;
+
+(*         let new_params = {
+          st.params with
+          param_lowright_lon = 
+            st.params.param_upleft_lon +. st.params.width *. st.wdpp;
+          param_lowright_lat = 
+            st.params.param_upleft_lat -. st.params.height *. st.hdpp;
+        } in
+        st.params <- new_params; *)
+
         st.tx <- (st.params.param_upleft_lon -. st.ullon_bound) /. st.wdpp;
         st.ty <- ( st.ullat_bound -. st.params.param_upleft_lat) /. st.hdpp;
         clear_update_all_button div_map_container canvas context;
@@ -1190,8 +1209,20 @@ let onload _ =
                       endx := ev##clientX; endy := ev##clientY;
                       let dx = !endx- !startx and dy = !endy - !starty in
                       if (dy <> 0 || dx <> 0) then
+                        (* let _ = Dom_html.window##alert(js 
+                          ((dx |> string_of_int)^" "^(dy |> string_of_int))) in *)
                         (* st.tx <- st.tx +. float_of_int dx;
                            st.ty <- st.ty +. float_of_int dy; *)
+                        let ullon = st.params.param_upleft_lon in
+                        let ullat = st.params.param_upleft_lat in
+                        let dx = if ((ullon -. (st.wdpp *. (float_of_int dx)))
+                            < root_upleft_lon) then
+                          (ullon -. root_upleft_lon) |> (/.) st.wdpp |> int_of_float else dx in
+                        let dy = if ((ullat +. (st.hdpp *. (float_of_int dy)))
+                            > root_upleft_lat) then
+                          (ullat -. root_upleft_lat) |> (/.) st.hdpp |> int_of_float else dy in
+
+
                         let new_param = {
                           st.params with
                           param_upleft_lon = max root_upleft_lon (st.params.param_upleft_lon
@@ -1203,6 +1234,7 @@ let onload _ =
                           param_lowright_lat = st.params.param_lowright_lat
                                              +. (st.hdpp *. float_of_int dy)
                         } in
+                        
                         st.params <- new_param;
                         http_get_res st draw_background canvas context div_map_container;
                       else

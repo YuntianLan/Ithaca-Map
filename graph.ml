@@ -669,30 +669,30 @@ module Map : MapGraph = struct
 	 * expected distance to the destination, remove it from the list
 	 * and return the result in the form of (triple * triple list) *)
 	let find_best lst dest nd_table =
-			let rec find_min lst curr_id curr_min = 
-				(match lst with
-				| [] -> curr_id
-				| (id,dist,path)::t ->
-					let new_est = estimate (id,dist,path) dest nd_table in
-					if new_est < curr_min then
-						find_min t id new_est
-					else
-						find_min t curr_id curr_min
-			) in
-			let best_id = find_min lst 0 999999. in
-			let filt (id,_,_) = (not (id = best_id)) in
-			let matches (id,_,_) = (id = best_id) in
-			let triple = List.find matches lst in
-			let remaining = List.filter filt lst in
-			(triple, remaining)
+		let rec find_min lst curr_id curr_min = 
+			(match lst with
+			| [] -> curr_id
+			| (id,dist,path)::t ->
+				let new_est = estimate (id,dist,path) dest nd_table in
+				if new_est < curr_min then
+					find_min t id new_est
+				else
+					find_min t curr_id curr_min
+		) in
+		let best_id = find_min lst 0 999999. in
+		let filt (id,_,_) = (not (id = best_id)) in
+		let matches (id,_,_) = (id = best_id) in
+		let triple = List.find matches lst in
+		let remaining = List.filter filt lst in
+		(triple, remaining)
 
 	(* Expand a node (nid * dist * path list) triple into a list of triples *)
 	let expand (id,dist,path) nd_table eg_table =
-		let _ = print_endline "step 1" in
+		(* let _ = print_endline "step 1" in *)
 		let neighbor_ids = 
 			try H.find eg_table id
 			with _ -> [] in
-		let _ = print_endline "step 2" in
+		(* let _ = print_endline "step 2" in *)
 		let nodes = List.map (H.find nd_table) neighbor_ids in
 		let exp_func n =
 			let new_dist = dist +. distance id n.nid nd_table in
@@ -728,10 +728,10 @@ module Map : MapGraph = struct
 				(* let estimate_remain = estimate to_expand e nd_table in *)
 
 				(* let _ = print_endline (string_of_float estimate_remain) in *)
-				let _ = print_endline (string_of_int (get_id to_expand)) in
+				(* let _ = print_endline (string_of_int (get_id to_expand)) in *)
 				(* let _ = print_nd (get_id to_expand) in *)
-				let _ = print_endline (string_of_int (List.length lst)) in
-				let _ = print_endline (string_of_int (H.length explored)) in
+				(* let _ = print_endline (string_of_int (List.length lst)) in *)
+				(* let _ = print_endline (string_of_int (H.length explored)) in *)
 
 				let expanded = expand to_expand nd_table eg_table in
 				let filt_expanded = List.filter
