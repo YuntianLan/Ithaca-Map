@@ -8,6 +8,7 @@ let fail = fun _ -> assert false
 
 module Html = Dom_html
 
+
 (* Type for image request *)
 type params = {
   param_upleft_lon: float;
@@ -430,8 +431,10 @@ let autocomplete textbox =
               (String.length word-String.length v))^
              "<input type='hidden' value='" ^ word ^ "'>" in
              !b##innerHTML <- js inn;
-             (* execute a function when someone clicks on the item value (DIV element): *)
-             (* When one of the suggested text is clicked, change the input to that word. *)
+             (* execute a function when someone clicks on 
+              the item value (DIV element): *)
+             (* When one of the suggested text is clicked, 
+             change the input to that word. *)
              !b##onclick <- Html.handler
                  (fun _ ->
                     (* returns a Dom.nodeList *)
@@ -446,7 +449,8 @@ let autocomplete textbox =
                               let input = Dom_html.CoerceTo.input elt in
                               Js.Opt.iter input
                                 (fun i ->
-                                   (* change the value in the textbox to the clicked text *)
+                                   (* change the value in the textbox 
+                                   to the clicked text *)
                                    let content = i##value in
                                    textbox##value <- content
                                 )
@@ -465,8 +469,10 @@ let show_icons div =
   let helper id marker =
     let button = marker.element in
     Dom.appendChild div button;
-    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx - 9))^"px");
-    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty - 24))^"px");
+    button##style##left <- 
+      js ((string_of_int (int_of_float marker.mk_tx - 9))^"px");
+    button##style##top <- 
+      js ((string_of_int (int_of_float marker.mk_ty - 24))^"px");
     setClass button "tooltip";
 
     let tooltip_text = Html.createSpan doc in
@@ -1014,9 +1020,11 @@ let onload _ =
 
   let div_info_text = Html.createDiv doc in
   setClass div_info_text "info-text";
-  append_text div_info_text "You can also use -/= to zoom,
-  or use the mouse drag and scroll wheel.
-  You can either type the start and end locations or double click on the map.";
+  append_text div_info_text 
+    "Press the +/- button at left to zoom, drag the map to change view.
+    Double click on the map or type in the cells on the left to enter start/end
+    locations. When you are done, press WALK/DRIVE to calculate route.
+    Use the buttons at the lower right for location recommendations.";
   Dom.appendChild a_info div_info_text;
 
   let div_info_subtext = Html.createDiv doc in

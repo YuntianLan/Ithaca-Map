@@ -16,9 +16,22 @@ OCaml 4.06 and Opam must be installed.
 `cd gui`<br>
 `make`
 
-4. Open `index.html` in your web browser.
+4. Open `index.html` from gui/ in your web browser.
 
 ## Key Features
+#### 1. Draggable / Zoomable interactive map for Ithaca
+![Alt text](images/1.png)
+#### 2. Location search with autocompletion
+![Alt text](images/2.png)
+#### 3. Location search result pinpointing
+![Alt text](images/3.png)
+#### 4. Graphical navigation
+![Alt text](images/4.png)
+![Alt text](images/5.png)
+#### 5. Attractions recommendation by category
+![Alt text](images/6.png)
+
+
 
 ## Data
 All data is downloaded from OpenStreetMap.org

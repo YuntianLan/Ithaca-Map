@@ -19,7 +19,8 @@ module type MapGraph = sig
 	val find_path : bool -> node -> node -> t -> float * node list
 	val node_to_coord : node -> (float * float)
 	val autocomplete : t -> string -> string list
-	val nodes_ways_oftype : category option -> t -> (float * float * string) list
+	val nodes_ways_oftype : 
+		category option -> t -> (float * float * string) list
 
 end
 
@@ -368,26 +369,34 @@ module Map : MapGraph = struct
 		{wid = id; nodes = nodes; categ = categ;
 			name = name; allow = allow; tags = tags}
 
-	(* Given a type, return the lat ,the lon and the name of the nodes that is of that type  *)
+	(* Given a type, return the lat, lon 
+	 * and the name of the nodes that is of that type *)
 	let nodes_oftype ty graph =
-		let lst = List.filter (fun s -> (H.find graph.node_table s).catego = ty) graph.all_nodes in
-		let ret = List.map (fun n -> ((H.find graph.node_table n).lat, (H.find graph.node_table n).lon, 
-							(H.find graph.node_table n).name)) lst in
+		let lst = List.filter 
+			(fun s -> (H.find graph.node_table s).catego = ty) graph.all_nodes in
+		let ret = List.map
+			(fun n -> ((H.find graph.node_table n).lat, 
+								(H.find graph.node_table n).lon, 
+								(H.find graph.node_table n).name)) lst in
 		let ret = List.filter (fun (_,_,name) -> not (name = "")) ret in 
 		ret
 
 
-	(* Given a type, return the lat ,the lon and the name of the ways that is of that type  *)
+	(* Given a type, return the lat, lon
+	 *  and the name of the ways that is of that type *)
 	let ways_oftype ty graph =
-		let lst = List.filter (fun s -> s.categ = ty) graph.way_lst in
-		let ret = List.map (fun n -> ((H.find graph.node_table (List.hd n.nodes)).lat,
-									(H.find graph.node_table (List.hd n.nodes)).lon,
-									(H.find graph.node_table (List.hd n.nodes)).name)) lst in
+		let lst = List.filter 
+			(fun s -> s.categ = ty) graph.way_lst in
+		let ret = List.map
+		 	(fun n -> ((H.find graph.node_table (List.hd n.nodes)).lat,
+								(H.find graph.node_table (List.hd n.nodes)).lon,
+								(H.find graph.node_table (List.hd n.nodes)).name)) lst in
 		let ret = List.filter (fun (_,_,name) -> not (name = "")) ret in 
 		ret
 
 
-	(* Given a type, return the lat ,the lon and the name of the nodes and ways that is of that type  *)
+	(* Given a type, return the lat, lon
+	 * and the name of the nodes and ways that is of that type *)
 	let nodes_ways_oftype ty graph =
 		(nodes_oftype ty graph) @ (ways_oftype ty graph)
 
@@ -760,8 +769,4 @@ module Map : MapGraph = struct
 
 end
 
-(*
-let g = Map.init_graph "graph/full.json"
-let n1 = Map.get_node_by_coord 42.813746 (-76.7116266) g
-let n2 = Map.get_node_by_coord 42.6753 (-76.11712) g
-*)
+
