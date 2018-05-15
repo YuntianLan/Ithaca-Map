@@ -11,6 +11,7 @@ let img_path = ref "unset"
 let js = Js.string
 let doc = Html.document
 let base_url = "http://127.0.0.1:8000/"
+let base_url = "http://10.148.6.164:8000/"
 let http_get url =
   XmlHttpRequest.get url >>= fun r ->
   let cod = r.XmlHttpRequest.code in
@@ -617,7 +618,7 @@ let http_get_res st callback canvas context div_map_container =
             "&lowright_lon="^round 10 st.params.param_lowright_lon^
             "&width="^round 10 st.params.width^
             "&height="^round 10 st.params.height in
-  let _ = Dom_html.window##alert(js url) in
+  (* let _ = Dom_html.window##alert(js url) in *)
   let start () =
     http_get url >>= (fun res ->
 
