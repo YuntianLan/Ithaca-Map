@@ -7,66 +7,8 @@ open Lwt
 let fail = fun _ -> assert false
 
 module Html = Dom_html
-let img_path = ref "unset"
 
-let js = Js.string
-let doc = Html.document
-let base_url = "http://127.0.0.1:8000/"
-
-let http_get url =
-  XmlHttpRequest.get url >>= fun r ->
-  let cod = r.XmlHttpRequest.code in
-  let msg = r.XmlHttpRequest.content in
-  if cod = 0 || cod = 200
-  then Lwt.return msg
-  else fst (Lwt.wait ())
-  
-(* ========= constants ========== *)
-let max_depth = 6
-let min_depth = 1
-let delta_zoom = 0.04
-let delta_base_move = 0.03
-let init_upleft_lon = -76.5496
-let init_upleft_lat = 42.4750
-
-let root_upleft_lon = -76.5527
-let root_upleft_lat = 42.4883
-let root_lowright_lon = -76.4649
-let root_lowright_lat = 42.4235
-let init_lowright_lon = -76.5246061523437504
-let init_lowright_lat = 42.4622962890625
-
-(* let root_upleft_lon = -76.5309082031
-let root_upleft_lat = 42.4494501953
-let init_lowright_lon = -76.4309328125
-let init_lowright_lat = 42.3986353516 *)
-
-(* Initial wdpp and hdpp for level 3 *)
-let iwdpp = 0.00004287109374999839
-let ihdpp = 0.00003164062500000259
-
-let coordinates = [(42.464,-76.530);(42.470,-76.540);(42.472,-76.544)]
-
-let wdpps = [
-  0.0; (* Dummy, for index simplicity *)
-  iwdpp *. 4.;    (* level = 1 *)
-  iwdpp *. 2.;    (* level = 2 *)
-  iwdpp *. 1.;    (* level = 3 *)
-  iwdpp *. 0.5;  (* level = 4 *)
-  iwdpp *. 0.25; (* level = 5 *)
-  iwdpp *. 0.125;(* level = 6 *)
-]
-
-let hdpps = [
-  0.0; (* Dummy, for index simplicity *)
-  ihdpp *. 4.;    (* level = 1 *)
-  ihdpp *. 2.;    (* level = 2 *)
-  ihdpp *. 1.;    (* level = 3 *)
-  ihdpp *. 0.5;  (* level = 4 *)
-  ihdpp *. 0.25; (* level = 5 *)
-  ihdpp *. 0.125;(* level = 6 *)
-]
-
+(* Type for image request *)
 type params = {
   param_upleft_lon: float;
   param_upleft_lat: float;
@@ -75,6 +17,8 @@ type params = {
   width: float;
   height: float;
 }
+
+(* Type for marker on the map *)
 type marker = {
   lat : float;
   lon : float;
@@ -82,6 +26,8 @@ type marker = {
   mk_ty : float;
   element : Html.buttonElement Js.t;
 }
+
+(* Map state *)
 type client_state = {
   mutable params: params;
   mutable current_depth: int;
@@ -97,6 +43,62 @@ type client_state = {
   mutable lrlat_bound : float;
 }
 
+
+let img_path = ref "unset"
+
+let js = Js.string
+let doc = Html.document
+let base_url = "http://127.0.0.1:8000/"
+
+let http_get url =
+  XmlHttpRequest.get url >>= fun r ->
+  let cod = r.XmlHttpRequest.code in
+  let msg = r.XmlHttpRequest.content in
+  if cod = 0 || cod = 200
+  then Lwt.return msg
+  else fst (Lwt.wait ())
+
+(* ========= constants ========== *)
+let max_depth = 6
+let min_depth = 1
+let delta_zoom = 0.04
+let delta_base_move = 0.03
+let init_upleft_lon = -76.5496
+let init_upleft_lat = 42.4750
+
+let root_upleft_lon = -76.5527
+let root_upleft_lat = 42.4883
+let root_lowright_lon = -76.4649
+let root_lowright_lat = 42.4235
+let init_lowright_lon = -76.5246061523437504
+let init_lowright_lat = 42.4622962890625
+
+let coordinates = [(42.464,-76.530);(42.470,-76.540);(42.472,-76.544)]
+
+(* Initial wdpp and hdpp for level 3 *)
+let iwdpp = 0.00004287109374999839
+let ihdpp = 0.00003164062500000259
+
+let wdpps = [
+  0.0; (* Dummy, for index simplicity *)
+  iwdpp *. 4.;    (* level = 1 *)
+  iwdpp *. 2.;    (* level = 2 *)
+  iwdpp *. 1.;    (* level = 3 *)
+  iwdpp *. 0.5;   (* level = 4 *)
+  iwdpp *. 0.25;  (* level = 5 *)
+  iwdpp *. 0.125; (* level = 6 *)
+]
+
+let hdpps = [
+  0.0; (* Dummy, for index simplicity *)
+  ihdpp *. 4.;    (* level = 1 *)
+  ihdpp *. 2.;    (* level = 2 *)
+  ihdpp *. 1.;    (* level = 3 *)
+  ihdpp *. 0.5;   (* level = 4 *)
+  ihdpp *. 0.25;  (* level = 5 *)
+  ihdpp *. 0.125; (* level = 6 *)
+]
+
 let markers1 : marker list ref = ref []
 let markers2 : marker list ref = ref []
 let sugg : marker list ref = ref []
@@ -107,20 +109,17 @@ let meter = ref ""
 let route = ref []
 let route_color = ref "#e60000"
 
-
-
 let img_map = Html.createImg doc
 
 
 (* Dummy mutable values *)
 let by_coord = ref (0.,0.)
 let by_name = ref [(0.,0.)]
-(* let route = ref ("",[]) *)
 let img_path = ref ""
 let autocomp = ref [""]
 
 
-(* Round a float to a string to exactly 2 decimal places *)
+(* Round a float to a string to a specific decimal places *)
 let round precision (x:float) =
   let sx = string_of_float x in
   let lst = String.split_on_char '.' sx in
@@ -132,6 +131,7 @@ let round precision (x:float) =
     else String.sub second 0 precision in
   (List.hd lst) ^ "." ^ trimmed
 
+(* Initial parameter *)
 let param = {
   param_upleft_lon = init_upleft_lon;
   param_upleft_lat = init_upleft_lat;
@@ -141,6 +141,7 @@ let param = {
   height = 0.;
 }
 
+(* Initial client state *)
 let st = {
   params = param;
   current_depth = 0;
@@ -159,10 +160,7 @@ let st = {
 
 
 
-
-
-
-
+(* [http_get url] asynchronously returns the message from the given url *)
 let http_get url =
   XmlHttpRequest.get url >>= fun r ->
   let cod = r.XmlHttpRequest.code in
@@ -171,6 +169,9 @@ let http_get url =
   then Lwt.return msg
   else fst (Lwt.wait ())
 
+(* [http_get_autocomp s] is the helper function that,
+ * given the input string s, asynchronously gets the 
+ * list of possible search results *)
 let http_get_autocomp (s:string) =
   let url = base_url^"?index=6"^"&input="^s in
   let start () =
@@ -181,6 +182,10 @@ let http_get_autocomp (s:string) =
   ignore(start ());
   !autocomp
 
+(* [http_get_route d draw_line context coord_tup_to_markers]
+ * is the helper function that,
+ * given the input string s, asynchronously gets the 
+ * distance/route and draws the route on the map *)
 let http_get_route drive draw_line context coord_tup_to_markers =
   let _ = route_color := if drive = "true" then "#e60000" else "#0000ff" in
   let sopt, eopt = !start_marker, !end_marker in
@@ -222,15 +227,11 @@ let http_get_route drive draw_line context coord_tup_to_markers =
               draw_line context (flst |> coord_tup_to_markers);
               Dom_html.window##alert (js ("Estimated travel distance: "
                 ^(dist|>float_of_string|>round 2)^" kilometers"));
-              (* Dom_html.window##alert (js (List.length flst |> string_of_int)); *)
               Lwt.return ()
         ) in
         ignore (start ())
     | _, _ ->
       Dom_html.window##alert (js "Please select a start and end point!")
-
-
-  (* route := ("",[]) *)
 
 
 (* Set the class of an Html element *)
@@ -249,8 +250,6 @@ let create_canvas w h =
   c##width <- w; c##height <- h; c
 
 let draw_line context lst =
-  (* let tx1 = (lst |> List.tl |> List.hd).mk_tx |> string_of_float in
-  let ty1 = (lst |> List.tl |> List.hd).mk_ty |> string_of_float in *)
   List.fold_left
     (fun acc cor  ->
        let prevX = (fst acc) in
@@ -280,8 +279,6 @@ let draw_background_with_line canvas context src offset lst =
          Js._false);
   setId img_map "map";
   img_map##src <- src
-
-
 
 
 let draw_background canvas context src offset =
@@ -402,26 +399,21 @@ let autocomplete textbox =
          let a = Html.createDiv doc in
          let v = Js.to_string textbox##value in
          let lst = http_get_autocomp v in
-         (* Dom_html.window##alert (js v); *)
 
          currentFocus := -1;
 
-         (* let newDiv = Html.createDiv doc in *)
          setId a (Js.to_string textbox##id^ "autocomplete-list");
          setClass a "autocomplete-items";
          (match Js.Opt.to_option textbox##parentNode with
           | None -> failwith "error"
           | Some x -> Dom.appendChild x a);
-         (* Dom.appendChild div_card_content a; *)
-
 
          for i = 0 to List.length lst - 1 do
            let word = List.nth lst i in
-           (* Dom_html.window##alert (js word); *)
            if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)
            (* create a DIV element for each matching element: *)
            then let b = ref (Html.createDiv doc) in
-             (* make the matching letters bold: *)
+             (* make the matching letters bold *)
              let inn = "<strong>" ^ (String.sub word 0 (String.length v)) ^ "</strong>" ^
                        (String.sub word (String.length v) (String.length word-String.length v))^
                        "<input type='hidden' value='" ^ word ^ "'>" in
@@ -456,10 +448,8 @@ let autocomplete textbox =
 
 let debug f = Printf.ksprintf (fun s -> Firebug.console##log (Js.string s)) f
 
-
 let show_icons div =
   let helper id marker =
-
     let button = marker.element in
     Dom.appendChild div button;
     button##style##left <- js ((string_of_int (int_of_float marker.mk_tx))^"px");
@@ -479,14 +469,6 @@ let show_icons div =
              else Dom.removeChild div x.element) (!sugg);
          sugg := [];
          Js._true)
-    (* button##onclick <- Html.handler
-        (fun _ ->
-          List.iter
-          (fun x -> if x.element = button then
-              (end_marker := Some x; setClass button "green_button";)
-               else Dom.removeChild div x.element) (!markers2);
-          markers2 := [];
-          Js._true) in *)
   in
 
   List.iteri helper (!sugg)
@@ -519,6 +501,7 @@ let display_start_end div marker color =
   button##style##left <- js ((string_of_int (int_of_float x.mk_tx - 12))^"px");
   button##style##top <- js ((string_of_int (int_of_float x.mk_ty - 25))^"px");
   setClass button color
+
 
 let addbutton div =
   let display_a_button marker =
@@ -633,10 +616,8 @@ let http_get_res st callback canvas context div_map_container =
             "&lowright_lon="^round 10 st.params.param_lowright_lon^
             "&width="^round 10 st.params.width^
             "&height="^round 10 st.params.height in
-  (* let _ = Dom_html.window##alert(js url) in *)
   let start () =
     http_get url >>= (fun res ->
-        (* let _ = Dom_html.window##alert(js res) in *)
         let nopng = String.sub res 0 (String.length res - 4) in
         let params = String.split_on_char '_' nopng in
         let zero_cache = List.nth params 0 in
@@ -650,16 +631,6 @@ let http_get_res st callback canvas context div_map_container =
         st.img_h <- List.nth params 6 |> float_of_string;
         st.wdpp <- List.nth wdpps st.current_depth;
         st.hdpp <- List.nth hdpps st.current_depth;
-
-(*         let new_params = {
-          st.params with
-          param_lowright_lon = 
-            st.params.param_upleft_lon +. st.params.width *. st.wdpp;
-          param_lowright_lat = 
-            st.params.param_upleft_lat -. st.params.height *. st.hdpp;
-        } in
-        st.params <- new_params; *)
-
         st.tx <- (st.params.param_upleft_lon -. st.ullon_bound) /. st.wdpp;
         st.ty <- ( st.ullat_bound -. st.params.param_upleft_lat) /. st.hdpp;
         clear_update_all_button div_map_container canvas context;
@@ -671,10 +642,8 @@ let http_get_res st callback canvas context div_map_container =
         if ((!route) |> List.length <= 0) then
           callback canvas context (js (base_url^"?index=5&path="^res)) (st.tx, st.ty)
         else
-          draw_background_with_line canvas context (js (base_url^"?index=5&path="^res)) (st.tx, st.ty) (!route);
-        (* Dom_html.window##alert(((!route) |> List.length |> string_of_int)^ "hmmm" |> js);
-        draw_line context (!route); *)
-        (* img_path := res; *)
+          draw_background_with_line canvas context (js 
+            (base_url^"?index=5&path="^res)) (st.tx, st.ty) (!route);
         Lwt.return ()) in
   ignore(start ())
 
@@ -699,13 +668,6 @@ let pix2coord x y =
   (lon, lat)
 
 
-
-
-
-
-
-
-
 (* ========= HTTP requests ========== *)
 (* onload _ loads all the required HTML elements upon GUI launching *)
 let onload _ =
@@ -714,19 +676,12 @@ let onload _ =
 
   let end_icon = Html.createButton doc in
   setClass end_icon "green_button";
-  (* Dom.appendChild div_map_container img_start; *)
-  (* img_dest##style##visibility <- js "visible"; *)
-  (* ==================== begin div map-container ==================== *)
 
+  (* ==================== begin div map-container ==================== *)
   let div_map_container = Html.createDiv doc in
   setClass div_map_container "map-container";
   Dom.appendChild doc##body div_map_container;
-  (* append_text div_map_container "Loading.."; *)
 
-  (* let img_map = Html.createImg doc in
-     setId img_map "map";
-     img_map##src <- js "../tiles/1.png";
-     Dom.appendChild div_mapbody img_map; *)
   let canvas_w = div_map_container##clientWidth in
   let canvas_h = div_map_container##clientHeight in
   st.params <- {st.params with width = float_of_int canvas_w;
@@ -738,48 +693,6 @@ let onload _ =
   let _ = http_get_res st draw_background canvas context div_map_container in
 
   (* ==================== end div map-container ==================== *)
-
-
-
-
-
-
-
-  (* let real_lrlat st =
-    st.params.param_upleft_lat -. (st.hdpp *. st.params.height) in
-
-  let real_lrlat st =
-    st.params.param_upleft_lon +. (st.wdpp *. st.params.width) in
-
-  let shift_left (delta:float) st =
-    let new_params = {
-      st.params with param_upleft_lon = st.params.param_upleft_lon -. delta;
-                     param_lowright_lon = st.params.param_lowright_lon -. delta;
-    } in
-    st.params <- new_params in
-
-  let shift_right (delta:float) st =
-    let new_params = {
-      st.params with param_upleft_lon = st.params.param_upleft_lon +. delta;
-                     param_lowright_lon = st.params.param_lowright_lon +. delta;
-    } in
-    st.params <- new_params in
-
-  let shift_up (delta:float) st =
-    let new_params = {
-      st.params with param_upleft_lat = st.params.param_upleft_lat +. delta;
-                     param_lowright_lat = st.params.param_lowright_lat +. delta;
-    } in
-    st.params <- new_params in
-
-  let shift_down (delta:float) st =
-    let new_params = {
-      st.params with param_upleft_lat = st.params.param_upleft_lat -. delta;
-                     param_lowright_lat = st.params.param_lowright_lat -. delta;
-    } in
-    st.params <- new_params in *)
-
-
 
   let zoom_in st =
     if st.current_depth = max_depth then () else
@@ -805,18 +718,6 @@ let onload _ =
       height              =   height;
     } in
 
-
-
-    (* let delta_lon = (lrlon -. ullon) /. 4. in
-    let delta_lat = (ullat -. lrlat) /. 4. in
-    let new_params = {
-      param_upleft_lon    =   ullon +. delta_lon;
-      param_upleft_lat    =   ullat -. delta_lat;
-      param_lowright_lon  =   lrlon -. delta_lon;
-      param_lowright_lat  =   lrlat +. delta_lat;
-      width               =   width;
-      height              =   height;
-    } in *)
     st.params <- new_params;
     http_get_res st draw_background canvas context div_map_container in
 
@@ -829,16 +730,11 @@ let onload _ =
 
     let ullon = st.params.param_upleft_lon in
     let ullat = st.params.param_upleft_lat in
-    (* let lrlon = st.params.param_upleft_lon +. st.wdpp *. width in
-    let lrlat = st.params.param_upleft_lat -. st.hdpp *. height in *)
     let lrlon = st.params.param_lowright_lon in
     let lrlat = st.params.param_lowright_lat in
 
     let delta_lon = (lrlon -. ullon) in
     let delta_lat = (ullat -. lrlat) in
-    (* let new_lrlon = lrlon +. delta_lon |> string_of_float in
-    let new_lrlat = lrlat -. delta_lat |> string_of_float in *)
-    (* Dom_html.window##alert (js (new_lrlon ^ " " ^ new_lrlat)); *)
     let new_params = {
       param_upleft_lon    =   ullon;
       param_upleft_lat    =   ullat;
@@ -848,31 +744,8 @@ let onload _ =
       height              =   height;
     } in
 
-
-(*     let delta_lon = (lrlon -. ullon) /. 2. in
-    let delta_lat = (ullat -. lrlat) /. 2. in
-    let new_lrlon = lrlon +. delta_lon |> string_of_float in
-    let new_lrlat = lrlat -. delta_lat |> string_of_float in
-    (* Dom_html.window##alert (js (new_lrlon ^ " " ^ new_lrlat)); *)
-    let new_params = {
-      param_upleft_lon    =   ullon -. delta_lon;
-      param_upleft_lat    =   ullat +. delta_lat;
-      param_lowright_lon  =   lrlon +. delta_lon;
-      param_lowright_lat  =   lrlat -. delta_lat;
-      width               =   width;
-      height              =   height;
-    } in *)
     st.params <- new_params;
     http_get_res st draw_background canvas context div_map_container in
-
-
-
-
-
-
-
-
-
 
 
   let div_markers = Html.createDiv doc in
@@ -927,11 +800,6 @@ let onload _ =
          http_get_nodes_by_type "fooddrink" div_map_container;
          Js._true);
 
-
-  (* let div_widget_card = Html.createDiv doc in
-     setClass div_widget_card "widget card";
-     Dom.appendChild div_actions div_widget_card; *)
-
   let div_card_content = Html.createDiv doc in
   setClass div_card_content "card-content";
   Dom.appendChild div_actions div_card_content;
@@ -953,7 +821,7 @@ let onload _ =
   setId input_submit_1 "input1_submit";
   input_submit_1##setAttribute(js "type", js "submit");
   input_submit_1##setAttribute(js "value", js "Find");
-  (* input_submit_1##value <- js "Find"; *)
+
   Dom.appendChild div_bottom input_submit_1;
   input_submit_1##onclick <- Html.handler
       (fun _ ->
@@ -967,7 +835,6 @@ let onload _ =
   input_2##placeholder <- js "Destination";
   Dom.appendChild div_autocomplete input_2;
 
-
   let input_submit_2 =  Html.createInput doc in
   setId input_submit_2 "input2_submit";
   input_submit_2##setAttribute(js "type", js "submit");
@@ -979,8 +846,6 @@ let onload _ =
         let n = (input_2##value |> Js.to_string) in
         http_get_nodes_by_name 2 n coord_tup_to_markers addbutton2 div_map_container;
       Js._true);
-
-
 
 
   div_map_container##ondblclick <- Html.handler
@@ -1010,7 +875,6 @@ let onload _ =
           else if (!start_marker = None && !end_marker = None)
           then
             (
-
              Dom.appendChild div_map_container start_icon;
              start_icon##style##left <- js ((string_of_int (ev##clientX-12))^"px");
              start_icon##style##top <- js ((string_of_int (ev##clientY-25))^"px");
@@ -1058,22 +922,8 @@ let onload _ =
                };
              ())
           else ());
-         (* 把点去掉 把输入框换成新的 *)
-
+         (* Remove the point and replace the input box with a new one *)
          Js._true);
-  (* let span_search_container = Html.createSpan doc in
-     setClass span_search_container "search-container";
-     Dom.appendChild div_card_content span_search_container;
-
-     let label_for_tags = Html.createLabel doc in
-     label_for_tags##htmlFor <- js "tags";
-     Dom.appendChild span_search_container label_for_tags;
-
-     let input_1 = Html.createInput doc in
-     setClass input_1 "search";
-     setId input_1 "tags";
-     input_1##placeholder <- js "Search locations";
-     Dom.appendChild span_search_container input_1; *)
 
   (* ==================== begin icons ==================== *)
 
@@ -1115,7 +965,8 @@ let onload _ =
 
   let div_info_text = Html.createDiv doc in
   setClass div_info_text "info-text";
-  append_text div_info_text "You can also use arrow keys and -/= to zoom, or use the mouse drag and scroll wheel.
+  append_text div_info_text "You can also use arrow keys and -/= to zoom, 
+  or use the mouse drag and scroll wheel.
   Double click to begin routing & double click again to end and show route.";
   Dom.appendChild a_info div_info_text;
 
@@ -1174,33 +1025,20 @@ let onload _ =
         Js._true);
   Dom.appendChild div_nothing a_clear;
 
-
   autocomplete input_1;
   autocomplete input_2;
 
-  (* let mx = ref 0 in
-     let my = ref 0 in *)
   let startx = ref 0 in
   let starty = ref 0 in
   let endx = ref 0 in
   let endy = ref 0 in
   canvas##onmousedown <- Dom_html.handler
       (fun ev ->
-         (* mx := ev##clientX; my := ev##clientY; *)
          startx := ev##clientX; starty := ev##clientY;
          let c1 =
            Html.addEventListener Html.document Html.Event.mousemove
              (Html.handler
                 (fun ev -> ();
-                  (* let x = ev##clientX and y = ev##clientY in
-                     let dx = x - !mx and dy = y - !my in
-                     if dy != 0 then
-                     debug "y";
-                     Dom_html.window##alert (js ("y is "^string_of_int dy));
-                     if dx != 0 then
-                     debug "x";
-                     Dom_html.window##alert (js ("x is "^string_of_int dx));
-                     mx := x; my := y; *)
                   Js._true))
              Js._true
          in
@@ -1212,11 +1050,6 @@ let onload _ =
                       endx := ev##clientX; endy := ev##clientY;
                       let dx = !endx- !startx and dy = !endy - !starty in
                       if (dy <> 0 || dx <> 0) then
-                        (* let _ = Dom_html.window##alert(js 
-                          ((dx |> string_of_int)^" "^(dy |> string_of_int))) in *)
-                        (* st.tx <- st.tx +. float_of_int dx;
-                           st.ty <- st.ty +. float_of_int dy; *)
-                        let dx_old, dy_old = dx, dy in
                         let ullon = st.params.param_upleft_lon in
                         let ullat = st.params.param_upleft_lat in
                         let dx = if ((ullon -. (st.wdpp *. (float_of_int dx)))
@@ -1249,7 +1082,6 @@ let onload _ =
                 Js._true);
          Js._false);
   Js._false
-
 
 
 
