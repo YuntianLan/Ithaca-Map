@@ -2,6 +2,7 @@ open Js_of_ocaml
 open Js_of_ocaml_lwt
 open Js
 open Lwt
+
 (* [fail] is a failure/exception handler *)
 let fail = fun _ -> assert false
 
@@ -11,6 +12,7 @@ let img_path = ref "unset"
 let js = Js.string
 let doc = Html.document
 let base_url = "http://127.0.0.1:8000/"
+
 let http_get url =
   XmlHttpRequest.get url >>= fun r ->
   let cod = r.XmlHttpRequest.code in
@@ -18,6 +20,7 @@ let http_get url =
   if cod = 0 || cod = 200
   then Lwt.return msg
   else fst (Lwt.wait ())
+  
 (* ========= constants ========== *)
 let max_depth = 6
 let min_depth = 1
@@ -1213,15 +1216,15 @@ let onload _ =
                           ((dx |> string_of_int)^" "^(dy |> string_of_int))) in *)
                         (* st.tx <- st.tx +. float_of_int dx;
                            st.ty <- st.ty +. float_of_int dy; *)
+                        let dx_old, dy_old = dx, dy in
                         let ullon = st.params.param_upleft_lon in
                         let ullat = st.params.param_upleft_lat in
                         let dx = if ((ullon -. (st.wdpp *. (float_of_int dx)))
                             < root_upleft_lon) then
-                          (ullon -. root_upleft_lon) |> (/.) st.wdpp |> int_of_float else dx in
+                          (ullon -. root_upleft_lon) /. st.wdpp |> int_of_float else dx in
                         let dy = if ((ullat +. (st.hdpp *. (float_of_int dy)))
                             > root_upleft_lat) then
-                          (ullat -. root_upleft_lat) |> (/.) st.hdpp |> int_of_float else dy in
-
+                          (root_upleft_lat -. ullat) /. st.hdpp |> int_of_float else dy in
 
                         let new_param = {
                           st.params with
