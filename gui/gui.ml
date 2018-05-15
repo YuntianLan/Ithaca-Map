@@ -50,6 +50,7 @@ let js = Js.string
 let doc = Html.document
 let base_url = "http://127.0.0.1:8000/"
 
+(* [http_get url] sends a GET request with [url, returns a Lwt Deferred type *)
 let http_get url =
   XmlHttpRequest.get url >>= fun r ->
   let cod = r.XmlHttpRequest.code in
