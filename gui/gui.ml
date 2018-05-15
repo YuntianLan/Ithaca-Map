@@ -251,7 +251,8 @@ let create_canvas w h =
   let c = Html.createCanvas Html.document in
   c##width <- w; c##height <- h; c
 
-(* [draw_line context lst] draws on the canvas the lines given the tuple [lst]. *)
+(* [draw_line context lst] draws on the canvas 
+ * the lines given the tuple [lst]. *)
 let draw_line context lst =
   List.fold_left
     (fun acc cor  ->
@@ -297,7 +298,8 @@ let draw_background canvas context src offset =
   img_map##src <- src
 
 let clear_line canvas context =
-  context##clearRect (0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height));
+  context##clearRect (0.0,0.0,(float_of_int canvas##width),
+    (float_of_int canvas##height));
   context##drawImage_full (img_map, st.tx, st.ty,
   (float_of_int canvas##width), (float_of_int canvas##height),
   0.0,0.0,(float_of_int canvas##width),(float_of_int canvas##height))
@@ -400,7 +402,8 @@ let autocomplete textbox =
       (fun _ ->
          closeAllList None (Dom_html.CoerceTo.element textbox);
          doc##onclick <- Html.handler (fun ev -> (closeAllList
-          (Js.Opt.to_option ev##target) (Dom_html.CoerceTo.element textbox));Js._true);
+          (Js.Opt.to_option ev##target) 
+          (Dom_html.CoerceTo.element textbox));Js._true);
          (* Create a new div to contain all the relevant autocomplete item *)
          let a = Html.createDiv doc in
          let v = Js.to_string textbox##value in
@@ -416,13 +419,16 @@ let autocomplete textbox =
 
          for i = 0 to List.length lst - 1 do
            let word = List.nth lst i in
-           if(String.(sub word 0 (length v) |> uppercase_ascii) = String.uppercase_ascii v)
+           if(String.(sub word 0 (length v) |> uppercase_ascii) = 
+              String.uppercase_ascii v)
            (* create a DIV element for each matching element: *)
            then let b = ref (Html.createDiv doc) in
              (* make the matching letters bold *)
-             let inn = "<strong>" ^ (String.sub word 0 (String.length v)) ^ "</strong>" ^
-                       (String.sub word (String.length v) (String.length word-String.length v))^
-                       "<input type='hidden' value='" ^ word ^ "'>" in
+             let inn = "<strong>" ^ (String.sub word 0 (String.length v)) 
+              ^ "</strong>" ^
+              (String.sub word (String.length v) 
+              (String.length word-String.length v))^
+             "<input type='hidden' value='" ^ word ^ "'>" in
              !b##innerHTML <- js inn;
              (* execute a function when someone clicks on the item value (DIV element): *)
              (* When one of the suggested text is clicked, change the input to that word. *)
@@ -490,14 +496,16 @@ let get_geo () =
       let coords = pos##coords in
       let latitude = coords##latitude in
       (* Firebug.console##debug(latitude); *)
-      Dom_html.window##alert (js ((string_of_float latitude)^(string_of_float coords##longitude)));
+      Dom_html.window##alert (js ((string_of_float latitude)^
+        (string_of_float coords##longitude)));
     in
     let f_error err =
       let code = err##code in
       let msg = err##message in
       if code = err##_TIMEOUT then Firebug.console##debug(msg)
     in
-    geo##getCurrentPosition(Js.wrap_callback f_success, Js.wrap_callback f_error, options)
+    geo##getCurrentPosition(Js.wrap_callback f_success, 
+    Js.wrap_callback f_error, options)
 
 
 let display_start_end div marker color =
@@ -510,14 +518,17 @@ let display_start_end div marker color =
   button##style##top <- js ((string_of_int (int_of_float x.mk_ty - 32))^"px");
   setClass button color
 
-(* [addbutton div] adds to the webpage all the possible grey markers of a start location,
+(* [addbutton div] adds to the webpage all the 
+ * possible grey markers of a start location,
  * the one clicked would turn red and other markers will disappear. *)
 let addbutton div =
   let display_a_button marker =
     let button = marker.element in
     Dom.appendChild div button;
-    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx - 16))^"px");
-    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty - 32))^"px");
+    button##style##left <- 
+      js ((string_of_int (int_of_float marker.mk_tx - 16))^"px");
+    button##style##top <- 
+      js ((string_of_int (int_of_float marker.mk_ty - 32))^"px");
     setClass button "grey_button";
     button##onclick <- Html.handler
     (fun _ ->
@@ -530,14 +541,17 @@ let addbutton div =
 
   List.iter display_a_button (!markers1)
 
-(* [addbutton2 div] adds to the webpage all the possible grey markers of a end location,
+(* [addbutton2 div] adds to the webpage all the 
+ * possible grey markers of a end location,
  * the one clicked would turn red and other markers will disappear. *)
 let addbutton2 div =
   let display_a_button marker =
     let button = marker.element in
     Dom.appendChild div button;
-    button##style##left <- js ((string_of_int (int_of_float marker.mk_tx - 16))^"px");
-    button##style##top <- js ((string_of_int (int_of_float marker.mk_ty - 32))^"px");
+    button##style##left <- 
+      js ((string_of_int (int_of_float marker.mk_tx - 16))^"px");
+    button##style##top <- 
+      js ((string_of_int (int_of_float marker.mk_ty - 32))^"px");
     setClass button "grey_button";
     button##onclick <- Html.handler
         (fun _ ->
@@ -590,7 +604,8 @@ let split_coord_list (s:string) : (float*float) list =
   tups
 
 (* [split_coord_name_list s] is the list of coordinate tuples parsed from [s]
- * requries: [s] must be in the form "coord1,coord2,name1;coord3,coord4,name2;..."*)
+ * requries: [s] must be in the form 
+ "coord1,coord2,name1;coord3,coord4,name2;..."*)
 let split_coord_name_list (s:string) : ((float*float)*string) list =
   let params = String.split_on_char ';' s in
   let tups = List.map (fun i ->
@@ -602,7 +617,7 @@ let split_coord_name_list (s:string) : ((float*float)*string) list =
     ) params in
   tups
 
-let http_get_nodes_by_name id name coord_to_markers addbutton div_map_container =
+let http_get_nodes_by_name id name coord_to_markers addbutton div_map_container=
   let url = base_url^"?index=2"^"&name="^name in
   let start () =
     http_get url >>= (fun res ->
@@ -651,7 +666,8 @@ let http_get_res st callback canvas context div_map_container =
         display_start_end div_map_container start_marker "red_button";
         display_start_end div_map_container end_marker "green_button";
         if ((!route) |> List.length <= 0) then
-          callback canvas context (js (base_url^"?index=5&path="^res)) (st.tx, st.ty)
+          callback canvas context 
+            (js (base_url^"?index=5&path="^res)) (st.tx, st.ty)
         else
           draw_background_with_line canvas context (js
             (base_url^"?index=5&path="^res)) (st.tx, st.ty) (!route);
@@ -663,7 +679,8 @@ let http_get_nodes_by_type type_name div_map_container =
   let url = base_url^"?index=7"^"&type="^type_name in
   let start () =
     http_get url >>= (fun res ->
-        List.iter (fun x -> Dom.removeChild div_map_container x.element) (!sugg);
+        List.iter 
+        (fun x -> Dom.removeChild div_map_container x.element) (!sugg);
         let coord_name = res |> split_coord_name_list in
         let coords = List.map (fun i -> fst i) coord_name in
         let names = List.map (fun i -> snd i) coord_name in
@@ -674,7 +691,8 @@ let http_get_nodes_by_type type_name div_map_container =
   ignore(start ())
 
 
-(* [pix2coord x y] is the longitude, latitude of the location specified at pixel [x], [y]*)
+(* [pix2coord x y] is the longitude, 
+ * latitude of the location specified at pixel [x], [y]*)
 let pix2coord x y =
   let lon = st.params.param_upleft_lon +. x *. st.wdpp in
   let lat = st.params.param_upleft_lat -. y *. st.hdpp in
@@ -772,7 +790,7 @@ let onload _ =
   setClass div_actions "actions";
   Dom.appendChild doc##body div_actions;
 
-  (* ========================= create the category icons ======================= *)
+  (* ======================= create the category icons ===================== *)
   let div_icons = Html.createDiv doc in
   setClass div_icons "icons";
   Dom.appendChild doc##body div_icons;
@@ -816,7 +834,7 @@ let onload _ =
       (fun _ ->
          http_get_nodes_by_type "fooddrink" div_map_container;
          Js._true);
-  (* ======================= finish creating the category icons ================= *)
+  (* ===================== finish creating the category icons =============== *)
 
   let div_card_content = Html.createDiv doc in
   setClass div_card_content "card-content";
@@ -846,7 +864,8 @@ let onload _ =
       (fun _ ->
         clear_start div_map_container;
         let n = (input_1##value |> Js.to_string) in
-        http_get_nodes_by_name 1 n coord_tup_to_markers addbutton div_map_container;
+        http_get_nodes_by_name 1 n coord_tup_to_markers
+          addbutton div_map_container;
       Js._true);
 
   let input_2 = Html.createInput doc in
@@ -863,7 +882,8 @@ let onload _ =
       (fun _ ->
         clear_end div_map_container;
         let n = (input_2##value |> Js.to_string) in
-        http_get_nodes_by_name 2 n coord_tup_to_markers addbutton2 div_map_container;
+        http_get_nodes_by_name 2 n coord_tup_to_markers 
+          addbutton2 div_map_container;
       Js._true);
   (* =============== end creating textbox and Find buttons ================== *)
 
@@ -877,10 +897,13 @@ let onload _ =
             clear_all div_map_container canvas context;
             input_1##value <- js "";
             input_2##value <- js "";
-            (* the server needs to find the location name as well as the lat,lon,mk_tx, mk_ty *)
+            (* the server needs to find the location name 
+             * as well as the lat,lon,mk_tx, mk_ty *)
             Dom.appendChild div_map_container start_icon;
-            start_icon##style##left <- js ((string_of_int (ev##clientX-16))^"px");
-            start_icon##style##top <- js ((string_of_int (ev##clientY-32))^"px");
+            start_icon##style##left <- 
+              js ((string_of_int (ev##clientX-16))^"px");
+            start_icon##style##top <- 
+              js ((string_of_int (ev##clientY-32))^"px");
             let x = float_of_int ev##clientX in
             let y = float_of_int ev##clientY in
             let (longi, lati) = pix2coord x y in
@@ -896,8 +919,10 @@ let onload _ =
           then
             (
              Dom.appendChild div_map_container start_icon;
-             start_icon##style##left <- js ((string_of_int (ev##clientX-16))^"px");
-             start_icon##style##top <- js ((string_of_int (ev##clientY-32))^"px");
+             start_icon##style##left <- 
+              js ((string_of_int (ev##clientX-16))^"px");
+             start_icon##style##top <- 
+              js ((string_of_int (ev##clientY-32))^"px");
              let x = float_of_int ev##clientX in
              let y = float_of_int ev##clientY in
              let (longi, lati) = pix2coord x y in
@@ -912,8 +937,10 @@ let onload _ =
           else if (!start_marker <> None && !end_marker = None)
           then
             (Dom.appendChild div_map_container end_icon;
-             end_icon##style##left <- js ((string_of_int (ev##clientX-16))^"px");
-             end_icon##style##top <- js ((string_of_int (ev##clientY-32))^"px");
+             end_icon##style##left <- 
+              js ((string_of_int (ev##clientX-16))^"px");
+             end_icon##style##top <- 
+              js ((string_of_int (ev##clientY-32))^"px");
              let x = float_of_int ev##clientX in
              let y = float_of_int ev##clientY in
              let (longi, lati) = pix2coord x y in
@@ -928,8 +955,10 @@ let onload _ =
           else if (!start_marker = None && !end_marker <> None)
           then
             (Dom.appendChild div_map_container start_icon;
-             start_icon##style##left <- js ((string_of_int (ev##clientX-16))^"px");
-             start_icon##style##top <- js ((string_of_int (ev##clientY-32))^"px");
+             start_icon##style##left <- 
+              js ((string_of_int (ev##clientX-16))^"px");
+             start_icon##style##top <- 
+              js ((string_of_int (ev##clientY-32))^"px");
              let x = float_of_int ev##clientX in
              let y = float_of_int ev##clientY in
              let (longi, lati) = pix2coord x y in
@@ -1078,25 +1107,30 @@ let onload _ =
                         let ullat = st.params.param_upleft_lat in
                         let dx = if ((ullon -. (st.wdpp *. (float_of_int dx)))
                             < root_upleft_lon) then
-                          (ullon -. root_upleft_lon) /. st.wdpp |> int_of_float else dx in
+                          (ullon -. root_upleft_lon) /. st.wdpp |> 
+                          int_of_float else dx in
                         let dy = if ((ullat +. (st.hdpp *. (float_of_int dy)))
                             > root_upleft_lat) then
-                          (root_upleft_lat -. ullat) /. st.hdpp |> int_of_float else dy in
+                          (root_upleft_lat -. ullat) /. st.hdpp |> 
+                          int_of_float else dy in
 
                         let new_param = {
                           st.params with
-                          param_upleft_lon = max root_upleft_lon (st.params.param_upleft_lon
-                                                                  -. (st.wdpp *. float_of_int dx));
+                          param_upleft_lon = max root_upleft_lon 
+                                              (st.params.param_upleft_lon
+                                              -. (st.wdpp *. float_of_int dx));
                           param_lowright_lon = st.params.param_lowright_lon
-                                               -. (st.wdpp *. float_of_int dx);
-                          param_upleft_lat = min root_upleft_lat (st.params.param_upleft_lat
-                                                                  +. (st.hdpp *. float_of_int dy));
+                                              -. (st.wdpp *. float_of_int dx);
+                          param_upleft_lat = min root_upleft_lat 
+                                              (st.params.param_upleft_lat
+                                              +. (st.hdpp *. float_of_int dy));
                           param_lowright_lat = st.params.param_lowright_lat
                                              +. (st.hdpp *. float_of_int dy)
                         } in
 
                         st.params <- new_param;
-                        http_get_res st draw_background canvas context div_map_container;
+                        http_get_res st draw_background canvas
+                          context div_map_container;
                       else
                         ();
 
