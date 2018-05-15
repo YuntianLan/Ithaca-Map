@@ -19,11 +19,9 @@ module type MapGraph = sig
 	val find_path : bool -> node -> node -> t -> float * node list
 	val node_to_coord : node -> (float * float)
 	val autocomplete : t -> string -> string list
-	(* To delete *)
 	val nodes_ways_oftype : category option -> t -> (float * float * string) list
 
 end
-
 
 
 
@@ -40,17 +38,18 @@ type nd = {
 	tags: (string * string) list;
 }
 
-
+(* Node type, represents a place on the map containing
+ * more than one location. *)
 type way = {
 	wid: int;
 	nodes: int list;
 	categ: category option;
 	name: string;
 	allow: allowed;
-	(* TODO: add tags when building nodes in the future *)
 	tags: (string * string) list;
 }
 
+(* Hashtable with int keys we'll use to store ways and nodes *)
 module IntHash = struct
 
 	type t = int
@@ -245,11 +244,6 @@ module Map : MapGraph = struct
 	type node = nd
 
 	type t = {
-(* 		(* Given coordinate, find the closest of ALL nodes *)
-		loc_tree: kdtree;
-		(* Given coordinate, find the closest of WAY nodes *)
-		route_tree: kdtree;
- *)
 
 		(* At this moment, use id list to store all nodes and
 		 * nodes on the way *)
@@ -310,9 +304,6 @@ module Map : MapGraph = struct
 				else if name = "college" then Some Study
 				else if name = "library" then Some Study
 				else if name = "fuel" then Some Fuel
-(* 				else if name = "doctors" then Some Medical
-				else if name = "hospital" then Some Medical
-				else if name = "pharmacy" then Some Medical *)
 				else Some Other
 			| None, Some name2 -> Some Shop
 			| Some name1, Some name2 -> Some Shop in
@@ -371,21 +362,22 @@ module Map : MapGraph = struct
 				else if name = "college" then Some Study
 				else if name = "library" then Some Study
 				else if name = "fuel" then Some Fuel
-(* 				else if name = "doctors" then Some Medical
-				else if name = "hospital" then Some Medical
-				else if name = "pharmacy" then Some Medical *)
 				else Some Other
 			| None, Some name2 -> Some Shop
 			| Some name1, Some name2 -> Some Shop in
 		{wid = id; nodes = nodes; categ = categ;
 			name = name; allow = allow; tags = tags}
 
+	(* Given a type, return the lat ,the lon and the name of the nodes that is of that type  *)
 	let nodes_oftype ty graph =
 		let lst = List.filter (fun s -> (H.find graph.node_table s).catego = ty) graph.all_nodes in
-		let ret = List.map (fun n -> ((H.find graph.node_table n).lat, (H.find graph.node_table n).lon, (H.find graph.node_table n).name)) lst in
+		let ret = List.map (fun n -> ((H.find graph.node_table n).lat, (H.find graph.node_table n).lon, 
+							(H.find graph.node_table n).name)) lst in
 		let ret = List.filter (fun (_,_,name) -> not (name = "")) ret in 
 		ret
 
+
+	(* Given a type, return the lat ,the lon and the name of the ways that is of that type  *)
 	let ways_oftype ty graph =
 		let lst = List.filter (fun s -> s.categ = ty) graph.way_lst in
 		let ret = List.map (fun n -> ((H.find graph.node_table (List.hd n.nodes)).lat,
@@ -395,6 +387,7 @@ module Map : MapGraph = struct
 		ret
 
 
+	(* Given a type, return the lat ,the lon and the name of the nodes and ways that is of that type  *)
 	let nodes_ways_oftype ty graph =
 		(nodes_oftype ty graph) @ (ways_oftype ty graph)
 
@@ -491,34 +484,6 @@ module Map : MapGraph = struct
 			else Trie.insert tr wy.name [Wayid(wy.wid)]
 
 
-
-(*
-
-	let add_node_trie (tr:place_trie) (nd:node) = 
-		if nd.name = "" then tr
-		else
-			if memb tr nd.name then
-				let lst = match find tr nd.name with
-				| None -> failwith "this won't happen"
-				| Some l -> l in
-				insert tr nd.name (Nodeid(nd.nid)::lst)
-			else insert tr nd.name [Nodeid(nd.nid)]
-
-	let add_way_trie (tr:place_trie) (wy:way) = 
-		if wy.name = "" then tr
-		else
-			if memb tr wy.name then
-				let lst = match find tr wy.name with
-				| None -> failwith "this won't happen"
-				| Some l -> l in
-				insert tr wy.name (Wayid(wy.wid)::lst)
-			else insert tr wy.name [Wayid(wy.wid)]
-*)
-
-
-
-
-
 	(* [way2node ways] converts ways into a list of 
 		nodes that arein the ways*)
 	let way2node ways = 
@@ -527,7 +492,6 @@ module Map : MapGraph = struct
 		let comp n1 n2 = n1 - n2 in
 		List.sort_uniq comp lst
 
-(* 4209899393 *)
 
 	(* [init_graph file_name] initialize a graph given a json file *)
 	let init_graph file_name = 
@@ -594,25 +558,11 @@ module Map : MapGraph = struct
 				if a < b then (-1) else if a > b then 1 else 0 in
 			let sorted = List.sort comp found in
 			sorted
-			(* if (List.length sorted) < 11 then sorted
-			else
-				let rec take n lst acc = 
-					if n=0 then acc
-					else take (n-1) (List.tl lst) (acc@[List.hd lst])
-				in
-				take 10 sorted [] *)
+
 
 	(*[node_to_coord n] returns the latitude 
 	and longitude of the given node *)
 	let node_to_coord n = (n.lat, n.lon)
-
-
-	(* let coord_dist lat1 lon1 lat2 lon2 = 
-		let r_lat = 111.19492665183317 in
-		let r_lon = 82.03674088387993 in
-		let diff_lat, diff_lon = 
-			r_lat *.(lat1 -. lat2), r_lon *. (lon1 -. lon2) in
-		sqrt ((diff_lat *. diff_lat) +. (diff_lon *. diff_lon)) *)
 
 
 	(* Given the nid of two nodes, return the (approximate)
@@ -669,30 +619,28 @@ module Map : MapGraph = struct
 	 * expected distance to the destination, remove it from the list
 	 * and return the result in the form of (triple * triple list) *)
 	let find_best lst dest nd_table =
-			let rec find_min lst curr_id curr_min = 
-				(match lst with
-				| [] -> curr_id
-				| (id,dist,path)::t ->
-					let new_est = estimate (id,dist,path) dest nd_table in
-					if new_est < curr_min then
-						find_min t id new_est
-					else
-						find_min t curr_id curr_min
-			) in
-			let best_id = find_min lst 0 999999. in
-			let filt (id,_,_) = (not (id = best_id)) in
-			let matches (id,_,_) = (id = best_id) in
-			let triple = List.find matches lst in
-			let remaining = List.filter filt lst in
-			(triple, remaining)
+		let rec find_min lst curr_id curr_min = 
+			(match lst with
+			| [] -> curr_id
+			| (id,dist,path)::t ->
+				let new_est = estimate (id,dist,path) dest nd_table in
+				if new_est < curr_min then
+					find_min t id new_est
+				else
+					find_min t curr_id curr_min
+		) in
+		let best_id = find_min lst 0 999999. in
+		let filt (id,_,_) = (not (id = best_id)) in
+		let matches (id,_,_) = (id = best_id) in
+		let triple = List.find matches lst in
+		let remaining = List.filter filt lst in
+		(triple, remaining)
 
 	(* Expand a node (nid * dist * path list) triple into a list of triples *)
 	let expand (id,dist,path) nd_table eg_table =
-		let _ = print_endline "step 1" in
 		let neighbor_ids = 
 			try H.find eg_table id
 			with _ -> [] in
-		let _ = print_endline "step 2" in
 		let nodes = List.map (H.find nd_table) neighbor_ids in
 		let exp_func n =
 			let new_dist = dist +. distance id n.nid nd_table in
@@ -725,14 +673,6 @@ module Map : MapGraph = struct
 			else
 				let to_expand, remain = find_best lst e nd_table in
 				let _ = (fun (id,_,_) -> H.add explored id true) to_expand in
-				(* let estimate_remain = estimate to_expand e nd_table in *)
-
-				(* let _ = print_endline (string_of_float estimate_remain) in *)
-				let _ = print_endline (string_of_int (get_id to_expand)) in
-				(* let _ = print_nd (get_id to_expand) in *)
-				let _ = print_endline (string_of_int (List.length lst)) in
-				let _ = print_endline (string_of_int (H.length explored)) in
-
 				let expanded = expand to_expand nd_table eg_table in
 				let filt_expanded = List.filter
 					(fun (id,_,_) -> not (H.mem explored id)) expanded in

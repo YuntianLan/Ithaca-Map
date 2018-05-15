@@ -32,7 +32,7 @@ open Camlimages
 open Pervasives
 
 (* Parameter keys:
- * index: int {1,2,3,4}
+ * index: int {1,2,3,4,5,6,7}
  * 		1. Nearest node coord given coord
  * 		2. Nearest node coord given location name
  * 		3. Path from one coord to another coord
